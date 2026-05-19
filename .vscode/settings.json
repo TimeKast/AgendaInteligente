@@ -1,0 +1,280 @@
+{
+  // ============================================
+  // TimeKast Factory — VS Code Settings
+  // Next.js 16+ | TypeScript | Tailwind | AI-First
+  // ============================================
+
+  // ==========================================
+  // TYPESCRIPT / JAVASCRIPT (unified js/ts namespace)
+  // ==========================================
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "js/ts.suggest.autoImports": true,
+  "js/ts.preferences.preferTypeOnlyAutoImports": true,
+  "js/ts.preferGoToSourceDefinition": true,
+  "js/ts.workspaceSymbols.scope": "currentProject",
+
+  // Inlay Hints (disabled by default - can be distracting)
+  "js/ts.inlayHints.parameterNames.enabled": "none",
+  "js/ts.inlayHints.variableTypes.enabled": false,
+  "js/ts.inlayHints.functionLikeReturnTypes.enabled": false,
+
+  // ==========================================
+  // ESLINT
+  // ==========================================
+  "eslint.enable": true,
+  "eslint.useFlatConfig": true,
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.codeActionsOnSave.mode": "problems",
+
+  // ==========================================
+  // PRETTIER
+  // ==========================================
+  "prettier.enable": true,
+  "prettier.requireConfig": true,
+  "prettier.useEditorConfig": true,
+
+  // ==========================================
+  // LANGUAGE-SPECIFIC SETTINGS
+  // ==========================================
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "never"
+    },
+    "editor.rulers": [100]
+  },
+
+  "[typescriptreact]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "never"
+    },
+    "editor.rulers": [100]
+  },
+
+  "[javascript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+
+  "[javascriptreact]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+
+  "[json]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[jsonc]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[yaml]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[markdown]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on",
+    "editor.rulers": [80]
+  },
+
+  "[css]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[html]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // ==========================================
+  // TAILWIND CSS
+  // ==========================================
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.validate": true,
+  "tailwindCSS.lint.cssConflict": "warning",
+  "tailwindCSS.lint.invalidApply": "error",
+  "tailwindCSS.lint.invalidScreen": "error",
+  "tailwindCSS.lint.invalidVariant": "error",
+  // Don't lint Tailwind in markdown code fences — intentionally documents
+  // v3 anti-patterns that would otherwise warn.
+  "tailwindCSS.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/*.md",
+    "**/*.mdx",
+    "**/.claude/**",
+    "**/docs/**"
+  ],
+
+  // ==========================================
+  // EDITOR
+  // ==========================================
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.trimAutoWhitespace": true,
+  "editor.renderWhitespace": "boundary",
+  "editor.wordWrap": "off",
+  "editor.lineNumbers": "on",
+  "editor.minimap.enabled": true,
+  "editor.minimap.maxColumn": 120,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.linkedEditing": true,
+  "editor.cursorBlinking": "smooth",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.smoothScrolling": true,
+  "editor.fontLigatures": true,
+  "editor.suggestSelection": "first",
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "editor.suggest.preview": true,
+  "editor.parameterHints.enabled": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+
+  // ==========================================
+  // FILES
+  // ==========================================
+  "files.autoSave": "onFocusChange",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.eol": "\n",
+  "files.encoding": "utf8",
+
+  "files.associations": {
+    "*.css": "tailwindcss",
+    "*.tsx": "typescriptreact",
+    "*.jsx": "javascriptreact"
+  },
+
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.next": true
+  },
+
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.next/**": true,
+    "**/dist/**": true
+  },
+
+  // ==========================================
+  // SEARCH
+  // ==========================================
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.git": true,
+    "**/pnpm-lock.yaml": true
+  },
+  "search.useIgnoreFiles": true,
+  "search.followSymlinks": false,
+
+  // ==========================================
+  // TERMINAL
+  // ==========================================
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.cursorBlinking": true,
+  "terminal.integrated.fontSize": 13,
+  "terminal.integrated.scrollback": 10000,
+
+  // ==========================================
+  // GIT
+  // ==========================================
+  "git.enabled": true,
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+
+  // ==========================================
+  // ERROR LENS
+  // ==========================================
+  "errorLens.enabled": true,
+  "errorLens.fontSize": "12",
+  "errorLens.delay": 500,
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+
+  // ==========================================
+  // POSTGRESQL
+  // ==========================================
+  "postgresql.connections": [],
+  "postgresql.format.keywordCase": "upper",
+  "postgresql.format.identifierCase": "lower",
+
+  // ==========================================
+  // WORKBENCH
+  // ==========================================
+  "workbench.editor.highlightModifiedTabs": true,
+  "workbench.editor.labelFormat": "short",
+  "workbench.tree.indent": 16,
+
+  // ==========================================
+  // SECURITY
+  // ==========================================
+  "security.workspace.trust.untrustedFiles": "prompt",
+  "security.workspace.trust.enabled": true,
+  "telemetry.telemetryLevel": "off",
+
+  // ==========================================
+  // PYTHON
+  // ==========================================
+  "python.defaultInterpreterPath": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
+  "python.languageServer": "Jedi",
+
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.rulers": [100]
+  },
+
+  // ==========================================
+  // DEBUGGING
+  // ==========================================
+  "debug.console.fontSize": 13,
+  "debug.internalConsoleOptions": "openOnSessionStart",
+  "debug.openDebug": "openOnDebugBreak",
+  "debug.showBreakpointsInOverviewRuler": true
+}

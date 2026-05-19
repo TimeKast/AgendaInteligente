@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+#
+# E2E Workflow
+# Runs Playwright E2E tests with Neon database inside the official Playwright container.
+#
+# This file is copied to .github/workflows/e2e.yml by `pnpm setup:e2e`.
+# Do not edit this template directly — it will be overwritten on next run.
+#
+# Container tag substitution: `__PLAYWRIGHT_VERSION__` is replaced at copy time
+# with the resolved version of `@playwright/test` from pnpm-lock.yaml (fallback:
+# package.json devDependencies). The container ships all system deps preinstalled,
+# so `playwright install` does NOT need `--with-deps` (which depended on apt
+# mirrors and was structurally fragile on GHA runners). To bump the container,
+# run `pnpm install @playwright/test@<new>` then `pnpm setup:e2e`.
+
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v__PLAYWRIGHT_VERSION__-noble
+
+    # Skip PRs from forks (no secrets access)
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+
+    env:
+      AUTH_SECRET: ci-test-secret-minimum-32-characters-required
+      AUTH_TRUST_HOST: "true"
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec playwright install chromium
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

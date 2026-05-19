@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1769728428260,
+      "tag": "0000_audit-fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769764370636,
+      "tag": "0001_soft-delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771261603065,
+      "tag": "0002_easy_felicia_hardy",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1771268983136,
+      "tag": "0003_strong_psynapse",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774649643162,
+      "tag": "0004_abnormal_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777966691782,
+      "tag": "0005_tense_vance_astro",
+      "breakpoints": true
+    }
+  ]
+}

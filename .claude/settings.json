@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/validate-commit.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/skill-announce-reminder.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm test:e2e *)",
+      "Bash(pnpm vitest *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm build *)",
+      "Bash(pnpm verify *)",
+      "Bash(pnpm format *)",
+      "Bash(pnpm format:check *)",
+      "Bash(pnpm knip *)",
+      "Bash(pnpm env:check *)",
+      "Bash(pnpm analyze *)",
+
+      "Bash(pnpm dev)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm run *)",
+
+      "Bash(pnpm db:query *)",
+      "Bash(pnpm db:generate *)",
+      "Bash(pnpm db:migrate *)",
+      "Bash(pnpm db:seed *)",
+      "Bash(pnpm db:seed:admin *)",
+
+      "Bash(npx -y md-to-pdf *)",
+
+      "Bash(pnpm update-board *)",
+      "Bash(pnpm board:status)",
+      "Bash(pnpm board:status *)",
+      "Bash(pnpm skill:lint *)",
+      "Bash(pnpm generate:inventory *)",
+      "Bash(pnpm generate:codebase *)",
+
+      "Bash(git add [a-zA-Z0-9._/-]*)",
+      "Bash(git commit -m *)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git rev-parse *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git switch *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git cherry-pick *)",
+      "Bash(git rebase *)",
+      "Bash(git tag *)",
+      "Bash(git show *)",
+      "Bash(git blame *)",
+      "Bash(git remote *)",
+      "Bash(git worktree *)",
+      "Bash(git reflog *)",
+      "Bash(git describe *)",
+      "Bash(git mv *)",
+
+      "Bash(gh api *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+
+      "Bash(date -u *)",
+      "Bash(date +*)",
+      "Bash(date)",
+      "Bash(mkdir -p .claude/transitions/*)",
+      "Bash(mkdir -p .claude/transitions/**)",
+      "Bash(mkdir -p .claude/**)",
+      "Bash(mv .claude/transitions/*)",
+      "Bash(mv .claude/transitions/**)",
+      "Bash(rm .claude/transitions/*)",
+      "Bash(rm .claude/transitions/**)",
+      "Bash(rm -f .claude/transitions/*)",
+      "Bash(rm -f .claude/transitions/**)",
+      "Bash(rm -rf .claude/transitions/*)",
+      "Bash(rm -rf .claude/transitions/**)",
+      "Bash(rmdir .claude/transitions/**)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(stat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(echo *)",
+      "Bash(basename *)",
+      "Bash(dirname *)",
+      "Bash(jq *)",
+      "Bash(grep *)",
+      "Bash(sort *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(diff *)",
+      "Bash(which *)",
+      "Bash(command -v *)",
+      "Bash(type *)",
+      "Bash(mkdir -p *)",
+      "Bash(cp * *)",
+      "Bash(cat >> project/**)",
+      "Bash(bc *)",
+
+      "Bash(rm -rf .next)",
+      "Bash(rm -rf node_modules/.cache)",
+
+      "Edit(.claude/**)",
+      "Write(.claude/**)",
+      "Edit(src/**)",
+      "Write(src/**)",
+      "Edit(tests/**)",
+      "Write(tests/**)",
+      "Edit(docs/**)",
+      "Write(docs/**)",
+      "Edit(project/**)",
+      "Write(project/**)",
+      "Edit(scripts/**)",
+      "Write(scripts/**)",
+      "Edit(public/**)",
+      "Write(public/**)",
+      "Edit(.env.example)",
+      "Write(.env.example)",
+
+      "Read(//private/tmp/**)",
+      "Read(.claude/transitions/*)",
+      "Read(.claude/transitions/*/*)",
+      "Read(.claude/transitions/**)",
+      "Write(.claude/transitions/*)",
+      "Write(.claude/transitions/*/*)",
+      "Write(.claude/transitions/**)",
+      "Edit(.claude/transitions/*)",
+      "Edit(.claude/transitions/*/*)",
+      "Edit(.claude/transitions/**)"
+    ],
+    "deny": [
+      "Bash(* --no-verify)",
+      "Bash(* --no-gpg-sign*)",
+      "Bash(pnpm db:push *)",
+      "Bash(pnpm run db:push*)",
+      "Bash(pnpm install*)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm remove *)",
+      "Bash(pnpm dlx *)",
+      "Bash(npx *)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(git reset --hard *)",
+      "Bash(git checkout .)",
+      "Bash(git restore .)",
+      "Bash(sed -i *)",
+      "Bash(gh api -X POST*)",
+      "Bash(gh api -X PUT*)",
+      "Bash(gh api -X DELETE*)",
+      "Edit(.env.local*)",
+      "Write(.env.local*)",
+      "Edit(**/*.pem)",
+      "Write(**/*.pem)",
+      "Edit(**/*.key)",
+      "Write(**/*.key)"
+    ]
+  }
+}

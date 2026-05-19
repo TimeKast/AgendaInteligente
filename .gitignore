@@ -1,0 +1,81 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+/playwright-report
+/test-results
+/blob-report
+tests/.auth/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Lighthouse CI
+.lighthouseci/
+
+# Factory sync - keep local merge strategies
+.gitattributes
+
+# Neon CLI config (local org)
+.neon
+
+# Local pending items (not synced to template)
+/pendientes
+
+# Python virtual environment
+.venv/
+
+# Python
+__pycache__/
+.venv/
+
+# Agent runtime state (ephemeral, per-session)
+.agent/audit.log
+.agent/session.state
+
+# Claude Code transitions (session bridges, local work journal)
+.claude/transitions/
+
+# Claude Code worktrees (git worktrees del agente, runtime-only)
+.claude/worktrees/
+
+# Claude Code local settings (per-dev overrides — baseline va en settings.json tracked)
+.claude/settings.local.json
+
+# Reporte Uso de plataformas
+usage-report.mjs

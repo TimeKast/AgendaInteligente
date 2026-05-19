@@ -1,0 +1,1049 @@
+# =============================================================================
+# Agent Registry — Single Source of Truth (SSOT)
+# =============================================================================
+# TimeKast Factory Agent System
+#
+# This file consolidates agent/skill routing, workflow defaults, issue
+# assignment combos, and fallback policy into a single machine-readable format.
+#
+# Sections:
+#   §A  agents / skills   — Catalog (WHO exists)
+#   §B  routing_policy     — HOW selection works
+#   §C  workflow_defaults  — WHEN agents load per workflow
+#   §D  issue_combos       — WHAT loads per issue type
+#   §E  fallback_policy    — SAFETY NET when nothing matches
+#
+# Generated views (by build_registry.py — REG-002):
+#   .agent/REGISTRY.md          — full human-readable
+#   .agent/REGISTRY.skills.md   — skills slice for /backlog
+#   .agent/REGISTRY.agents.md   — agents slice for /implement
+#   .agent/REGISTRY.combos.md   — issue combos for /backlog add
+#   .agent/REGISTRY.fallbacks.md — fallback rules for /implement
+#
+# Validate: python3 -c "import yaml; yaml.safe_load(open('registry.yaml'))"
+# =============================================================================
+
+# =============================================================================
+# §A — CATALOG
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# §A.1 — Agents (30)
+# -----------------------------------------------------------------------------
+# Fields:
+#   path             — relative to .agent/ (must exist)
+#   scope            — kit | project
+#   keywords_any     — match ANY to activate (EN)
+#   keywords_es      — match ANY to activate (ES)
+#   keywords_all     — ALL must match (optional, for disambiguation)
+#   negative_keywords — if ANY match, agent is disqualified
+#   domains          — associated domain(s) for domain_match scoring
+#   activation_mode  — auto | workflow_only | explicit_only
+#   priority         — 0-100, higher = preferred in tie-breaks
+# -----------------------------------------------------------------------------
+
+agents:
+  architect:
+    path: agents/architect.md
+    scope: kit
+    keywords_any: [architecture, ADR, technical decision, trade-off, system design, pattern]
+    keywords_es: [arquitectura, ADR, decisión técnica, diseño del sistema, patrón]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 70
+
+  backend-specialist:
+    path: agents/backend-specialist.md
+    scope: kit
+    keywords_any: [API, endpoint, server action, mutation, webhook, cron, middleware]
+    keywords_es: [API, endpoint, acción de servidor, mutación, webhook, cron]
+    negative_keywords: [flutter, react native]
+    domains: [api]
+    activation_mode: auto
+    priority: 80
+
+  code-archaeologist:
+    path: agents/code-archaeologist.md
+    scope: kit
+    keywords_any: [legacy, refactor, archaeology, migration from v1, old code, technical debt]
+    keywords_es: [legado, refactorizar, arqueología, histórico, código viejo, deuda técnica]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 60
+
+  data-modeler-drizzle:
+    path: agents/data-modeler-drizzle.md
+    scope: kit
+    keywords_any: [relations, indexes, createTable, data model, entity]
+    keywords_all: [drizzle]
+    keywords_es: [relaciones, índices, modelo de datos, entidad]
+    negative_keywords: []
+    domains: [db]
+    activation_mode: auto
+    priority: 75
+
+  database-architect:
+    path: agents/database-architect.md
+    scope: kit
+    keywords_any: [schema, migration, DB, database, query, postgres, neon]
+    keywords_es: [esquema, migración, base de datos, consulta, postgres]
+    negative_keywords: []
+    domains: [db]
+    activation_mode: auto
+    priority: 80
+
+  dataviz-specialist:
+    path: agents/dataviz-specialist.md
+    scope: kit
+    keywords_any: [dashboard, chart, graph, KPI, data viz, visualization, metrics]
+    keywords_es: [dashboard, gráfica, indicador, visualización, métricas, tablero]
+    negative_keywords: []
+    domains: [ui]
+    activation_mode: auto
+    priority: 75
+
+  debugger:
+    path: agents/debugger.md
+    scope: kit
+    keywords_any: [bug, error, debug, fix, crash, trace, stack trace, breakpoint]
+    keywords_es: [bug, error, depurar, arreglar, falla, rastrear, crash]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 70
+
+  design-engineer:
+    path: agents/design-engineer.md
+    scope: kit
+    keywords_any: [visual polish, restyle, implement skin, apply design, premium UI]
+    keywords_es: [pulir UI, mejorar diseño, aplicar skin, hacer más premium, se ve feo]
+    negative_keywords: []
+    domains: [ui]
+    activation_mode: auto
+    priority: 75
+
+  design-system-lead:
+    path: agents/design-system-lead.md
+    scope: kit
+    keywords_any: [design system, tokens, theme, DS-, color palette, typography scale]
+    keywords_es: [sistema de diseño, tokens, tema, paleta de colores]
+    negative_keywords: []
+    domains: [ui]
+    activation_mode: explicit_only
+    priority: 65
+
+  devops-engineer:
+    path: agents/devops-engineer.md
+    scope: kit
+    keywords_any: [deploy, CI/CD, Vercel, Docker, pipeline, env vars, staging, release]
+    keywords_es: [despliegue, CI/CD, Vercel, Docker, pipeline, variables de entorno]
+    negative_keywords: []
+    domains: []
+    activation_mode: auto
+    priority: 70
+
+  discovery-expert:
+    path: agents/discovery-expert.md
+    scope: kit
+    keywords_any: [discovery, brief, requirements, understand problem, brain dump, intake]
+    keywords_es: [discovery, brief, requisitos, entender problema, brain dump, intake]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 90
+
+  documentation-writer:
+    path: agents/documentation-writer.md
+    scope: kit
+    keywords_any: [documentation, README, docs, changelog, ADR doc, wiki]
+    keywords_es: [documentación, README, docs, changelog, wiki]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 65
+
+  explorer-agent:
+    path: agents/explorer-agent.md
+    scope: kit
+    keywords_any: [explore, analyze codebase, overview, file structure, code map]
+    keywords_es: [explorar, analizar codebase, overview, estructura de archivos]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 60
+
+  flutter-mobile:
+    path: agents/flutter-mobile.md
+    scope: kit
+    keywords_any: [flutter, dart, widget, provider, GoRouter, arb, pubspec, flavor]
+    keywords_es: [flutter, dart, widget, proveedor, GoRouter, arb, pubspec]
+    negative_keywords: [react native]
+    domains: []
+    activation_mode: auto
+    priority: 85
+
+  frontend-specialist:
+    path: agents/frontend-specialist.md
+    scope: kit
+    keywords_any: [component, React, hook, state, RSC, form, UI, responsive, layout]
+    keywords_es: [componente, React, hook, estado, formulario, interfaz, responsivo]
+    negative_keywords: [flutter, dart, react native]
+    domains: [ui]
+    activation_mode: auto
+    priority: 80
+
+  game-developer:
+    path: agents/game-developer.md
+    scope: kit
+    keywords_any: [game, canvas, sprite, unity, godot, 2D, 3D, game loop]
+    keywords_es: [juego, canvas, sprite, unity, godot, 2D, 3D]
+    negative_keywords: []
+    domains: []
+    activation_mode: explicit_only
+    priority: 70
+
+  layout-composer:
+    path: agents/layout-composer.md
+    scope: kit
+    keywords_any: [layout, shell, sidebar, navigation model, app structure, header, footer]
+    keywords_es: [layout, shell, sidebar, navegación, estructura de la app, barra lateral]
+    negative_keywords: []
+    domains: [ui]
+    activation_mode: workflow_only
+    priority: 70
+
+  mobile-developer:
+    path: agents/mobile-developer.md
+    scope: kit
+    keywords_any: [mobile, React Native, iOS, Android, native app]
+    keywords_es: [móvil, React Native, iOS, Android, app nativa]
+    negative_keywords: [flutter, dart]
+    domains: []
+    activation_mode: auto
+    priority: 80
+
+  orchestrator:
+    path: agents/orchestrator.md
+    scope: kit
+    keywords_any: [orchestrate, multi-agent, coordinate, parallel, complex task]
+    keywords_es: [orquestar, multi-agente, coordinar, tarea compleja]
+    negative_keywords: []
+    domains: []
+    activation_mode: explicit_only
+    priority: 60
+
+  performance-optimizer:
+    path: agents/performance-optimizer.md
+    scope: kit
+    keywords_any: [performance, slow, bundle, lighthouse, Core Web Vitals, lazy load]
+    keywords_es: [rendimiento, lento, bundle, lighthouse, Core Web Vitals, carga lenta]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 70
+
+  product-manager:
+    path: agents/product-manager.md
+    scope: kit
+    keywords_any: [product, requirements, stakeholder, roadmap, user story]
+    keywords_es: [producto, requisitos, stakeholder, roadmap, historia de usuario]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 65
+
+  product-owner:
+    path: agents/product-owner.md
+    scope: kit
+    keywords_any: [backlog, prioritization, sprint, PO, acceptance criteria]
+    keywords_es: [backlog, priorización, sprint, PO, criterios de aceptación]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 65
+
+  project-planner:
+    path: agents/project-planner.md
+    scope: kit
+    keywords_any: [plan, project, roadmap, task breakdown, estimate, milestone]
+    keywords_es: [planificar, proyecto, roadmap, desglose, estimación, hito]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 70
+
+  quality-engineer:
+    path: agents/quality-engineer.md
+    scope: kit
+    keywords_any: [quality, QC, code review, audit, pre-release, standards]
+    keywords_es: [calidad, QC, revisión de código, auditoría, estándares]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 70
+
+  security-auditor:
+    path: agents/security-auditor.md
+    scope: kit
+    keywords_any: [security, auth, RBAC, permission, session, encryption, vulnerability]
+    keywords_es: [seguridad, auth, RBAC, permisos, sesión, encriptación]
+    negative_keywords: []
+    domains: [security]
+    activation_mode: auto
+    priority: 80
+
+  skeptical-client:
+    path: agents/skeptical-client.md
+    scope: kit
+    keywords_any: [client review, proposal review, client validation, skeptical]
+    keywords_es: [revisión cliente, validación propuesta, cliente escéptico]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 55
+
+  seo-specialist:
+    path: agents/seo-specialist.md
+    scope: kit
+    keywords_any: [SEO, meta tags, sitemap, indexing, schema markup, Open Graph]
+    keywords_es: [SEO, meta tags, sitemap, indexación, schema markup]
+    negative_keywords: []
+    domains: []
+    activation_mode: workflow_only
+    priority: 65
+
+  test-engineer:
+    path: agents/test-engineer.md
+    scope: kit
+    keywords_any: [e2e, playwright, integration test, browser test, test scenario]
+    keywords_es: [e2e, playwright, prueba de integración, escenario de prueba]
+    negative_keywords: []
+    domains: [testing]
+    activation_mode: auto
+    priority: 80
+
+  ui-critic:
+    path: agents/ui-critic.md
+    scope: kit
+    keywords_any: [critique, design review, polish review, visual audit, UX review]
+    keywords_es: [review de diseño, se ve amateur, auditoría visual, revisión UX]
+    negative_keywords: []
+    domains: [ui]
+    activation_mode: explicit_only
+    priority: 65
+
+  visual-design-director:
+    path: agents/visual-design-director.md
+    scope: kit
+    keywords_any: [visual direction, skin, look and feel, visual identity, brand, mood board]
+    keywords_es: [dirección visual, skin, identidad visual, se ve genérico, marca, moodboard]
+    negative_keywords: []
+    domains: [ui]
+    activation_mode: workflow_only
+    priority: 70
+
+# -----------------------------------------------------------------------------
+# §A.2 — Skills
+# -----------------------------------------------------------------------------
+
+skills:
+  # ---------------------------------------------------------------------------
+  # Domain skills (5) — CÓMO en ESTE stack
+  # Path: skills/domains/{name}/SKILL.md
+  # ---------------------------------------------------------------------------
+  domains:
+    api:
+      path: skills/domains/api/SKILL.md
+      keywords_any: [server action, API, endpoint, webhook, mutation, revalidate, Zod]
+      keywords_es: [acción de servidor, API, endpoint, webhook, mutación, revalidar, Zod]
+
+    db:
+      path: skills/domains/db/SKILL.md
+      keywords_any: [schema, migration, drizzle, query, transaction, relation, index, database]
+      keywords_es:
+        [esquema, migración, drizzle, consulta, transacción, relación, índice, base de datos]
+
+    security:
+      path: skills/domains/security/SKILL.md
+      keywords_any: [auth, permission, role, RBAC, session, login, protected, encryption]
+      keywords_es: [autenticación, permiso, rol, RBAC, sesión, login, protegido, encriptación]
+
+    testing:
+      path: skills/domains/testing/SKILL.md
+      keywords_any: [test, vitest, playwright, e2e, mock, fixture, coverage, assertion]
+      keywords_es: [prueba, vitest, playwright, e2e, mock, fixture, cobertura, aserción]
+
+    ui:
+      path: skills/domains/ui/SKILL.md
+      keywords_any:
+        [component, form, table, button, modal, dialog, tailwind, shadcn, card, responsive]
+      keywords_es:
+        [componente, formulario, tabla, botón, modal, diálogo, tailwind, shadcn, responsivo]
+
+  # ---------------------------------------------------------------------------
+  # Kit skills (30) — routable by keywords
+  # Path: skills/{name}/SKILL.md
+  # ---------------------------------------------------------------------------
+  kit:
+    # Web / React / Frontend (5)
+    nextjs-react-expert:
+      path: skills/nextjs-react-expert/SKILL.md
+      keywords_any: [nextjs, react, app router, RSC, suspense, server component, hydration]
+      keywords_es: [nextjs, react, app router, componente de servidor, hidratación]
+      activation_mode: auto
+
+    tailwind-patterns:
+      path: skills/tailwind-patterns/SKILL.md
+      keywords_any: [tailwind, CSS, container query, design token, theme]
+      keywords_es: [tailwind, CSS, container query, token de diseño, tema]
+      activation_mode: auto
+
+    frontend-design:
+      path: skills/frontend-design/SKILL.md
+      keywords_any: [UI, UX, color, typography, layout, spacing, responsive]
+      keywords_es: [UI, UX, color, tipografía, layout, espaciado, responsivo]
+      activation_mode: auto
+
+    web-design-guidelines:
+      path: skills/web-design-guidelines/SKILL.md
+      keywords_any: [accessibility, a11y, WCAG, usability, best practices]
+      keywords_es: [accesibilidad, a11y, WCAG, usabilidad, mejores prácticas]
+      activation_mode: explicit_only
+
+    app-builder:
+      path: skills/app-builder/SKILL.md
+      keywords_any: [full-stack app, create app, scaffold, project setup]
+      keywords_es: [app full-stack, crear app, scaffold, setup de proyecto]
+      activation_mode: workflow_only
+
+    # Backend / Infrastructure (6)
+    api-patterns:
+      path: skills/api-patterns/SKILL.md
+      keywords_any: [server action, API route, REST, GraphQL, tRPC, pagination]
+      keywords_es: [acción de servidor, ruta API, REST, GraphQL, tRPC, paginación]
+      activation_mode: auto
+
+    database-design:
+      path: skills/database-design/SKILL.md
+      keywords_any: [drizzle, schema design, neon, ORM, postgres, indexing]
+      keywords_es: [drizzle, diseño de esquema, neon, ORM, postgres, indexación]
+      activation_mode: auto
+
+    nodejs-best-practices:
+      path: skills/nodejs-best-practices/SKILL.md
+      keywords_any: [node, express, async, middleware, error handling]
+      keywords_es: [node, express, asíncrono, middleware, manejo de errores]
+      activation_mode: auto
+
+    deployment-procedures:
+      path: skills/deployment-procedures/SKILL.md
+      keywords_any: [deploy, vercel, CI/CD, release, rollback, staging]
+      keywords_es: [despliegue, vercel, CI/CD, release, rollback, staging]
+      activation_mode: workflow_only
+
+    mcp-builder:
+      path: skills/mcp-builder/SKILL.md
+      keywords_any: [MCP, model context protocol, tool, resource]
+      keywords_es: [MCP, protocolo de contexto, herramienta, recurso]
+      activation_mode: explicit_only
+
+    # Design / UX (8)
+    design-engineering:
+      path: skills/design-engineering/SKILL.md
+      keywords_any: [visual polish, restyle, implement skin, apply design, UI implementation]
+      keywords_es: [pulir UI, restyle, implementar skin, aplicar diseño]
+      activation_mode: auto
+
+    design-system-principles:
+      path: skills/design-system-principles/SKILL.md
+      keywords_any:
+        [
+          design system,
+          tokens,
+          theme,
+          skin,
+          UI kit,
+          component library,
+          design tokens,
+          consistency,
+          design anti-pattern,
+        ]
+      keywords_es:
+        [
+          sistema de diseño,
+          tokens,
+          tema,
+          skin,
+          kit de UI,
+          librería de componentes,
+          tokens de diseño,
+          consistencia,
+          anti-patrón de diseño,
+        ]
+      activation_mode: auto
+
+    ui-style-lab:
+      path: skills/ui-style-lab/SKILL.md
+      keywords_any: [skin, visual direction, look and feel, identity, iconography]
+      keywords_es: [skin, dirección visual, identidad, se ve genérico, iconografía]
+      activation_mode: explicit_only
+
+    data-storytelling-design:
+      path: skills/data-storytelling-design/SKILL.md
+      keywords_any: [dashboard, chart, KPI, data viz, storytelling, visualization]
+      keywords_es: [dashboard, gráfica, KPI, visualización de datos, storytelling]
+      activation_mode: auto
+
+    mobile-design:
+      path: skills/mobile-design/SKILL.md
+      keywords_any: [mobile, iOS, Android, touch, gesture, native]
+      keywords_es: [móvil, iOS, Android, táctil, gesto, nativo]
+      activation_mode: workflow_only
+
+    flutter-mobile-design:
+      path: skills/flutter-mobile-design/SKILL.md
+      keywords_any: [flutter, dart, widget, provider, arb, pubspec, flavor]
+      keywords_es: [flutter, dart, widget, proveedor, arb, pubspec, flavor]
+      activation_mode: auto
+
+    seo-geo-engine:
+      path: skills/seo-geo-engine/SKILL.md
+      keywords_any: [SEO, GEO, meta tags, sitemap, AI search, E-E-A-T, citation]
+      keywords_es: [SEO, GEO, meta tags, sitemap, búsqueda AI, E-E-A-T, citación]
+      activation_mode: explicit_only
+
+    # Testing / Quality (7)
+    testing-patterns:
+      path: skills/testing-patterns/SKILL.md
+      keywords_any: [vitest, unit test, mock, assertion, spy, stub]
+      keywords_es: [vitest, prueba unitaria, mock, aserción, spy, stub]
+      activation_mode: auto
+
+    webapp-testing:
+      path: skills/webapp-testing/SKILL.md
+      keywords_any: [playwright, e2e, browser test, integration test]
+      keywords_es: [playwright, e2e, prueba de navegador, prueba de integración]
+      activation_mode: auto
+
+    code-review-checklist:
+      path: skills/code-review-checklist/SKILL.md
+      keywords_any: [code review, PR, pull request, review]
+      keywords_es: [revisión de código, PR, pull request, revisión]
+      activation_mode: workflow_only
+
+    systematic-debugging:
+      path: skills/systematic-debugging/SKILL.md
+      keywords_any: [debug, error, trace, root cause, stack trace]
+      keywords_es: [depurar, error, traza, causa raíz, stack trace]
+      activation_mode: workflow_only
+
+    performance-profiling:
+      path: skills/performance-profiling/SKILL.md
+      keywords_any: [performance, slow, lighthouse, bundle, Core Web Vitals]
+      keywords_es: [rendimiento, lento, lighthouse, bundle, Core Web Vitals]
+      activation_mode: workflow_only
+
+    # Security (2)
+    vulnerability-scanner:
+      path: skills/vulnerability-scanner/SKILL.md
+      keywords_any: [security, OWASP, vulnerability, supply chain, CVE]
+      keywords_es: [seguridad, OWASP, vulnerabilidad, cadena de suministro, CVE]
+      activation_mode: workflow_only
+
+    # Architecture / Planning (2)
+    architecture:
+      path: skills/architecture/SKILL.md
+      keywords_any: [architecture, ADR, technical decision, trade-off]
+      keywords_es: [arquitectura, ADR, decisión técnica, trade-off]
+      activation_mode: workflow_only
+
+    parallel-agents:
+      path: skills/parallel-agents/SKILL.md
+      keywords_any: [multi-agent, orchestration, parallel]
+      keywords_es: [multi-agente, orquestación, paralelo]
+      activation_mode: explicit_only
+
+    # Languages / Platforms (4)
+    python-patterns:
+      path: skills/python-patterns/SKILL.md
+      keywords_any: [python, django, flask, fastapi, pip]
+      keywords_es: [python, django, flask, fastapi, pip]
+      activation_mode: auto
+
+    bash-linux:
+      path: skills/bash-linux/SKILL.md
+      keywords_any: [bash, shell, terminal, script, cron]
+      keywords_es: [bash, shell, terminal, script, cron]
+      activation_mode: auto
+
+    powershell-windows:
+      path: skills/powershell-windows/SKILL.md
+      keywords_any: [powershell, Windows, cmd]
+      keywords_es: [powershell, Windows, cmd]
+      activation_mode: auto
+
+    i18n-localization:
+      path: skills/i18n-localization/SKILL.md
+      keywords_any: [i18n, locale, translation, RTL, internationalization]
+      keywords_es: [i18n, locale, traducción, RTL, internacionalización]
+      activation_mode: explicit_only
+
+    # Documentation (1)
+    documentation-templates:
+      path: skills/documentation-templates/SKILL.md
+      keywords_any: [README, API docs, code comments, JSDoc]
+      keywords_es: [README, documentación API, comentarios de código, JSDoc]
+      activation_mode: workflow_only
+
+    # Game Development (1)
+    game-development:
+      path: skills/game-development/SKILL.md
+      keywords_any: [game, unity, godot, canvas, sprite, 2D, 3D]
+      keywords_es: [juego, unity, godot, canvas, sprite, 2D, 3D]
+      activation_mode: explicit_only
+
+  # ---------------------------------------------------------------------------
+  # Role skills (7) — loaded by workflow, no keyword routing
+  # Path: skills/roles/{name}/SKILL.md
+  # ---------------------------------------------------------------------------
+  roles:
+    discovery:
+      path: skills/roles/discovery/SKILL.md
+      workflow: /discovery
+
+    proposal:
+      path: skills/roles/proposal/SKILL.md
+      workflow: /proposal
+
+    docs:
+      path: skills/roles/docs/SKILL.md
+      workflow: /docs
+
+    design:
+      path: skills/roles/design/SKILL.md
+      workflow: /design
+
+    backlog:
+      path: skills/roles/backlog/SKILL.md
+      workflow: /backlog
+
+    implement:
+      path: skills/roles/implement/SKILL.md
+      workflow: /implement
+
+    factory_agents:
+      path: skills/roles/factory_agents/SKILL.md
+      workflow: /factory_agents
+
+  # ---------------------------------------------------------------------------
+  # Universal skills (5) — always loaded, no routing needed
+  # Path: skills/{name}/SKILL.md
+  # ---------------------------------------------------------------------------
+  universal:
+    clean-code:
+      path: skills/clean-code/SKILL.md
+    plan-writing:
+      path: skills/plan-writing/SKILL.md
+    brainstorming:
+      path: skills/brainstorming/SKILL.md
+    behavioral-modes:
+      path: skills/behavioral-modes/SKILL.md
+    intelligent-routing:
+      path: skills/intelligent-routing/SKILL.md
+
+  # ---------------------------------------------------------------------------
+  # Utility skills (1) — on-demand
+  # Path: skills/utils/{name}/SKILL.md
+  # ---------------------------------------------------------------------------
+  utils:
+    pdf-export:
+      path: skills/utils/pdf-export/SKILL.md
+
+# =============================================================================
+# §B — ROUTING POLICY
+# =============================================================================
+
+routing_policy:
+  # Order of precedence for agent/skill selection (highest to lowest)
+  precedence:
+    1: user_explicit # @agent, @skill — user mentions directly
+    2: workflow_hard # roles + mandatory agents per workflow
+    3: issue_fields # Skills: and Agents: fields from issue
+    4: project_routing # only if enabled in project.yaml
+    5: core_scoring # keywords_any/all + priority scoring
+    6: fallbacks # contextual → generic
+
+  # Scoring weights for keyword matching
+  scoring:
+    keywords_any_match: 10 # per keyword matched
+    keywords_all_match: 25 # bonus if ALL keywords_all present
+    negative_match: -100 # disqualifies candidate
+    domain_match: 15 # if issue domain matches agent domain
+    min_score_threshold: 20 # minimum score to activate
+
+  # Tie-breaking rules (applied in order when scores are equal)
+  tie_breakers:
+    - prefer_higher_priority # agent.priority value
+    - prefer_domain_specific # agent with matching domain wins
+    - prefer_issue_combo_agent # agents suggested by issue_combos win
+    - prefer_project_agent # if project.yaml enabled
+
+  # Relationships between agents
+  agent_relationships:
+    data-modeler-drizzle:
+      narrows: database-architect # more specific → preferred when drizzle present
+    flutter-mobile:
+      excludes: mobile-developer # never load both
+    design-engineer:
+      complements: frontend-specialist # different focus, can coexist
+
+  # Hard limits
+  caps:
+    max_agents_per_issue: 3
+    max_skills_per_issue: 5
+
+  # Announcement format when agent/skills are activated
+  announcement: |
+    🤖 Aplicando conocimiento de `@{agent-name}`...
+    🧰 Skills: `{skill-1}`, `{skill-2}`
+
+# =============================================================================
+# §C — WORKFLOW DEFAULTS
+# =============================================================================
+# Each workflow defines:
+#   agents_always       — loaded unconditionally
+#   agents_conditional  — loaded when condition is met
+#   agents_by_tier      — loaded based on workflow tier/level
+#   skills_always       — loaded unconditionally
+# =============================================================================
+
+workflow_defaults:
+  /discovery:
+    agents_always: [discovery-expert]
+    agents_conditional:
+      - agent: explorer-agent
+        when:
+          file_exists_any: [src/, app/]
+      - agent: code-archaeologist
+        when:
+          file_exists_any: [src/]
+      - agent: product-owner
+        when:
+          keywords_any: [requirements, scope, challenge]
+      - agent: architect
+        when:
+          keywords_any: [architecture, system design, technical]
+      - agent: project-planner
+        when:
+          keywords_any: [roadmap, estimate, timeline]
+    skills_always: [roles/discovery]
+
+  /proposal:
+    agents_always: [project-planner, product-manager, skeptical-client]
+    agents_conditional:
+      - agent: architect
+        when:
+          keywords_any: [architecture, complex, technical decision]
+    skills_always: [roles/proposal, brainstorming, app-builder, architecture]
+
+  /docs:
+    agents_always: [documentation-writer]
+    agents_conditional:
+      - agent: explorer-agent
+        when:
+          file_exists_any: [src/lib/actions/]
+    skills_always: [roles/docs, documentation-templates, architecture, plan-writing]
+
+  /design:
+    agents_always: [visual-design-director, layout-composer, frontend-specialist]
+    agents_conditional:
+      - agent: mobile-developer
+        when:
+          keywords_any: [mobile, iOS, android]
+      - agent: flutter-mobile
+        when:
+          keywords_any: [flutter, dart, widget, arb]
+      - agent: seo-specialist
+        when:
+          keywords_any: [SEO, metadata, sitemap]
+      - agent: game-developer
+        when:
+          keywords_any: [game, canvas, sprite]
+      - agent: dataviz-specialist
+        when:
+          keywords_any: [dashboard, chart, data viz, KPI]
+      - agent: architect
+        when:
+          keywords_any: [architecture, complex, system design]
+    skills_always: [roles/design, frontend-design, domains/ui]
+
+  /backlog:
+    agents_always: [project-planner]
+    agents_conditional:
+      - agent: architect
+        when:
+          keywords_any: [architecture, complex, multi-module]
+    skills_always: [roles/backlog, plan-writing, architecture]
+
+  /implement:
+    agents_always: [test-engineer]
+    agents_conditional:
+      - agent: architect
+        when:
+          file_count_gt: 3
+      - agent: project-planner
+        when:
+          file_count_gt: 3
+    skills_always: [clean-code]
+    # Everything else comes from issue fields or fallback
+
+  /audit_deep:
+    agents_always: [quality-engineer]
+    agents_by_tier:
+      R2: [security-auditor, backend-specialist]
+      R3: [devops-engineer, performance-optimizer, test-engineer]
+    skills_always: [code-review-checklist, vulnerability-scanner, testing-patterns]
+
+  /debug:
+    agents_always: [debugger]
+    skills_always: [systematic-debugging, domains/api, domains/db, domains/ui]
+
+# =============================================================================
+# §D — ISSUE ASSIGNMENT COMBOS
+# =============================================================================
+# Each combo defines:
+#   match.any      — match ANY keyword to trigger
+#   match.all      — ALL keywords must be present (optional)
+#   dimension      — domain dimension (ui, db, api, security, testing, infra, docs, mobile)
+#   agents         — agents to assign
+#   skills         — skills to assign
+# =============================================================================
+
+issue_combos:
+  schema_db:
+    match:
+      any: [schema, migration, createTable, seed]
+      all: [drizzle]
+    dimension: db
+    agents: [database-architect, data-modeler-drizzle]
+    skills: [domains/db, kit/database-design]
+
+  server_action:
+    match:
+      any: [server action, API, endpoint, cron, webhook]
+    dimension: api
+    agents: [backend-specialist]
+    skills: [domains/api, kit/api-patterns]
+
+  server_action_complex:
+    match:
+      any: [business rules, anti-fraud, validation complex]
+    dimension: api
+    agents: [backend-specialist]
+    skills: [domains/api]
+
+  ui_crud:
+    match:
+      any: [CRUD, DataTable, form page, table page, list view]
+    dimension: ui
+    agents: [frontend-specialist]
+    skills: [domains/ui, kit/nextjs-react-expert]
+
+  ui_visual:
+    match:
+      any: [card, badge, visual component, new component, custom UI]
+    dimension: ui
+    agents: [frontend-specialist, design-engineer]
+    skills: [domains/ui, kit/nextjs-react-expert, kit/design-engineering]
+
+  ui_dashboard:
+    match:
+      any: [dashboard, KPI, chart, metrics, analytics, visualization]
+    dimension: ui
+    agents: [frontend-specialist, design-engineer, dataviz-specialist]
+    skills: [domains/ui, kit/design-engineering, kit/data-storytelling-design]
+
+  branding_theming:
+    match:
+      any: [branding, theming, visual identity, color palette, skin]
+    dimension: ui
+    agents: [design-engineer]
+    skills:
+      [domains/ui, kit/design-engineering, kit/tailwind-patterns, kit/design-system-principles]
+
+  auth_rbac:
+    match:
+      any: [auth, RBAC, permissions, login, session, role]
+    dimension: security
+    agents: [backend-specialist, security-auditor]
+    skills: [domains/security, domains/api]
+
+  testing_unit:
+    match:
+      any: [unit test, integration test, vitest, mock]
+    dimension: testing
+    agents: [test-engineer]
+    skills: [kit/testing-patterns]
+
+  testing_e2e:
+    match:
+      any: [e2e, playwright, browser test]
+    dimension: testing
+    agents: [test-engineer]
+    skills: [kit/webapp-testing]
+
+  cron_email:
+    match:
+      any: [cron, email template, scheduled job, background job]
+    dimension: api
+    agents: [backend-specialist]
+    skills: [domains/api, kit/bash-linux]
+
+  docs_technical:
+    match:
+      any: [documentation, README, changelog, ADR, wiki]
+    dimension: docs
+    agents: [documentation-writer]
+    skills: [kit/documentation-templates]
+
+  mobile_flutter:
+    match:
+      any: [flutter, dart, widget, provider, arb, pubspec]
+    dimension: mobile
+    agents: [flutter-mobile]
+    skills: [kit/flutter-mobile-design]
+
+  mobile_react_native:
+    match:
+      any: [react native, expo, metro, react-native]
+    dimension: mobile
+    agents: [mobile-developer]
+    skills: [kit/mobile-design]
+
+  performance_audit:
+    match:
+      any: [performance, lighthouse, slow, bundle, Core Web Vitals]
+    dimension: infra
+    agents: [performance-optimizer]
+    skills: [kit/performance-profiling]
+
+  design_system_theming:
+    match:
+      any: [tokens, theme system, design system, typography system, spacing scale]
+    dimension: ui
+    agents: [design-system-lead, design-engineer]
+    skills: [kit/design-engineering, kit/tailwind-patterns, kit/design-system-principles]
+
+  pwa:
+    match:
+      any: [PWA, service worker, offline, manifest, installable, cache strategy]
+    dimension: ui
+    agents: [frontend-specialist]
+    skills: [domains/ui, kit/nextjs-react-expert]
+
+  i18n:
+    match:
+      any: [i18n, internationalization, locale, translation, RTL, multi-language]
+    dimension: ui
+    agents: [frontend-specialist]
+    skills: [kit/i18n-localization]
+
+  infra_cicd:
+    match:
+      any: [CI/CD, deploy, pipeline, GitHub Actions, vercel, staging, release]
+    dimension: infra
+    agents: [devops-engineer]
+    skills: [kit/deployment-procedures]
+
+  refactoring:
+    match:
+      any:
+        [
+          refactor,
+          refactorizar,
+          clean up,
+          dead code,
+          technical debt,
+          deuda técnica,
+          optimize,
+          reorganize,
+          simplify,
+          extract,
+          consolidate,
+        ]
+    dimension: code
+    agents: [architect, backend-specialist]
+    skills: [universal/clean-code, kit/performance-profiling]
+
+  seo:
+    match:
+      any: [SEO, meta tags, sitemap, indexing, Open Graph, schema markup, GEO]
+    dimension: ui
+    agents: [seo-specialist]
+    skills: [kit/seo-geo-engine]
+
+  project_setup:
+    match:
+      any: [setup, configurar, env vars, secrets, branding, deploy platform, seed, initial config]
+    dimension: infra
+    agents: [backend-specialist]
+    skills: [domains/security, kit/deployment-procedures]
+
+# Resolution algorithm (8 steps)
+resolution_algorithm:
+  steps:
+    1: detect_matching_combos # find all combos that match the issue
+    2: select_primary_combo # pick highest-match combo
+    3: allow_one_complement # if clearly different dimension, add 1 more
+    4: enrich_via_scoring # run core_scoring for additional skills only
+    5: apply_agent_relationships # narrows, excludes
+    6: dedupe_alphabetical # remove duplicates
+    7: apply_caps # max 3 agents, max 5 skills
+    8: write_to_issue # > **Agents:** `...` > **Skills:** `...`
+  validation_rule: 'Every issue MUST have >= 1 skill + >= 1 agent'
+
+# =============================================================================
+# §E — FALLBACK POLICY
+# =============================================================================
+# Evaluated INDEPENDENTLY for agents and skills.
+# Step 1: Try contextual detection.
+# Step 2: If nothing detected → use generic fullstack pair.
+# =============================================================================
+
+fallback_policy:
+  # Agents and skills are evaluated independently
+  independent: true
+
+  # STEP 1: Contextual — detect domain from issue content
+  contextual:
+    - detect:
+        keywords_any: [schema, query, migration, drizzle, database]
+      agents: [database-architect]
+      skills: [domains/db]
+
+    - detect:
+        keywords_any: [auth, RBAC, session, permission, login]
+      agents: [security-auditor]
+      skills: [domains/security]
+
+    - detect:
+        keywords_any: [test, vitest, playwright, e2e, coverage]
+      agents: [test-engineer]
+      skills: [domains/testing]
+
+    - detect:
+        keywords_any: [deploy, CI/CD, vercel, release]
+      agents: [devops-engineer]
+      skills: [kit/deployment-procedures]
+
+    - detect:
+        keywords_any: [docs, documentation, README, changelog]
+      agents: [documentation-writer]
+      skills: [kit/documentation-templates]
+
+  # STEP 2: Generic fullstack — only if contextual detected nothing
+  generic:
+    agents: [frontend-specialist, backend-specialist]
+    skills: [domains/ui, domains/api]

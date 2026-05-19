@@ -1,0 +1,36 @@
+# ============================================
+# TimeKast Factory — Pre-commit Hook
+# Runs lint-staged before each commit
+# ============================================
+
+# Abort on any non-zero exit. Without this, lint-staged failures fall
+# through and the hook still completes the commit. Existing `|| true`
+# guards on optional `git add` calls keep working.
+set -e
+
+pnpm lint-staged
+
+# Check if any issue files were DELETED (lint-staged doesn't handle deletions)
+DELETED_ISSUES=$(git diff --cached --name-only --diff-filter=D | grep -E 'project/backlog/.*/issues/.*\.md$' || true)
+
+if [ -n "$DELETED_ISSUES" ]; then
+  echo "📋 Detected deleted issue files, regenerating board..."
+  pnpm update-board
+  git add project/backlog/BOARD.md 2>/dev/null || true
+fi
+
+# Auto-regenerate INVENTORY and stage if changed
+pnpm generate:inventory
+git add project/reference/INVENTORY.md 2>/dev/null || true
+
+# Auto-regenerate CODEBASE dependency map and stage if changed
+pnpm generate:codebase
+git add project/reference/CODEBASE.md 2>/dev/null || true
+
+# Auto-regenerate HOOKS/helpers registry and stage if changed
+pnpm generate:hooks
+git add project/reference/HOOKS.md 2>/dev/null || true
+
+# Validate skill metadata (frontmatter, descriptions, pair cross-refs)
+# Runs once per commit (not per-file) — exits non-zero on failure to abort commit
+pnpm skill:lint

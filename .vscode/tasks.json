@@ -1,0 +1,281 @@
+{
+  // ============================================
+  // TimeKast Factory — VS Code Tasks
+  // Next.js 16+ | TypeScript | Drizzle | AI-First
+  // ============================================
+  "version": "2.0.0",
+  "tasks": [
+    // ==========================================
+    // DEVELOPMENT
+    // ==========================================
+    {
+      "label": "Dev: Start Next.js",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "typescript",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "Error: (.*):(\\d+):(\\d+): (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Compiling",
+          "endsPattern": "Compiled"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Dev: Stop Server",
+      "type": "shell",
+      "command": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      }
+    },
+
+    // ==========================================
+    // BUILD
+    // ==========================================
+    {
+      "label": "Build: Production",
+      "type": "shell",
+      "command": "pnpm build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build: Start Production",
+      "type": "shell",
+      "command": "pnpm start",
+      "dependsOn": ["Build: Production"],
+      "problemMatcher": []
+    },
+
+    // ==========================================
+    // LINTING & TYPE CHECKING
+    // ==========================================
+    {
+      "label": "Lint: ESLint",
+      "type": "shell",
+      "command": "pnpm lint",
+      "problemMatcher": ["$eslint-stylish"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Lint: ESLint Fix",
+      "type": "shell",
+      "command": "pnpm lint --fix",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Format: Prettier",
+      "type": "shell",
+      "command": "pnpm format",
+      "problemMatcher": []
+    },
+    {
+      "label": "Check: TypeScript",
+      "type": "shell",
+      "command": "pnpm typecheck",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Check: All (Lint + TypeScript)",
+      "dependsOn": ["Lint: ESLint", "Check: TypeScript"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      }
+    },
+
+    // ==========================================
+    // TESTING
+    // ==========================================
+    {
+      "label": "Test: Unit (Vitest)",
+      "type": "shell",
+      "command": "pnpm test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Test: Unit Watch",
+      "type": "shell",
+      "command": "pnpm test:watch",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Test: E2E (Playwright)",
+      "type": "shell",
+      "command": "pnpm test:e2e",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Test: E2E UI Mode",
+      "type": "shell",
+      "command": "pnpm exec playwright test --ui",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: Coverage",
+      "type": "shell",
+      "command": "pnpm test:coverage",
+      "problemMatcher": []
+    },
+
+    // ==========================================
+    // DATABASE (Drizzle + Neon)
+    // ==========================================
+    {
+      "label": "DB: Generate Migration",
+      "type": "shell",
+      "command": "pnpm db:generate",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "DB: Run Migrations",
+      "type": "shell",
+      "command": "pnpm db:migrate",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "DB: Push (Dev Only)",
+      "type": "shell",
+      "command": "pnpm db:push",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "DB: Studio",
+      "type": "shell",
+      "command": "pnpm db:studio",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "DB: Seed",
+      "type": "shell",
+      "command": "pnpm db:seed",
+      "problemMatcher": []
+    },
+
+    // ==========================================
+    // DEPENDENCIES
+    // ==========================================
+    {
+      "label": "Install: Dependencies",
+      "type": "shell",
+      "command": "pnpm install",
+      "problemMatcher": []
+    },
+    {
+      "label": "Install: Clean Install",
+      "type": "shell",
+      "command": "rm -rf node_modules && pnpm install",
+      "problemMatcher": []
+    },
+
+    // ==========================================
+    // CLEANUP
+    // ==========================================
+    {
+      "label": "Clean: Build Artifacts",
+      "type": "shell",
+      "command": "rm -rf .next dist build coverage .turbo",
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean: Full Reset",
+      "type": "shell",
+      "command": "rm -rf .next dist build coverage .turbo node_modules && pnpm install",
+      "problemMatcher": []
+    },
+
+    // ==========================================
+    // DEPLOYMENT
+    // ==========================================
+    {
+      "label": "Deploy: Vercel Preview",
+      "type": "shell",
+      "command": "vercel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy: Vercel Production",
+      "type": "shell",
+      "command": "vercel --prod",
+      "problemMatcher": []
+    },
+
+    // ==========================================
+    // PRE-COMMIT VALIDATION
+    // ==========================================
+    {
+      "label": "Validate: Pre-PR Check",
+      "type": "shell",
+      "command": "pnpm lint && pnpm typecheck && pnpm test",
+      "problemMatcher": ["$eslint-stylish", "$tsc"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

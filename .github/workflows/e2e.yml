@@ -1,0 +1,10 @@
+# E2E workflow placeholder — protected by .gitattributes merge=ours
+# To activate: run `pnpm setup:e2e` or copy e2e.yml.example
+name: E2E Tests (disabled)
+on: workflow_dispatch
+jobs:
+  placeholder:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Activate with pnpm setup:e2e"

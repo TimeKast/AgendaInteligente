@@ -1,0 +1,2 @@
+# shadcn/ui components directory
+# Install components with: pnpm dlx shadcn@latest add <component>

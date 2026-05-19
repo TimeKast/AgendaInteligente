@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+#
+# CI Workflow - Base
+# Runs lint, typecheck, and unit tests on every push/PR.
+# E2E tests are in a separate workflow (only runs on main)
+
+name: CI
+
+on:
+  push:
+    branches: ['**'] # All branches, but not tags
+    tags-ignore: ['**'] # Explicitly ignore tags
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Lint, TypeCheck, Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: TypeCheck
+        run: pnpm typecheck
+
+      - name: Unit Tests
+        run: pnpm test

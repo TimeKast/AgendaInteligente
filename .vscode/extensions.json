@@ -1,0 +1,62 @@
+{
+  // ============================================
+  // TimeKast Factory — Recommended Extensions
+  // Next.js 16+ | TypeScript | Tailwind | AI-First
+  // ============================================
+
+  "recommendations": [
+    // ==========================================
+    // CORE: TypeScript/JavaScript
+    // ==========================================
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "yoavbls.pretty-ts-errors",
+    "formulahendry.auto-rename-tag",
+
+    // ==========================================
+    // REACT / NEXT.JS / TAILWIND
+    // ==========================================
+    "bradlc.vscode-tailwindcss",
+
+    // ==========================================
+    // AI ASSISTANTS
+    // ==========================================
+    "anthropic.claude-code",
+
+    // ==========================================
+    // DATABASE
+    // ==========================================
+    "cweijan.vscode-postgresql-client2",
+
+    // ==========================================
+    // API DEVELOPMENT
+    // ==========================================
+    "humao.rest-client",
+
+    // ==========================================
+    // CONFIG FILES
+    // ==========================================
+    "redhat.vscode-yaml",
+    "editorconfig.editorconfig",
+
+    // ==========================================
+    // DEVELOPER EXPERIENCE
+    // ==========================================
+    "usernamehw.errorlens",
+    "aaron-bond.better-comments",
+    "christian-kohler.path-intellisense",
+    "yzhang.markdown-all-in-one"
+  ],
+
+  // Extensions that cause conflicts or are not needed
+  "unwantedRecommendations": [
+    // Python (not used)
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+
+    // Outdated/Conflicting
+    "ms-vscode.vscode-typescript-next",
+    "mgmcdermott.vscode-language-babel",
+    "burkeholland.simple-react-snippets"
+  ]
+}

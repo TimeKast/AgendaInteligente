@@ -1,0 +1,84 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,loading,error,not-found,route,default,template,global-error}.{ts,tsx}",
+    "src/lib/db/schema/*.ts",
+    "src/lib/db/seeds/*.ts",
+    "scripts/**/*.{ts,mjs}",
+    "tests/**/*.{ts,tsx}",
+    "lighthouserc.js"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
+  "ignore": [
+    "src/app/sw.ts",
+    "**/index.ts",
+
+    "src/components/auth/index.ts",
+    "src/components/branding/index.ts",
+    "src/components/common/index.ts",
+    "src/components/form/index.ts",
+    "src/components/ui/alert-dialog.tsx",
+    "src/components/ui/dropdown-menu.tsx",
+    "src/components/ui/sheet.tsx",
+    "src/components/ui/tooltip.tsx",
+    "src/components/ui/card.tsx",
+    "src/components/ui/dialog.tsx",
+    "src/components/ui/select.tsx",
+    "src/components/ui/skeleton.tsx",
+    "src/components/ui/table-extras.tsx",
+    "src/components/ui/popover.tsx",
+
+    "src/components/branding/BrandLogo.tsx",
+    "src/components/common/ErrorBoundary.tsx",
+    "src/components/common/Footer.tsx",
+    "src/components/form/FormCheckbox.tsx",
+    "src/components/form/FormField.tsx",
+    "src/components/form/FormSelect.tsx",
+    "src/components/providers/ThemeProvider.tsx",
+    "src/lib/api/client.ts",
+    "src/lib/cache.ts",
+    "src/lib/db/helpers/audit-fields.ts",
+    "src/lib/db/helpers/soft-delete.ts",
+    "src/lib/db/utils/pagination.ts",
+    "src/lib/auth/auth.ts",
+    "src/lib/hooks/usePermissions.tsx",
+    "src/lib/hooks/useServerTableState.ts",
+    "src/lib/pwa/index.ts",
+
+    "src/lib/audit.ts",
+    "src/lib/auth/permissions.ts",
+    "src/lib/auth/super-admin.ts",
+    "src/lib/email/smtp.ts",
+    "src/lib/env.ts",
+    "src/lib/actions/admin/user-admin.ts"
+  ],
+  "ignoreDependencies": [
+    "postcss",
+    "ts-node",
+    "tw-animate-css",
+    "tailwindcss",
+    "@tailwindcss/typography",
+    "@radix-ui/react-tooltip",
+    "serwist",
+    "@tanstack/react-table",
+    "recharts"
+  ],
+  "paths": {
+    "@/*": ["./*"]
+  },
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "devDependencies": "warn",
+    "optionalPeerDependencies": "off",
+    "unlisted": "warn",
+    "binaries": "off",
+    "unresolved": "error",
+    "exports": "warn",
+    "types": "warn",
+    "enumMembers": "off",
+    "classMembers": "off",
+    "duplicates": "warn"
+  },
+  "ignoreExportsUsedInFile": true
+}
