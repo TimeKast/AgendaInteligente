@@ -8,7 +8,7 @@
  * — that keeps the rest of the row tappable for navigation.
  */
 
-import { GripVertical } from 'lucide-react';
+import { GripVertical, MoreHorizontal } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ActivityRow } from './ActivityRow';
@@ -22,6 +22,8 @@ interface SortableActivityRowProps {
   priority: number;
   projectLabel: string;
   href?: string;
+  /** When provided, renders a "⋯" button after the row that opens the status modal. */
+  onOpenStatus?: () => void;
 }
 
 export function SortableActivityRow(props: SortableActivityRowProps) {
@@ -59,9 +61,39 @@ export function SortableActivityRow(props: SortableActivityRowProps) {
     </button>
   );
 
+  const { onOpenStatus, ...rowProps } = props;
+
   return (
-    <div ref={setNodeRef} style={style}>
-      <ActivityRow {...props} dragHandle={handle} />
+    <div
+      ref={setNodeRef}
+      style={{ ...style, position: 'relative' }}
+    >
+      <ActivityRow {...rowProps} dragHandle={handle} trailingSlot={
+        onOpenStatus ? (
+          <button
+            type="button"
+            aria-label={`Cambiar status de ${props.title}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenStatus();
+            }}
+            style={{
+              appearance: 'none',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--ag-ink-hint)',
+              cursor: 'pointer',
+              padding: 4,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <MoreHorizontal size={16} strokeWidth={1.5} aria-hidden />
+          </button>
+        ) : undefined
+      } />
     </div>
   );
 }

@@ -1,14 +1,17 @@
 'use client';
 
 /**
- * TodayActivitiesBoard — client-side reorderable board of the day's
- * activities, grouped by time block (Mañana / Tarde / Noche).
+ * TodayActivitiesBoard — client-side board of the day's activities, grouped
+ * by time block (Mañana / Tarde / Noche).
  *
- * Implements DD-026 within-section drag-to-reorder. Cross-section drag is
- * NOT enabled in this round (visual-only prototype).
+ * Responsibilities:
+ *   - DD-026 within-section drag-to-reorder via @dnd-kit/sortable.
+ *   - SCR-051 inline quick-add (ActivityQuickAdd) at the top — new items go
+ *     to Mañana (visual-only convention).
+ *   - SCR-052 per-row "⋯" → ActivityStatusModal to change status / log a
+ *     reason for skipped|blocked.
  *
- * Uses @dnd-kit/sortable with one SortableContext per section so that drag
- * operations don't accidentally reorder across sections.
+ * All state is local (useState). No backend.
  */
 
 import { useState } from 'react';
@@ -30,6 +33,12 @@ import {
 import { ActivitySection } from './ActivitySection';
 import { SortableActivityRow } from './SortableActivityRow';
 import type { ActivityStatus } from './ActivityRow';
+import { ActivityQuickAdd, type QuickAddDraft } from './ActivityQuickAdd';
+import {
+  ActivityStatusModal,
+  type ExtendedActivityStatus,
+  type StatusReason,
+} from './ActivityStatusModal';
 
 interface TodayActivity {
   id: string;
@@ -97,6 +106,12 @@ const INITIAL: Record<Section, TodayActivity[]> = {
 
 export function TodayActivitiesBoard() {
   const [sections, setSections] = useState(INITIAL);
+  const [statusModal, setStatusModal] = useState<{
+    id: string;
+    section: Section;
+    title: string;
+    status: ExtendedActivityStatus;
+  } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -117,8 +132,49 @@ export function TodayActivitiesBoard() {
     };
   }
 
+  function handleCreate(draft: QuickAddDraft) {
+    // Prototype convention: new items land in "Mañana" unless time is set
+    // (kept simple for the visual demo).
+    const id = `new-${Date.now()}`;
+    setSections((prev) => ({
+      ...prev,
+      morning: [
+        ...prev.morning,
+        {
+          id,
+          title: draft.title,
+          status: 'todo',
+          scheduledTime: draft.scheduledTime,
+          priority: draft.priority,
+          projectLabel: draft.projectLabel,
+        },
+      ],
+    }));
+  }
+
+  function openStatus(section: Section, activity: TodayActivity) {
+    setStatusModal({
+      section,
+      id: activity.id,
+      title: activity.title,
+      status: activity.status,
+    });
+  }
+
+  function applyStatus(next: ExtendedActivityStatus, _reason?: StatusReason) {
+    if (!statusModal) return;
+    const { section, id } = statusModal;
+    setSections((prev) => ({
+      ...prev,
+      [section]: prev[section].map((a) => (a.id === id ? { ...a, status: next } : a)),
+    }));
+    setStatusModal(null);
+  }
+
   return (
     <>
+      <ActivityQuickAdd onCreate={handleCreate} />
+
       <ActivitySection label="Mañana">
         <DndContext
           sensors={sensors}
@@ -139,6 +195,7 @@ export function TodayActivitiesBoard() {
                 scheduledTime={a.scheduledTime}
                 priority={a.priority}
                 projectLabel={a.projectLabel}
+                onOpenStatus={() => openStatus('morning', a)}
               />
             ))}
           </SortableContext>
@@ -177,6 +234,7 @@ export function TodayActivitiesBoard() {
                 scheduledTime={a.scheduledTime}
                 priority={a.priority}
                 projectLabel={a.projectLabel}
+                onOpenStatus={() => openStatus('afternoon', a)}
               />
             ))}
           </SortableContext>
@@ -203,11 +261,20 @@ export function TodayActivitiesBoard() {
                 scheduledTime={a.scheduledTime}
                 priority={a.priority}
                 projectLabel={a.projectLabel}
+                onOpenStatus={() => openStatus('night', a)}
               />
             ))}
           </SortableContext>
         </DndContext>
       </ActivitySection>
+
+      <ActivityStatusModal
+        open={statusModal !== null}
+        title={statusModal?.title ?? ''}
+        currentStatus={statusModal?.status ?? 'todo'}
+        onCancel={() => setStatusModal(null)}
+        onApply={applyStatus}
+      />
     </>
   );
 }

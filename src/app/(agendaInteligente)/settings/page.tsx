@@ -1,9 +1,10 @@
 /**
  * SCR-024 — Settings hub (mobile portrait prototype)
  *
- * Visual-only. Rows link to functional sub-screens (intensity, notifications)
- * or to placeholder paths. The "Cerrar sesión" button is a ghost — no real
- * sign-out action wired in this prototype.
+ * Visual-only. Rows link to functional sub-screens (account, language,
+ * appearance, integrations, billing, privacy, notifications, intensity,
+ * categories). The "Cerrar sesión" button is a ghost — no real sign-out
+ * action wired in this prototype.
  */
 
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
@@ -32,9 +33,7 @@ export default function SettingsPage() {
         </SettingsSection>
 
         <SettingsSection label="Cuenta">
-          <SettingRow label="Email" value="fedelevi@hotmail.com" href="/settings/account" />
-          <SettingRow label="Idioma" value="Español" href="/settings/language" />
-          <SettingRow label="Zona horaria" value="America/Mexico_City" href="/settings/timezone" />
+          <SettingRow label="Mi cuenta" value="fedelevi@hotmail.com" href="/settings/account" />
         </SettingsSection>
 
         <SettingsSection label="Check-ins">
@@ -52,19 +51,26 @@ export default function SettingsPage() {
         </SettingsSection>
 
         <SettingsSection label="Preferencias">
-          <SettingRow label="Apariencia" value="Sistema" href="/settings/appearance" />
-          <SettingRow label="Calendar sync" value="Conectar" href="/settings/calendar" />
+          <SettingRow
+            label="Idioma & zona horaria"
+            value="Español · MX"
+            href="/settings/language"
+          />
+          <SettingRow label="Apariencia" value="Claro" href="/settings/appearance" />
+          <SettingRow
+            label="Integraciones"
+            value="0 conectadas"
+            href="/settings/integrations"
+          />
           <SettingRow label="Ver onboarding demo" href="/onboarding/language" />
         </SettingsSection>
 
         <SettingsSection label="Plan">
-          <SettingRow label="Plan actual" value="Free" href="/settings/plan" />
-          <SettingRow label="Facturación" href="/settings/billing" />
+          <SettingRow label="Billing" value="Free" href="/settings/billing" />
         </SettingsSection>
 
         <SettingsSection label="Privacy & data">
-          <SettingRow label="Exportar mis datos" href="/settings/export" />
-          <SettingRow label="Borrar cuenta" href="/settings/delete" />
+          <SettingRow label="Privacy & data" href="/settings/privacy" />
         </SettingsSection>
 
         <div

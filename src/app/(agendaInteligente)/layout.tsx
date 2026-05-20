@@ -18,6 +18,7 @@ import type { Metadata } from 'next';
 import { Source_Serif_4, Inter } from 'next/font/google';
 import './agenda-tokens.css';
 import { AgendaShell } from '@/components/agenda/AgendaShell';
+import { AppearanceController } from '@/components/agenda/AppearanceController';
 
 const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
@@ -49,6 +50,7 @@ export default function AgendaLayout({ children }: { children: React.ReactNode }
         minHeight: '100dvh',
       }}
     >
+      <AppearanceController />
       <AgendaShell>{children}</AgendaShell>
     </div>
   );

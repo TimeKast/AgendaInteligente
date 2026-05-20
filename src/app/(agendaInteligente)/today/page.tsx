@@ -5,13 +5,18 @@
  * NO mutations. Demonstrates the warm-book editorial aesthetic per
  * 14_DESIGN_BRIEF.md + 15_DESIGN.md §9 wireframe.
  *
+ * Round 2 additions:
+ *   - SCR-055 PushPermissionBanner at top of main.
+ *   - SCR-051 inline ActivityQuickAdd (inside TodayActivitiesBoard).
+ *   - SCR-052 per-row ⋯ → ActivityStatusModal (inside TodayActivitiesBoard).
+ *
  * Visit at: http://localhost:3002/today  (port from package.json#ports.dev)
  */
 
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { DaySheetMorningSection } from '@/components/agenda/DaySheetMorningSection';
-import { ActivitySection } from '@/components/agenda/ActivitySection';
-import { ActivityRow } from '@/components/agenda/ActivityRow';
+import { TodayActivitiesBoard } from '@/components/agenda/TodayActivitiesBoard';
+import { PushPermissionBanner } from '@/components/agenda/PushPermissionBanner';
 
 export default function TodayPage() {
   return (
@@ -26,6 +31,8 @@ export default function TodayPage() {
           marginInline: 'auto',
         }}
       >
+        <PushPermissionBanner />
+
         <DaySheetMorningSection
           intention="Terminar el reporte trimestral antes de las 13"
           energyPhysical={4}
@@ -49,58 +56,7 @@ export default function TodayPage() {
             }}
           />
 
-          <ActivitySection label="Mañana">
-            <ActivityRow
-              href="/activity/1"
-              title="Reunión clientes"
-              status="done"
-              scheduledTime="10:00"
-              priority={4}
-              projectLabel="Empresa Genomma"
-            />
-            <ActivityRow
-              href="/activity/2"
-              title="Revisar PR equipo"
-              status="todo"
-              priority={5}
-              projectLabel="Empresa Genomma"
-            />
-          </ActivitySection>
-
-          <ActivitySection label="Tarde">
-            <ActivityRow
-              href="/activity/3"
-              title="Reporte trimestral"
-              status="in_progress"
-              priority={5}
-              projectLabel="Empresa Genomma"
-            />
-            <ActivityRow
-              href="/activity/4"
-              title="Gym 1h"
-              status="todo"
-              priority={2}
-              projectLabel="Personal"
-            />
-          </ActivitySection>
-
-          <ActivitySection label="Noche">
-            <ActivityRow
-              href="/activity/5"
-              title="Estudio alemán 45min"
-              status="todo"
-              priority={3}
-              projectLabel="Personal"
-            />
-            <ActivityRow
-              href="/activity/6"
-              title="Llamar a Juan"
-              status="todo"
-              scheduledTime="21:00"
-              priority={3}
-              projectLabel="Personal"
-            />
-          </ActivitySection>
+          <TodayActivitiesBoard />
         </div>
       </main>
     </>

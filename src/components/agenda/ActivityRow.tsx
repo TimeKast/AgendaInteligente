@@ -16,11 +16,11 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check, AlertTriangle, MinusCircle } from 'lucide-react';
 import { PriorityDots } from './PriorityDots';
 import { ProjectChip } from './ProjectChip';
 
-export type ActivityStatus = 'todo' | 'in_progress' | 'done';
+export type ActivityStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
 
 interface ActivityRowProps {
   title: string;
@@ -38,6 +38,12 @@ interface ActivityRowProps {
    * trigger navigation. Used by SortableActivityRow in Today.
    */
   dragHandle?: ReactNode;
+  /**
+   * Optional trailing slot rendered AFTER the row's link (e.g. a "⋯" menu
+   * button). Like `dragHandle`, it lives outside the <Link> so taps don't
+   * trigger navigation.
+   */
+  trailingSlot?: ReactNode;
 }
 
 function Checkbox({ status }: { status: ActivityStatus }) {
@@ -82,6 +88,34 @@ function Checkbox({ status }: { status: ActivityStatus }) {
     );
   }
 
+  if (status === 'skipped') {
+    return (
+      <span
+        aria-label="Saltado"
+        style={{
+          ...base,
+          color: 'var(--ag-ink-hint)',
+        }}
+      >
+        <MinusCircle size={14} strokeWidth={1.5} />
+      </span>
+    );
+  }
+
+  if (status === 'blocked') {
+    return (
+      <span
+        aria-label="Bloqueado"
+        style={{
+          ...base,
+          color: 'var(--ag-warning)',
+        }}
+      >
+        <AlertTriangle size={14} strokeWidth={1.75} />
+      </span>
+    );
+  }
+
   return (
     <span
       aria-label="Pendiente"
@@ -102,9 +136,11 @@ export function ActivityRow({
   projectLabel,
   href,
   dragHandle,
+  trailingSlot,
 }: ActivityRowProps) {
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
+  const isSkipped = status === 'skipped';
 
   const rowInner = (
     <>
@@ -124,7 +160,7 @@ export function ActivityRow({
             fontFamily: 'var(--ag-font-body)',
             fontSize: 16,
             lineHeight: 1.4,
-            color: isDone ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
+            color: isDone || isSkipped ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
             fontStyle: isInProgress ? 'italic' : 'normal',
             textDecoration: isDone ? 'line-through' : 'none',
             textDecorationColor: 'var(--ag-rule)',
@@ -176,23 +212,24 @@ export function ActivityRow({
     textDecoration: 'none',
   } as const;
 
-  // When a drag handle is provided, render it OUTSIDE the link so dragging
-  // doesn't trigger navigation.
-  if (dragHandle) {
+  // When a drag handle or trailing slot is provided, render them OUTSIDE the
+  // link so dragging / menu taps don't trigger navigation.
+  if (dragHandle || trailingSlot) {
+    const cols = `${dragHandle ? 'auto ' : ''}1fr${trailingSlot ? ' auto' : ''}`;
     return (
       <li
         className="ag-activity-row"
         style={{
           listStyle: 'none',
           display: 'grid',
-          gridTemplateColumns: 'auto 1fr',
+          gridTemplateColumns: cols,
           alignItems: 'center',
           gap: 'var(--ag-space-2)',
           borderBottom:
             '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
         }}
       >
-        {dragHandle}
+        {dragHandle ?? null}
         {href ? (
           <Link
             href={href}
@@ -206,6 +243,7 @@ export function ActivityRow({
         ) : (
           <div style={{ ...rowStyle, borderBottom: 'none' }}>{rowInner}</div>
         )}
+        {trailingSlot ?? null}
       </li>
     );
   }

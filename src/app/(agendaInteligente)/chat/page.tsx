@@ -5,6 +5,7 @@
  * Hardcoded morning ritual flow with a vague_language challenge.
  */
 
+import Link from 'next/link';
 import { MoreHorizontal } from 'lucide-react';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { Conversation } from '@/components/agenda/Conversation';
@@ -76,6 +77,27 @@ export default function ChatPage() {
             Bien. Guardo: hoy es para el reporte. ¿Terminado o no a qué hora?
           </AgentMessage>
         </Conversation>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            padding: 'var(--ag-space-3) var(--ag-space-4)',
+          }}
+        >
+          <Link
+            href="/chat/crisis-demo"
+            style={{
+              fontFamily: 'var(--ag-font-display)',
+              fontStyle: 'italic',
+              fontSize: 12,
+              color: 'var(--ag-ink-hint)',
+              textDecoration: 'none',
+            }}
+          >
+            Demo: ver pantalla de crisis exit (AI-8)
+          </Link>
+        </div>
       </main>
 
       <ChatInput />
