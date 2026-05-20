@@ -22,6 +22,15 @@ export default function SettingsPage() {
           marginInline: 'auto',
         }}
       >
+        <SettingsSection label="Organización">
+          <SettingRow
+            label="Categorías"
+            value="4 categorías"
+            href="/categories"
+            hint="Reordenar, renombrar o borrar."
+          />
+        </SettingsSection>
+
         <SettingsSection label="Cuenta">
           <SettingRow label="Email" value="fedelevi@hotmail.com" href="/settings/account" />
           <SettingRow label="Idioma" value="Español" href="/settings/language" />

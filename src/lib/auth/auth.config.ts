@@ -129,6 +129,8 @@ export const authConfig = {
         '/settings',
         '/activity',
         '/onboarding',
+        '/categories',
+        '/projects',
       ];
 
       const isPublicRoute =

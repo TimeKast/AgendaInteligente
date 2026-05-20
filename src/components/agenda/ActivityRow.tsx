@@ -15,6 +15,7 @@
  */
 
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { PriorityDots } from './PriorityDots';
 import { ProjectChip } from './ProjectChip';
@@ -31,6 +32,12 @@ interface ActivityRowProps {
   projectLabel: string;
   /** Optional link target — if set, the row navigates on tap. */
   href?: string;
+  /**
+   * Optional leading drag handle element. When provided, rendered to the LEFT
+   * of the checkbox and NOT wrapped by the row's <Link> so dragging doesn't
+   * trigger navigation. Used by SortableActivityRow in Today.
+   */
+  dragHandle?: ReactNode;
 }
 
 function Checkbox({ status }: { status: ActivityStatus }) {
@@ -94,6 +101,7 @@ export function ActivityRow({
   priority,
   projectLabel,
   href,
+  dragHandle,
 }: ActivityRowProps) {
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
@@ -167,6 +175,40 @@ export function ActivityRow({
     color: 'inherit',
     textDecoration: 'none',
   } as const;
+
+  // When a drag handle is provided, render it OUTSIDE the link so dragging
+  // doesn't trigger navigation.
+  if (dragHandle) {
+    return (
+      <li
+        className="ag-activity-row"
+        style={{
+          listStyle: 'none',
+          display: 'grid',
+          gridTemplateColumns: 'auto 1fr',
+          alignItems: 'center',
+          gap: 'var(--ag-space-2)',
+          borderBottom:
+            '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
+        }}
+      >
+        {dragHandle}
+        {href ? (
+          <Link
+            href={href}
+            style={{
+              ...rowStyle,
+              borderBottom: 'none',
+            }}
+          >
+            {rowInner}
+          </Link>
+        ) : (
+          <div style={{ ...rowStyle, borderBottom: 'none' }}>{rowInner}</div>
+        )}
+      </li>
+    );
+  }
 
   return (
     <li className="ag-activity-row" style={{ listStyle: 'none' }}>

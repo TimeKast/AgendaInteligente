@@ -26,9 +26,13 @@ export function AgendaShell({ children }: AgendaShellProps) {
   const isOnboarding = pathname.startsWith('/onboarding');
   const isChat = pathname.startsWith('/chat');
   const isActivityDetail = pathname.startsWith('/activity/');
+  const isCatalogDetail =
+    pathname.startsWith('/categories') ||
+    pathname.startsWith('/projects/') ||
+    /^\/goals\/[^/]+/.test(pathname);
 
-  const showBottomNav = !isOnboarding && !isChat && !isActivityDetail;
-  const showFab = !isOnboarding && !isChat && !isActivityDetail;
+  const showBottomNav = !isOnboarding && !isChat && !isActivityDetail && !isCatalogDetail;
+  const showFab = !isOnboarding && !isChat && !isActivityDetail && !isCatalogDetail;
 
   return (
     <>
