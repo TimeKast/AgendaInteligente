@@ -1,0 +1,164 @@
+/**
+ * ActivityRow — single line in the day's activity list (CMP-050).
+ *
+ * Composition (left → right):
+ *   [checkbox] [title] [scheduled_time?] [priority dots] [project chip]
+ *
+ * States:
+ *   - todo        → empty checkbox, normal weight
+ *   - in_progress → half-filled checkbox + italic title
+ *   - done        → filled checkbox + strikethrough + ink-hint color
+ *
+ * This is a pure presentational row; tap handlers will be added in a later
+ * round (the prototype intentionally has no real state mutations).
+ */
+
+import { Check } from 'lucide-react';
+import { PriorityDots } from './PriorityDots';
+import { ProjectChip } from './ProjectChip';
+
+export type ActivityStatus = 'todo' | 'in_progress' | 'done';
+
+interface ActivityRowProps {
+  title: string;
+  status: ActivityStatus;
+  /** "HH:mm" string or undefined if not scheduled. */
+  scheduledTime?: string;
+  /** 1-5 priority. */
+  priority: number;
+  projectLabel: string;
+}
+
+function Checkbox({ status }: { status: ActivityStatus }) {
+  const base = {
+    width: 18,
+    height: 18,
+    borderRadius: 'var(--ag-radius-xs)',
+    flexShrink: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: `background-color var(--ag-duration-base) var(--ag-ease), box-shadow var(--ag-duration-base) var(--ag-ease)`,
+  } as const;
+
+  if (status === 'done') {
+    return (
+      <span
+        aria-label="Hecho"
+        style={{
+          ...base,
+          backgroundColor: 'var(--ag-ink-primary)',
+          boxShadow: 'inset 0 0 0 1px var(--ag-ink-primary)',
+          color: 'var(--ag-accent-on)',
+        }}
+      >
+        <Check size={12} strokeWidth={2} />
+      </span>
+    );
+  }
+
+  if (status === 'in_progress') {
+    return (
+      <span
+        aria-label="En progreso"
+        style={{
+          ...base,
+          // Half-filled visual via diagonal gradient on warm tones — no blue.
+          background: 'linear-gradient(135deg, var(--ag-ink-primary) 0 50%, transparent 50% 100%)',
+          boxShadow: 'inset 0 0 0 1px var(--ag-ink-soft)',
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-label="Pendiente"
+      style={{
+        ...base,
+        backgroundColor: 'transparent',
+        boxShadow: 'inset 0 0 0 1px var(--ag-rule)',
+      }}
+    />
+  );
+}
+
+export function ActivityRow({
+  title,
+  status,
+  scheduledTime,
+  priority,
+  projectLabel,
+}: ActivityRowProps) {
+  const isDone = status === 'done';
+  const isInProgress = status === 'in_progress';
+
+  return (
+    <li
+      className="ag-activity-row"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        alignItems: 'center',
+        gap: 'var(--ag-space-3)',
+        padding: 'var(--ag-space-3) 0',
+        borderBottom: '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
+        minHeight: 48, // touch target
+      }}
+    >
+      <Checkbox status={status} />
+
+      {/* Title + time stacked, occupying flexible middle column */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          gap: 2,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 16,
+            lineHeight: 1.4,
+            color: isDone ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
+            fontStyle: isInProgress ? 'italic' : 'normal',
+            textDecoration: isDone ? 'line-through' : 'none',
+            textDecorationColor: 'var(--ag-rule)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {title}
+        </span>
+        {scheduledTime ? (
+          <span
+            style={{
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: 12,
+              color: 'var(--ag-slate)',
+              letterSpacing: '0.02em',
+            }}
+          >
+            {scheduledTime}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Right cluster: priority dots + project chip */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--ag-space-3)',
+          flexShrink: 0,
+        }}
+      >
+        <PriorityDots priority={priority} />
+        <ProjectChip label={projectLabel} />
+      </div>
+    </li>
+  );
+}

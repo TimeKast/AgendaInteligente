@@ -2,7 +2,7 @@
 
 > **Auto-generated** — Run `pnpm generate:inventory` to update
 > **Regla:** SIEMPRE consultar antes de crear algo nuevo.
-> **Last updated:** 2026-05-15
+> **Last updated:** 2026-05-20
 
 ---
 
@@ -101,23 +101,24 @@
 
 | Route | File |
 |-------|------|
-| / | `src/app/page.tsx` |
-| /accept-invite | `src/app/(auth)/accept-invite/page.tsx` |
-| /dashboard | `src/app/(protected)/dashboard/page.tsx` |
-| /error | `src/app/(auth)/error/page.tsx` |
-| /forgot-password | `src/app/(auth)/forgot-password/page.tsx` |
-| /login | `src/app/(auth)/login/page.tsx` |
-| /notifications | `src/app/(protected)/notifications/page.tsx` |
-| /offline | `src/app/offline/page.tsx` |
-| /privacy | `src/app/(legal)/privacy/page.tsx` |
-| /profile | `src/app/(protected)/profile/page.tsx` |
-| /register | `src/app/(auth)/register/page.tsx` |
-| /reset-password | `src/app/(auth)/reset-password/page.tsx` |
-| /settings/general | `src/app/(protected)/settings/general/page.tsx` |
-| /settings/users | `src/app/(protected)/settings/users/page.tsx` |
-| /settings/users/[id] | `src/app/(protected)/settings/users/[id]/page.tsx` |
-| /settings/users/nuevo | `src/app/(protected)/settings/users/nuevo/page.tsx` |
-| /terms | `src/app/(legal)/terms/page.tsx` |
+| / | `src\app\page.tsx` |
+| /accept-invite | `src\app\(auth)\accept-invite\page.tsx` |
+| /dashboard | `src\app\(protected)\dashboard\page.tsx` |
+| /error | `src\app\(auth)\error\page.tsx` |
+| /forgot-password | `src\app\(auth)\forgot-password\page.tsx` |
+| /login | `src\app\(auth)\login\page.tsx` |
+| /notifications | `src\app\(protected)\notifications\page.tsx` |
+| /offline | `src\app\offline\page.tsx` |
+| /privacy | `src\app\(legal)\privacy\page.tsx` |
+| /profile | `src\app\(protected)\profile\page.tsx` |
+| /register | `src\app\(auth)\register\page.tsx` |
+| /reset-password | `src\app\(auth)\reset-password\page.tsx` |
+| /settings/general | `src\app\(protected)\settings\general\page.tsx` |
+| /settings/users | `src\app\(protected)\settings\users\page.tsx` |
+| /settings/users/[id] | `src\app\(protected)\settings\users\[id]\page.tsx` |
+| /settings/users/nuevo | `src\app\(protected)\settings\users\nuevo\page.tsx` |
+| /terms | `src\app\(legal)\terms\page.tsx` |
+| /today | `src\app\(agendaInteligente)\today\page.tsx` |
 
 ---
 
@@ -125,19 +126,19 @@
 
 | Endpoint | File |
 |----------|------|
-| /api/auth/[...nextauth] | `src/app/api/auth/[...nextauth]/route.ts` |
-| /api/auth/forgot-password | `src/app/api/auth/forgot-password/route.ts` |
-| /api/auth/register | `src/app/api/auth/register/route.ts` |
-| /api/auth/reset-password | `src/app/api/auth/reset-password/route.ts` |
-| /api/avatar/[userId] | `src/app/api/avatar/[userId]/route.ts` |
-| /api/email/test | `src/app/api/email/test/route.ts` |
-| /api/health | `src/app/api/health/route.ts` |
-| /api/invites/accept | `src/app/api/invites/accept/route.ts` |
-| /api/invites/send | `src/app/api/invites/send/route.ts` |
-| /api/invites/validate | `src/app/api/invites/validate/route.ts` |
-| /api/notifications/poll | `src/app/api/notifications/poll/route.ts` |
-| /api/push/subscribe | `src/app/api/push/subscribe/route.ts` |
-| /serwist/[path] | `src/app/serwist/[path]/route.ts` |
+| /api/auth/[...nextauth] | `src\app\api\auth\[...nextauth]\route.ts` |
+| /api/auth/forgot-password | `src\app\api\auth\forgot-password\route.ts` |
+| /api/auth/register | `src\app\api\auth\register\route.ts` |
+| /api/auth/reset-password | `src\app\api\auth\reset-password\route.ts` |
+| /api/avatar/[userId] | `src\app\api\avatar\[userId]\route.ts` |
+| /api/email/test | `src\app\api\email\test\route.ts` |
+| /api/health | `src\app\api\health\route.ts` |
+| /api/invites/accept | `src\app\api\invites\accept\route.ts` |
+| /api/invites/send | `src\app\api\invites\send\route.ts` |
+| /api/invites/validate | `src\app\api\invites\validate\route.ts` |
+| /api/notifications/poll | `src\app\api\notifications\poll\route.ts` |
+| /api/push/subscribe | `src\app\api\push\subscribe\route.ts` |
+| /serwist/[path] | `src\app\serwist\[path]\route.ts` |
 
 ---
 
@@ -146,10 +147,10 @@
 | Metric | Value |
 |--------|-------|
 | Dependencies | 37 |
-| Page Routes | 17 |
+| Page Routes | 18 |
 | API Routes | 13 |
 | Components & Utils | 40 |
-| **Total items** | **107** |
+| **Total items** | **108** |
 
 ---
 

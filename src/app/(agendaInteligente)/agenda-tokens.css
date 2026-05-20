@@ -1,0 +1,90 @@
+/* =========================================================================
+ * AgendaInteligente — Warm-book editorial tokens (scoped)
+ * =========================================================================
+ * Source of truth: project/planning/14_DESIGN_BRIEF.md §6 + DESIGN.md §2
+ *
+ * These tokens are SCOPED to [data-theme="agenda"] and DO NOT pollute the
+ * TimeKast neumorphism tokens defined in src/app/globals.css :root.
+ * ========================================================================= */
+
+[data-theme='agenda'] {
+  /* ---- Neutral foundation ---- */
+  --ag-bg: oklch(0.97 0.012 75);
+  --ag-bg-elevated: oklch(0.94 0.014 75);
+  --ag-bg-sunken: oklch(0.91 0.016 75);
+
+  --ag-ink-primary: oklch(0.21 0.012 60);
+  --ag-ink-soft: oklch(0.32 0.012 60);
+  --ag-ink-hint: oklch(0.52 0.018 65);
+  --ag-slate: oklch(0.45 0.01 220);
+  --ag-rule: oklch(0.79 0.02 75);
+
+  /* ---- Primary action (no blue, no purple) ---- */
+  --ag-accent-primary: oklch(0.21 0.012 60);
+  --ag-accent-on: oklch(0.97 0.012 75);
+  --ag-accent-primary-hover: oklch(0.17 0.012 60);
+
+  /* ---- Per-scope accents (only secondary signal) ---- */
+  --ag-scope-day: oklch(0.5 0 0);
+  --ag-scope-week: oklch(0.2 0 0);
+  --ag-scope-quarter: oklch(0.51 0.045 145);
+  --ag-scope-year: oklch(0.52 0.14 50);
+  --ag-scope-5year: oklch(0.44 0.06 240);
+  --ag-scope-life: oklch(0.42 0.07 15);
+
+  /* ---- Functional colors ---- */
+  --ag-success: oklch(0.55 0.08 145);
+  --ag-warning: oklch(0.65 0.13 75);
+  --ag-danger: oklch(0.5 0.15 25);
+  --ag-info: oklch(0.55 0.06 240);
+
+  /* ---- Geometry ---- */
+  --ag-radius-xs: 4px;
+  --ag-radius-sm: 6px;
+  --ag-radius-base: 10px;
+  --ag-radius-card: 14px;
+  --ag-radius-pill: 999px;
+  --ag-border-width: 1px;
+
+  /* ---- Spacing (4px base) ---- */
+  --ag-space-1: 4px;
+  --ag-space-2: 8px;
+  --ag-space-3: 12px;
+  --ag-space-4: 16px;
+  --ag-space-5: 20px;
+  --ag-space-6: 24px;
+  --ag-space-8: 32px;
+
+  /* ---- Type tokens ---- */
+  --ag-font-display: 'Source Serif 4', 'Lora', Georgia, serif;
+  --ag-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --ag-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* ---- Motion (calm) ---- */
+  --ag-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ag-duration-fast: 120ms;
+  --ag-duration-base: 200ms;
+  --ag-duration-slow: 320ms;
+
+  /* ---- Apply scope to itself (background + ink) ---- */
+  background-color: var(--ag-bg);
+  color: var(--ag-ink-primary);
+  font-family: var(--ag-font-body);
+
+  /* Override TimeKast `html.dark` color-scheme leakage so light canonical applies */
+  color-scheme: light;
+}
+
+/* Dark mode (optional toggle — opt-in via [data-theme="agenda"][data-mode="dark"]) */
+[data-theme='agenda'][data-mode='dark'] {
+  --ag-bg: oklch(0.16 0.008 60);
+  --ag-bg-elevated: oklch(0.2 0.01 60);
+  --ag-bg-sunken: oklch(0.13 0.006 60);
+  --ag-ink-primary: oklch(0.92 0.012 75);
+  --ag-ink-soft: oklch(0.78 0.014 70);
+  --ag-ink-hint: oklch(0.55 0.014 65);
+  --ag-rule: oklch(0.32 0.014 65);
+  --ag-accent-primary: oklch(0.92 0.012 75);
+  --ag-accent-on: oklch(0.16 0.008 60);
+  color-scheme: dark;
+}

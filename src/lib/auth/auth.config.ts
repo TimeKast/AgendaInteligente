@@ -121,6 +121,8 @@ export const authConfig = {
         '/privacy',
         '/terms',
         '/offline',
+        // AgendaInteligente prototype — visual-only, no backend.
+        '/today',
       ];
 
       const isPublicRoute =
