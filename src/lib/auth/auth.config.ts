@@ -123,6 +123,12 @@ export const authConfig = {
         '/offline',
         // AgendaInteligente prototype — visual-only, no backend.
         '/today',
+        '/week',
+        '/goals',
+        '/chat',
+        '/settings',
+        '/activity',
+        '/onboarding',
       ];
 
       const isPublicRoute =

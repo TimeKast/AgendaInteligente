@@ -7,33 +7,37 @@
  * Active state: ink-primary text + 2px top border + subtle bg-elevated fill.
  * NO blue accent — strictly warm-book tokens. Lucide icons stroke 1.5.
  *
- * NOTE: Items don't route in this prototype (only Today exists). They
- * render as buttons so the active visual treatment is demonstrable but
- * pressing them is a no-op (logged to console).
+ * Active route inferred from `usePathname()`. Each item is a `<Link>`.
  */
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Calendar, CalendarRange, Compass, MessageSquare, Settings } from 'lucide-react';
 import type { ComponentType } from 'react';
 
 interface NavItem {
   key: string;
   label: string;
+  href: string;
   Icon: ComponentType<{ size?: number; strokeWidth?: number }>;
 }
 
 const ITEMS: NavItem[] = [
-  { key: 'today', label: 'Today', Icon: Calendar },
-  { key: 'week', label: 'Week', Icon: CalendarRange },
-  { key: 'goals', label: 'Goals', Icon: Compass },
-  { key: 'chat', label: 'Chat', Icon: MessageSquare },
-  { key: 'settings', label: 'Settings', Icon: Settings },
+  { key: 'today', label: 'Today', href: '/today', Icon: Calendar },
+  { key: 'week', label: 'Week', href: '/week', Icon: CalendarRange },
+  { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
+  { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },
+  { key: 'settings', label: 'Settings', href: '/settings', Icon: Settings },
 ];
 
-interface AgendaBottomNavProps {
-  activeKey?: string;
+function isActive(pathname: string, href: string) {
+  if (href === '/today') return pathname === '/today';
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AgendaBottomNav({ activeKey = 'today' }: AgendaBottomNavProps) {
+export function AgendaBottomNav() {
+  const pathname = usePathname() ?? '/today';
+
   return (
     <nav
       aria-label="Navegación principal"
@@ -58,16 +62,13 @@ export function AgendaBottomNav({ activeKey = 'today' }: AgendaBottomNavProps) {
           gridTemplateColumns: 'repeat(5, 1fr)',
         }}
       >
-        {ITEMS.map(({ key, label, Icon }) => {
-          const active = key === activeKey;
+        {ITEMS.map(({ key, label, href, Icon }) => {
+          const active = isActive(pathname, href);
           return (
             <li key={key} style={{ display: 'flex' }}>
-              <button
-                type="button"
+              <Link
+                href={href}
                 aria-current={active ? 'page' : undefined}
-                onClick={() => {
-                  console.log(`nav: ${key}`);
-                }}
                 style={{
                   flex: 1,
                   height: '100%',
@@ -82,6 +83,7 @@ export function AgendaBottomNav({ activeKey = 'today' }: AgendaBottomNavProps) {
                   gap: 2,
                   cursor: 'pointer',
                   fontFamily: 'var(--ag-font-body)',
+                  textDecoration: 'none',
                   transition: `color var(--ag-duration-base) var(--ag-ease), background-color var(--ag-duration-base) var(--ag-ease)`,
                 }}
               >
@@ -95,7 +97,7 @@ export function AgendaBottomNav({ activeKey = 'today' }: AgendaBottomNavProps) {
                 >
                   {label}
                 </span>
-              </button>
+              </Link>
             </li>
           );
         })}

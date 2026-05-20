@@ -8,11 +8,16 @@
  *     and exposes its own scoped CSS vars via `[data-theme="agenda"]`.
  *
  * Source of truth: project/planning/14_DESIGN_BRIEF.md §6, 15_DESIGN.md §9
+ *
+ * Note: the bottom nav + FAB are mounted inside an AgendaShell client component
+ * so they can be conditionally rendered per route (e.g. hidden on /chat,
+ * /onboarding, /activity/* detail screens).
  */
 
 import type { Metadata } from 'next';
 import { Source_Serif_4, Inter } from 'next/font/google';
 import './agenda-tokens.css';
+import { AgendaShell } from '@/components/agenda/AgendaShell';
 
 const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
@@ -44,7 +49,7 @@ export default function AgendaLayout({ children }: { children: React.ReactNode }
         minHeight: '100dvh',
       }}
     >
-      {children}
+      <AgendaShell>{children}</AgendaShell>
     </div>
   );
 }

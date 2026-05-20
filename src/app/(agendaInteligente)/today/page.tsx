@@ -12,13 +12,11 @@ import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { DaySheetMorningSection } from '@/components/agenda/DaySheetMorningSection';
 import { ActivitySection } from '@/components/agenda/ActivitySection';
 import { ActivityRow } from '@/components/agenda/ActivityRow';
-import { FabMic } from '@/components/agenda/FabMic';
-import { AgendaBottomNav } from '@/components/agenda/AgendaBottomNav';
 
 export default function TodayPage() {
   return (
     <>
-      <AgendaHeader dateLabel="Lunes, 19 de mayo" initials="F" />
+      <AgendaHeader dateLabel="Martes, 20 de mayo" initials="F" />
 
       <main
         style={{
@@ -53,6 +51,7 @@ export default function TodayPage() {
 
           <ActivitySection label="Mañana">
             <ActivityRow
+              href="/activity/1"
               title="Reunión clientes"
               status="done"
               scheduledTime="10:00"
@@ -60,6 +59,7 @@ export default function TodayPage() {
               projectLabel="Empresa Genomma"
             />
             <ActivityRow
+              href="/activity/2"
               title="Revisar PR equipo"
               status="todo"
               priority={5}
@@ -69,22 +69,31 @@ export default function TodayPage() {
 
           <ActivitySection label="Tarde">
             <ActivityRow
+              href="/activity/3"
               title="Reporte trimestral"
               status="in_progress"
               priority={5}
               projectLabel="Empresa Genomma"
             />
-            <ActivityRow title="Gym 1h" status="todo" priority={2} projectLabel="Personal" />
+            <ActivityRow
+              href="/activity/4"
+              title="Gym 1h"
+              status="todo"
+              priority={2}
+              projectLabel="Personal"
+            />
           </ActivitySection>
 
           <ActivitySection label="Noche">
             <ActivityRow
+              href="/activity/5"
               title="Estudio alemán 45min"
               status="todo"
               priority={3}
               projectLabel="Personal"
             />
             <ActivityRow
+              href="/activity/6"
               title="Llamar a Juan"
               status="todo"
               scheduledTime="21:00"
@@ -94,9 +103,6 @@ export default function TodayPage() {
           </ActivitySection>
         </div>
       </main>
-
-      <FabMic />
-      <AgendaBottomNav activeKey="today" />
     </>
   );
 }

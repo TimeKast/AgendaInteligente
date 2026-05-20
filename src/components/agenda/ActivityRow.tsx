@@ -9,10 +9,12 @@
  *   - in_progress → half-filled checkbox + italic title
  *   - done        → filled checkbox + strikethrough + ink-hint color
  *
- * This is a pure presentational row; tap handlers will be added in a later
- * round (the prototype intentionally has no real state mutations).
+ * When `href` is provided the row wraps in a <Link> so the user can tap
+ * through to the activity detail. The row is otherwise purely presentational
+ * (no real state mutations — this is a visual prototype).
  */
 
+import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { PriorityDots } from './PriorityDots';
 import { ProjectChip } from './ProjectChip';
@@ -27,6 +29,8 @@ interface ActivityRowProps {
   /** 1-5 priority. */
   priority: number;
   projectLabel: string;
+  /** Optional link target — if set, the row navigates on tap. */
+  href?: string;
 }
 
 function Checkbox({ status }: { status: ActivityStatus }) {
@@ -89,23 +93,13 @@ export function ActivityRow({
   scheduledTime,
   priority,
   projectLabel,
+  href,
 }: ActivityRowProps) {
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
 
-  return (
-    <li
-      className="ag-activity-row"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'auto 1fr auto',
-        alignItems: 'center',
-        gap: 'var(--ag-space-3)',
-        padding: 'var(--ag-space-3) 0',
-        borderBottom: '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
-        minHeight: 48, // touch target
-      }}
-    >
+  const rowInner = (
+    <>
       <Checkbox status={status} />
 
       {/* Title + time stacked, occupying flexible middle column */}
@@ -159,6 +153,30 @@ export function ActivityRow({
         <PriorityDots priority={priority} />
         <ProjectChip label={projectLabel} />
       </div>
+    </>
+  );
+
+  const rowStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'auto 1fr auto',
+    alignItems: 'center',
+    gap: 'var(--ag-space-3)',
+    padding: 'var(--ag-space-3) 0',
+    borderBottom: '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
+    minHeight: 48, // touch target
+    color: 'inherit',
+    textDecoration: 'none',
+  } as const;
+
+  return (
+    <li className="ag-activity-row" style={{ listStyle: 'none' }}>
+      {href ? (
+        <Link href={href} style={rowStyle}>
+          {rowInner}
+        </Link>
+      ) : (
+        <div style={rowStyle}>{rowInner}</div>
+      )}
     </li>
   );
 }
