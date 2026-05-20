@@ -3,20 +3,21 @@
  *
  * Visual signature:
  *  - Lateral 4px scope accent bar in `--ag-scope-day` (DD-pattern-3).
- *  - Serif h2 "Intención de hoy".
- *  - Inline intention field (filled or italic placeholder).
- *  - Hairline divider in `--ag-rule` (warm ecru, NOT gray).
  *  - Energy indicators block.
  *  - Italic serif placeholder for "Gratitud" (unfilled).
+ *  - Hairline divider in `--ag-rule` (warm ecru, NOT gray).
  *
  * Design ref: 15_DESIGN.md §9 SCR-020 mobile wireframe.
+ *
+ * Note: The "Intención de hoy" field was retired from the morning sheet
+ * (user feedback, 2026-05-20) — the day is shaped by activities + wins, not
+ * by an additional one-liner. Gratitud + energy remain.
  */
 
 import { EnergyIndicators } from './EnergyIndicators';
 import { SheetField } from './SheetField';
 
 interface DaySheetMorningSectionProps {
-  intention?: string;
   gratitude?: string;
   energyPhysical: 0 | 1 | 2 | 3 | 4 | 5;
   energyMental: 0 | 1 | 2 | 3 | 4 | 5;
@@ -24,7 +25,6 @@ interface DaySheetMorningSectionProps {
 }
 
 export function DaySheetMorningSection({
-  intention,
   gratitude,
   energyPhysical,
   energyMental,
@@ -66,32 +66,23 @@ export function DaySheetMorningSection({
           gap: 'var(--ag-space-5)',
         }}
       >
-        {/* Heading */}
+        {/* Visually hidden heading kept for a11y landmark. */}
         <h2
           id="ag-morning-heading"
           style={{
-            margin: 0,
-            fontFamily: 'var(--ag-font-display)',
-            fontSize: 22,
-            lineHeight: 1.25,
-            fontWeight: 500,
-            color: 'var(--ag-ink-primary)',
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
           }}
         >
-          Intención de hoy
+          Mañana
         </h2>
-
-        {/* Intention text — serif body, ink primary when filled */}
-        <SheetField value={intention} placeholder="Una intención, en una frase" serif />
-
-        {/* Hairline divider — warm ecru */}
-        <hr
-          style={{
-            margin: 0,
-            border: 'none',
-            borderTop: '1px solid var(--ag-rule)',
-          }}
-        />
 
         {/* Energy indicators */}
         <EnergyIndicators

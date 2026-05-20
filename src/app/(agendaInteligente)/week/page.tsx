@@ -1,19 +1,41 @@
+'use client';
+
 /**
  * SCR-021 — Week (mobile portrait prototype)
  *
- * Visual-only. Hardcoded data. Visit at /week.
+ * Visual-only. Hardcoded week data. Visit at /week.
  * Source: project/planning/15_DESIGN.md §9 wireframe SCR-021.
+ *
+ * Round 3: WeekNavigation block lets the user prev/next/today between weeks.
+ * The week data (DayCard, kickoff wins) stays HARDCODED — only the date
+ * range in the navigator re-renders.
  */
 
+import { useState } from 'react';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { WeekSheetKickoffSection } from '@/components/agenda/WeekSheetKickoffSection';
 import { WeekDayDots } from '@/components/agenda/WeekDayDots';
 import { DayCard } from '@/components/agenda/DayCard';
+import { WeekNavigation, sundayOf } from '@/components/agenda/WeekNavigation';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function WeekPage() {
+  // Frozen "today" for the prototype so the offset caption is deterministic
+  // regardless of when the page is loaded. In v1 this becomes `new Date()`.
+  const today = new Date(2026, 4, 20); // 2026-05-20
+
+  const [currentWeekStarting, setCurrentWeekStarting] = useState<Date>(() =>
+    sundayOf(today),
+  );
+
+  function shiftWeek(deltaWeeks: number) {
+    setCurrentWeekStarting((prev) => new Date(prev.getTime() + deltaWeeks * 7 * DAY_MS));
+  }
+
   return (
     <>
-      <AgendaHeader dateLabel="Lunes 19 mayo — 25 mayo" initials="F" />
+      <AgendaHeader dateLabel="Semana" initials="F" />
 
       <main
         style={{
@@ -22,6 +44,14 @@ export default function WeekPage() {
           marginInline: 'auto',
         }}
       >
+        <WeekNavigation
+          weekStarting={currentWeekStarting}
+          today={today}
+          onPrev={() => shiftWeek(-1)}
+          onNext={() => shiftWeek(1)}
+          onToday={() => setCurrentWeekStarting(sundayOf(today))}
+        />
+
         <WeekSheetKickoffSection
           oneThing="Lanzar el MVP v0.5"
           wins={[
