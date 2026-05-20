@@ -1,24 +1,32 @@
 'use client';
 
 /**
- * TodayActivitiesBoard — client-side board of the day's activities, grouped
- * by time block (Mañana / Tarde / Noche / En cualquier momento).
+ * TodayActivitiesBoard — pool + calendar grid orchestrator for Today.
  *
- * Responsibilities:
- *   - DD-026 within-section + cross-section drag-to-reorder via @dnd-kit.
- *     A single <DndContext> wraps every section so a row can be dragged from
- *     one time block to another. Each section is both a <SortableContext>
- *     (for within-section reorder) and a useDroppable target (for landing
- *     into an empty section or at the bottom).
- *   - DD-021 mobile swipe-to-status: each row is wrapped in <SwipeableRow>.
- *     Swipe LEFT = mark Done; swipe RIGHT = open reason modal (skipped) or
- *     mark Blocked via the secondary action. Disabled on desktop.
- *   - SCR-051 inline quick-add (ActivityQuickAdd) at the top — new items go
- *     to Mañana (visual-only convention).
- *   - SCR-052 per-row "⋯" → ActivityStatusModal to change status / log a
- *     reason for skipped|blocked. Remains the desktop primary path.
+ * Replaces the previous 4-section (Mañana/Tarde/Noche/Anytime) time-block
+ * layout with a calendar-style model:
  *
- * All state is local (useState). No backend.
+ *   - POOL ("HOY SIN HORARIO")  → activities with scheduledDate=today and
+ *                                  scheduledTime=null. Rendered as a top list.
+ *   - CALENDAR GRID ("AGENDA")  → 06:00 → 22:00, one row per hour. Activities
+ *                                  with scheduledTime live in their hour slot.
+ *
+ * Drag rules:
+ *   - Pool → hour slot  : sets scheduledTime = "HH:00".
+ *   - Hour slot → pool  : clears scheduledTime.
+ *   - Hour A → Hour B   : updates scheduledTime.
+ *
+ * External Google Calendar events are decorative (2 hardcoded entries that
+ * block their hour slot — useDroppable disabled inside HourSlot via `blocked`).
+ *
+ * Swipe-to-status (DD-021) stays on pool rows. Calendar-anchored rows do NOT
+ * get swipe so the grid feels solid — status changes go through the "⋯" menu.
+ *
+ * Layout responsibility:
+ *   - Mobile <1024px: single-column flow (pool above calendar).
+ *   - Desktop ≥1024px: caller wraps this in a `.ag-today-split` flex; here we
+ *     render the pool sidebar + calendar canvas as siblings and let CSS rule
+ *     the geometry.
  */
 
 import { useMemo, useState } from 'react';
@@ -28,24 +36,19 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
-  useDroppable,
-  closestCenter,
   DragOverlay,
+  pointerWithin,
   type DragEndEvent,
-  type DragOverEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { ActivitySection } from './ActivitySection';
-import { SortableActivityRow } from './SortableActivityRow';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { ActivityRow, type ActivityStatus } from './ActivityRow';
 import { ActivityQuickAdd, type QuickAddDraft } from './ActivityQuickAdd';
 import { SwipeableRow } from './SwipeableRow';
+import { DraggableTaskRow } from './DraggableTaskRow';
+import { PoolSection } from './PoolSection';
+import { CalendarGrid } from './CalendarGrid';
+import { ExternalEventRow } from './ExternalEventRow';
 import {
   ActivityStatusModal,
   type ExtendedActivityStatus,
@@ -56,82 +59,121 @@ interface TodayActivity {
   id: string;
   title: string;
   status: ActivityStatus;
-  scheduledTime?: string;
+  /** "HH:00" string anchors this activity to that hour slot. null → pool. */
+  scheduledTime: string | null;
   priority: number;
   projectLabel: string;
 }
 
-type Section = 'morning' | 'afternoon' | 'night' | 'anytime';
+interface WeekActivity {
+  id: string;
+  title: string;
+  status: ActivityStatus;
+  priority: number;
+  projectLabel: string;
+}
 
-const SECTION_LABEL: Record<Section, string> = {
-  morning: 'Mañana',
-  afternoon: 'Tarde',
-  night: 'Noche',
-  anytime: 'En cualquier momento',
-};
+interface ExternalEvent {
+  id: string;
+  hour: string; // "HH:00"
+  title: string;
+  timeRange: string; // "10:00 – 11:00"
+}
 
-const SECTION_ORDER: Section[] = ['morning', 'afternoon', 'night', 'anytime'];
+const INITIAL_TODAY: TodayActivity[] = [
+  {
+    id: 't1',
+    title: 'Reunión Genomma — kickoff',
+    status: 'todo',
+    scheduledTime: '08:00',
+    priority: 4,
+    projectLabel: 'Empresa Genomma',
+  },
+  {
+    id: 't2',
+    title: 'Reporte trimestral',
+    status: 'in_progress',
+    scheduledTime: '11:00',
+    priority: 5,
+    projectLabel: 'Empresa Genomma',
+  },
+  {
+    id: 't3',
+    title: 'Revisar PR equipo',
+    status: 'todo',
+    scheduledTime: null,
+    priority: 3,
+    projectLabel: 'Empresa Genomma',
+  },
+  {
+    id: 't4',
+    title: 'Gym 1h',
+    status: 'todo',
+    scheduledTime: null,
+    priority: 2,
+    projectLabel: 'Personal',
+  },
+  {
+    id: 't5',
+    title: 'Llamar a mamá',
+    status: 'todo',
+    scheduledTime: '19:00',
+    priority: 3,
+    projectLabel: 'Personal',
+  },
+];
 
-const INITIAL: Record<Section, TodayActivity[]> = {
-  morning: [
-    {
-      id: '1',
-      title: 'Reunión clientes',
-      status: 'done',
-      scheduledTime: '10:00',
-      priority: 4,
-      projectLabel: 'Empresa Genomma',
-    },
-    {
-      id: '2',
-      title: 'Revisar PR equipo',
-      status: 'todo',
-      priority: 5,
-      projectLabel: 'Empresa Genomma',
-    },
-  ],
-  afternoon: [
-    {
-      id: '3',
-      title: 'Reporte trimestral',
-      status: 'in_progress',
-      priority: 5,
-      projectLabel: 'Empresa Genomma',
-    },
-    {
-      id: '4',
-      title: 'Gym 1h',
-      status: 'todo',
-      priority: 2,
-      projectLabel: 'Personal',
-    },
-  ],
-  night: [
-    {
-      id: '5',
-      title: 'Estudio alemán 45min',
-      status: 'todo',
-      priority: 3,
-      projectLabel: 'Personal',
-    },
-    {
-      id: '6',
-      title: 'Llamar a Juan',
-      status: 'todo',
-      scheduledTime: '21:00',
-      priority: 3,
-      projectLabel: 'Personal',
-    },
-  ],
-  anytime: [],
-};
+const INITIAL_WEEK: WeekActivity[] = [
+  {
+    id: 'w1',
+    title: 'Borrador propuesta cliente',
+    status: 'todo',
+    priority: 4,
+    projectLabel: 'Empresa Genomma',
+  },
+  {
+    id: 'w2',
+    title: 'Estudio alemán — capítulo 3',
+    status: 'todo',
+    priority: 3,
+    projectLabel: 'Personal',
+  },
+  {
+    id: 'w3',
+    title: 'Pagar tarjeta',
+    status: 'todo',
+    priority: 2,
+    projectLabel: 'Personal',
+  },
+];
 
-export function TodayActivitiesBoard() {
-  const [sections, setSections] = useState(INITIAL);
+const EXTERNAL_EVENTS: ExternalEvent[] = [
+  { id: 'gc-1', hour: '10:00', title: 'Reunión clientes', timeRange: '10:00 – 11:00' },
+  { id: 'gc-2', hour: '14:00', title: 'Llamada Juan', timeRange: '14:00 – 15:00' },
+];
+
+const DROP_POOL_TODAY = 'pool:today';
+const DROP_POOL_WEEK = 'pool:week';
+const HOUR_DROP_PREFIX = 'hour:';
+
+interface TodayActivitiesBoardProps {
+  /**
+   * When true, render desktop layout: pool sidebar (DaySheet + pool + week) on
+   * the left, calendar canvas on the right — wrapped by CSS class
+   * `.ag-today-split`. When false (mobile), stack everything in single column.
+   *
+   * The caller doesn't actually toggle this — both DOMs are rendered and CSS
+   * shows the right one. Kept as a single layout that responds via CSS.
+   */
+  morningSection?: React.ReactNode;
+}
+
+export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardProps) {
+  const [todayItems, setTodayItems] = useState<TodayActivity[]>(INITIAL_TODAY);
+  const [weekItems, setWeekItems] = useState<WeekActivity[]>(INITIAL_WEEK);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [statusModal, setStatusModal] = useState<{
     id: string;
-    section: Section;
     title: string;
     status: ExtendedActivityStatus;
   } | null>(null);
@@ -143,169 +185,263 @@ export function TodayActivitiesBoard() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  // Reverse lookup: id → owning section. Recomputed on every state change but
-  // small (≤ a couple dozen items in the prototype).
-  const itemSection = useMemo(() => {
-    const map = new Map<string, Section>();
-    for (const s of SECTION_ORDER) {
-      for (const a of sections[s]) map.set(a.id, s);
-    }
-    return map;
-  }, [sections]);
+  const blockedHours = useMemo(
+    () => new Set(EXTERNAL_EVENTS.map((e) => e.hour)),
+    [],
+  );
 
   const activeActivity = useMemo(() => {
     if (!activeId) return null;
-    const s = itemSection.get(activeId);
-    if (!s) return null;
-    return sections[s].find((a) => a.id === activeId) ?? null;
-  }, [activeId, itemSection, sections]);
-
-  function findContainer(id: string): Section | null {
-    // Could be either an item id or a section's droppable id.
-    if (SECTION_ORDER.includes(id as Section)) return id as Section;
-    return itemSection.get(id) ?? null;
-  }
+    return todayItems.find((a) => a.id === activeId)
+      ?? weekItems.find((a) => a.id === activeId)
+      ?? null;
+  }, [activeId, todayItems, weekItems]);
 
   function handleDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));
-  }
-
-  function handleDragOver(e: DragOverEvent) {
-    const { active, over } = e;
-    if (!over) return;
-    const activeContainer = findContainer(String(active.id));
-    const overContainer = findContainer(String(over.id));
-    if (!activeContainer || !overContainer) return;
-    if (activeContainer === overContainer) return;
-
-    // Move between sections live, so the placeholder visually previews where
-    // the row will land. Index = the over item's index in destination, or end.
-    setSections((prev) => {
-      const sourceList = prev[activeContainer];
-      const destList = prev[overContainer];
-      const activeIdx = sourceList.findIndex((a) => a.id === active.id);
-      if (activeIdx < 0) return prev;
-      const moved = sourceList[activeIdx];
-
-      const overIsSection = SECTION_ORDER.includes(String(over.id) as Section);
-      const overIdx = overIsSection
-        ? destList.length
-        : destList.findIndex((a) => a.id === over.id);
-      const insertAt = overIdx < 0 ? destList.length : overIdx;
-
-      return {
-        ...prev,
-        [activeContainer]: sourceList.filter((a) => a.id !== active.id),
-        [overContainer]: [
-          ...destList.slice(0, insertAt),
-          moved,
-          ...destList.slice(insertAt),
-        ],
-      };
-    });
-  }
-
-  function handleDragEnd(e: DragEndEvent) {
-    const { active, over } = e;
-    setActiveId(null);
-    if (!over) return;
-    const activeContainer = findContainer(String(active.id));
-    const overContainer = findContainer(String(over.id));
-    if (!activeContainer || !overContainer) return;
-
-    if (activeContainer === overContainer) {
-      // Within-section reorder.
-      setSections((prev) => {
-        const list = prev[activeContainer];
-        const oldIndex = list.findIndex((a) => a.id === active.id);
-        const newIndex = list.findIndex((a) => a.id === over.id);
-        if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return prev;
-        return { ...prev, [activeContainer]: arrayMove(list, oldIndex, newIndex) };
-      });
-    }
-    // Cross-section moves were already applied in handleDragOver — nothing
-    // more to do here. The state already reflects the final position.
   }
 
   function handleDragCancel() {
     setActiveId(null);
   }
 
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    setActiveId(null);
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Determine source list
+    const inToday = todayItems.some((a) => a.id === activeId);
+    const inWeek = weekItems.some((a) => a.id === activeId);
+
+    if (overId === DROP_POOL_TODAY) {
+      // Land in today pool: clear scheduledTime; if it was in week, move it
+      // into today (with scheduledTime=null).
+      if (inToday) {
+        setTodayItems((prev) =>
+          prev.map((a) => (a.id === activeId ? { ...a, scheduledTime: null } : a)),
+        );
+      } else if (inWeek) {
+        const moved = weekItems.find((a) => a.id === activeId);
+        if (!moved) return;
+        setWeekItems((prev) => prev.filter((a) => a.id !== activeId));
+        setTodayItems((prev) => [
+          ...prev,
+          { ...moved, scheduledTime: null },
+        ]);
+      }
+      return;
+    }
+
+    if (overId === DROP_POOL_WEEK) {
+      // Drag a today item into the week pool: remove from today, append to
+      // week (drops scheduledTime entirely).
+      if (inToday) {
+        const moved = todayItems.find((a) => a.id === activeId);
+        if (!moved) return;
+        setTodayItems((prev) => prev.filter((a) => a.id !== activeId));
+        setWeekItems((prev) => [
+          ...prev,
+          {
+            id: moved.id,
+            title: moved.title,
+            status: moved.status,
+            priority: moved.priority,
+            projectLabel: moved.projectLabel,
+          },
+        ]);
+      }
+      return;
+    }
+
+    if (overId.startsWith(HOUR_DROP_PREFIX)) {
+      const hour = overId.slice(HOUR_DROP_PREFIX.length); // "HH:00"
+      if (blockedHours.has(hour)) return; // can't land on Google-blocked slot
+      if (inToday) {
+        setTodayItems((prev) =>
+          prev.map((a) => (a.id === activeId ? { ...a, scheduledTime: hour } : a)),
+        );
+      } else if (inWeek) {
+        // Drag from week to a specific hour today: promote into today, set hour.
+        const moved = weekItems.find((a) => a.id === activeId);
+        if (!moved) return;
+        setWeekItems((prev) => prev.filter((a) => a.id !== activeId));
+        setTodayItems((prev) => [
+          ...prev,
+          { ...moved, scheduledTime: hour },
+        ]);
+      }
+    }
+  }
+
   function handleCreate(draft: QuickAddDraft) {
     const id = `new-${Date.now()}`;
-    setSections((prev) => ({
+    setTodayItems((prev) => [
       ...prev,
-      morning: [
-        ...prev.morning,
-        {
-          id,
-          title: draft.title,
-          status: 'todo',
-          scheduledTime: draft.scheduledTime,
-          priority: draft.priority,
-          projectLabel: draft.projectLabel,
-        },
-      ],
-    }));
+      {
+        id,
+        title: draft.title,
+        status: 'todo',
+        scheduledTime: draft.scheduledTime ? normalizeHour(draft.scheduledTime) : null,
+        priority: draft.priority,
+        projectLabel: draft.projectLabel,
+      },
+    ]);
   }
 
-  function openStatus(section: Section, activity: TodayActivity) {
-    setStatusModal({
-      section,
-      id: activity.id,
-      title: activity.title,
-      status: activity.status,
-    });
+  function setTodayStatus(id: string, next: ActivityStatus) {
+    setTodayItems((prev) => prev.map((a) => (a.id === id ? { ...a, status: next } : a)));
   }
 
-  function setActivityStatus(section: Section, id: string, next: ActivityStatus) {
-    setSections((prev) => ({
-      ...prev,
-      [section]: prev[section].map((a) => (a.id === id ? { ...a, status: next } : a)),
-    }));
+  function openStatus(activity: { id: string; title: string; status: ActivityStatus }) {
+    setStatusModal({ id: activity.id, title: activity.title, status: activity.status });
   }
 
   function applyStatus(next: ExtendedActivityStatus, _reason?: StatusReason) {
     if (!statusModal) return;
-    setActivityStatus(statusModal.section, statusModal.id, next);
+    setTodayStatus(statusModal.id, next);
     setStatusModal(null);
   }
 
+  // ----- Derived slices -----
+  const poolItems = useMemo(
+    () => todayItems.filter((a) => a.scheduledTime === null),
+    [todayItems],
+  );
+
+  const slotsByHour = useMemo(() => {
+    const map: Record<string, React.ReactNode> = {};
+    // Tasks anchored to each hour
+    for (const a of todayItems) {
+      if (!a.scheduledTime) continue;
+      const existing = map[a.scheduledTime];
+      const row = (
+        <DraggableTaskRow
+          key={a.id}
+          id={a.id}
+          title={a.title}
+          status={a.status}
+          priority={a.priority}
+          projectLabel={a.projectLabel}
+          href={`/activity/${a.id}`}
+          onOpenStatus={() => openStatus(a)}
+        />
+      );
+      map[a.scheduledTime] = existing ? (
+        <>
+          {existing}
+          {row}
+        </>
+      ) : row;
+    }
+    // External Google events
+    for (const evt of EXTERNAL_EVENTS) {
+      const existing = map[evt.hour];
+      const block = (
+        <ExternalEventRow key={evt.id} title={evt.title} timeRange={evt.timeRange} />
+      );
+      map[evt.hour] = existing ? (
+        <>
+          {existing}
+          {block}
+        </>
+      ) : block;
+    }
+    return map;
+    // openStatus/setTodayStatus are stable references via the parent's
+    // function declarations; dnd-kit useDraggable manages its own identity.
+  }, [todayItems]);
+
   const isDragging = activeId !== null;
 
+  // ----- Render -----
   return (
     <>
-      <ActivityQuickAdd onCreate={handleCreate} />
-
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
-        // dnd-kit's autoScroll is enabled by default; keep it explicit so we
-        // know vertical viewport-edge auto-scroll works on long lists.
         autoScroll
       >
-        {SECTION_ORDER.map((section, idx) => (
-          <DroppableSection
-            key={section}
-            section={section}
-            label={SECTION_LABEL[section]}
-            items={sections[section]}
-            isDragging={isDragging}
-            onOpenStatus={openStatus}
-            onMarkDone={(id) => setActivityStatus(section, id, 'done')}
-            onSwipeSkip={(activity) => openStatus(section, activity)}
-            onSwipeBlock={(id) => setActivityStatus(section, id, 'blocked')}
-            // The first section keeps the existing "Arrastrá para reordenar"
-            // helper so users discover the gesture.
-            showHelpHint={idx === 0 && !isDragging}
-          />
-        ))}
+        <div className="ag-today-split">
+          {/* ---- Pool sidebar (desktop) / pool stack (mobile) ---- */}
+          <div className="ag-today-pool">
+            {morningSection ?? null}
 
-        <DragOverlay dropAnimation={{ duration: 160, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}>
+            <PoolSection
+              id={DROP_POOL_TODAY}
+              label="Hoy sin horario"
+              isDragging={isDragging}
+              empty={poolItems.length === 0}
+              footer={<ActivityQuickAdd onCreate={handleCreate} />}
+            >
+              {poolItems.map((a) => (
+                <SwipeableRow
+                  key={a.id}
+                  disabled={isDragging}
+                  onDone={() => setTodayStatus(a.id, 'done')}
+                  onSkip={() => openStatus(a)}
+                  onBlock={() => setTodayStatus(a.id, 'blocked')}
+                >
+                  <DraggableTaskRow
+                    id={a.id}
+                    title={a.title}
+                    status={a.status}
+                    priority={a.priority}
+                    projectLabel={a.projectLabel}
+                    href={`/activity/${a.id}`}
+                    onOpenStatus={() => openStatus(a)}
+                  />
+                </SwipeableRow>
+              ))}
+            </PoolSection>
+
+            <PoolSection
+              id={DROP_POOL_WEEK}
+              label="Esta semana"
+              isDragging={isDragging}
+              empty={weekItems.length === 0}
+            >
+              {weekItems.map((a) => (
+                <SwipeableRow
+                  key={a.id}
+                  disabled={isDragging}
+                  onDone={() => {/* week-list status mutations are out of scope */}}
+                  onSkip={() => {/* idem */}}
+                  onBlock={() => {/* idem */}}
+                >
+                  <DraggableTaskRow
+                    id={a.id}
+                    title={a.title}
+                    status={a.status}
+                    priority={a.priority}
+                    projectLabel={a.projectLabel}
+                  />
+                </SwipeableRow>
+              ))}
+            </PoolSection>
+          </div>
+
+          {/* ---- Calendar canvas ---- */}
+          <div className="ag-today-canvas">
+            <CalendarGrid
+              startHour={6}
+              endHour={22}
+              isDragging={isDragging}
+              slotsByHour={slotsByHour}
+              blockedHours={blockedHours}
+            />
+          </div>
+        </div>
+
+        <DragOverlay
+          dropAnimation={{ duration: 160, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}
+        >
           {activeActivity ? (
             <div
               style={{
@@ -320,7 +456,6 @@ export function TodayActivitiesBoard() {
                 <ActivityRow
                   title={activeActivity.title}
                   status={activeActivity.status}
-                  scheduledTime={activeActivity.scheduledTime}
                   priority={activeActivity.priority}
                   projectLabel={activeActivity.projectLabel}
                 />
@@ -342,113 +477,12 @@ export function TodayActivitiesBoard() {
 }
 
 /**
- * DroppableSection — a single time-block container.
- *
- * Combines:
- *   - ActivitySection (visual chrome — uppercase label + ul list).
- *   - useDroppable so a row dropped on empty space lands here.
- *   - SortableContext for within-section reorder.
- *   - SwipeableRow wrapping each item for mobile swipe-to-status.
+ * Round an arbitrary "HH:mm" string down to the nearest hour ("HH:00") so
+ * quick-add's free-form time input collapses cleanly onto our 1-hour grid.
  */
-function DroppableSection({
-  section,
-  label,
-  items,
-  isDragging,
-  showHelpHint,
-  onOpenStatus,
-  onMarkDone,
-  onSwipeSkip,
-  onSwipeBlock,
-}: {
-  section: Section;
-  label: string;
-  items: TodayActivity[];
-  isDragging: boolean;
-  showHelpHint: boolean;
-  onOpenStatus: (section: Section, activity: TodayActivity) => void;
-  onMarkDone: (id: string) => void;
-  onSwipeSkip: (activity: TodayActivity) => void;
-  onSwipeBlock: (id: string) => void;
-}) {
-  // Drop zone for the *section as a whole* — used when items.length === 0
-  // (no SortableContext item to collide with) or when the user drags below
-  // the last item.
-  const { setNodeRef, isOver } = useDroppable({ id: section });
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        backgroundColor: isOver && isDragging
-          ? 'color-mix(in oklab, var(--ag-bg-elevated), transparent 30%)'
-          : 'transparent',
-        borderRadius: 'var(--ag-radius-base)',
-        transition: 'background-color 160ms ease-out',
-      }}
-    >
-      <ActivitySection label={label} empty={items.length === 0 && !isDragging} emptyCopy="Sin actividades.">
-        {/* Drop-zone hint shown while a drag is active. */}
-        {isDragging ? (
-          <li style={{ listStyle: 'none' }}>
-            <p
-              style={{
-                margin: 0,
-                paddingBlock: 'var(--ag-space-1)',
-                fontFamily: 'var(--ag-font-display)',
-                fontStyle: 'italic',
-                fontSize: 13,
-                color: 'var(--ag-ink-hint)',
-                opacity: 0.85,
-              }}
-            >
-              Soltá acá
-            </p>
-          </li>
-        ) : null}
-
-        <SortableContext
-          items={items.map((a) => a.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {items.map((a) => (
-            <SwipeableRow
-              key={a.id}
-              disabled={isDragging}
-              onDone={() => onMarkDone(a.id)}
-              onSkip={() => onSwipeSkip(a)}
-              onBlock={() => onSwipeBlock(a.id)}
-            >
-              <SortableActivityRow
-                id={a.id}
-                href={`/activity/${a.id}`}
-                title={a.title}
-                status={a.status}
-                scheduledTime={a.scheduledTime}
-                priority={a.priority}
-                projectLabel={a.projectLabel}
-                onOpenStatus={() => onOpenStatus(section, a)}
-              />
-            </SwipeableRow>
-          ))}
-        </SortableContext>
-      </ActivitySection>
-
-      {showHelpHint ? (
-        <p
-          style={{
-            margin: 0,
-            paddingInline: 'var(--ag-space-1)',
-            paddingBottom: 'var(--ag-space-2)',
-            fontFamily: 'var(--ag-font-display)',
-            fontStyle: 'italic',
-            fontSize: 13,
-            color: 'var(--ag-ink-hint)',
-          }}
-        >
-          Arrastrá para reordenar o mover entre bloques.
-        </p>
-      ) : null}
-    </div>
-  );
+function normalizeHour(time: string): string {
+  const m = /^(\d{1,2})(?::\d{2})?$/.exec(time.trim());
+  if (!m) return time;
+  const hh = Math.max(0, Math.min(23, Number(m[1])));
+  return `${hh.toString().padStart(2, '0')}:00`;
 }

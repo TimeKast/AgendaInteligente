@@ -1,22 +1,21 @@
 'use client';
 
 /**
- * SCR-020 — Today (mobile portrait prototype)
+ * SCR-020 — Today (pool + calendar grid prototype)
  *
  * Pure frontend visual prototype with hardcoded data. NO backend reads,
  * NO mutations. Demonstrates the warm-book editorial aesthetic per
  * 14_DESIGN_BRIEF.md + 15_DESIGN.md §9 wireframe.
  *
- * Round 2 additions:
- *   - SCR-055 PushPermissionBanner at top of main.
- *   - SCR-051 inline ActivityQuickAdd (inside TodayActivitiesBoard).
- *   - SCR-052 per-row ⋯ → ActivityStatusModal (inside TodayActivitiesBoard).
+ * Layout (responsive, handled in CSS via .ag-today-split):
+ *   - Mobile <1024px: stacked → header → push banner → DaySheet morning →
+ *     HOY SIN HORARIO (pool) → AGENDA (06:00-22:00 hour grid) → Cerrar día.
+ *   - Desktop ≥1024px: header → 2-column → [DaySheet + pool + week sidebar
+ *     (280px)] + [calendar canvas (rest)] → Cerrar día below.
  *
- * Round 3 additions:
- *   - Footer "Cerrar día" button → CloseDayModal (non-conversational
- *     alternative to the evening chat ritual).
+ * The pool ↔ hour-slot drag is owned by TodayActivitiesBoard (DndContext).
  *
- * Visit at: http://localhost:3002/today  (port from package.json#ports.dev)
+ * Visit at: http://localhost:3002/today
  */
 
 import { useEffect, useState } from 'react';
@@ -28,8 +27,8 @@ import { CloseDayModal, type CloseDayPayload } from '@/components/agenda/CloseDa
 
 // Hardcoded "today's wins" used to populate the CloseDayModal.
 const TODAY_WINS = [
-  { id: 'w1', title: 'Reunión clientes' },
-  { id: 'w2', title: 'Reporte trimestral entregado' },
+  { id: 'w1', title: 'Reunión Genomma — kickoff' },
+  { id: 'w2', title: 'Reporte trimestral' },
   { id: 'w3', title: 'Gym 1h' },
 ];
 
@@ -37,7 +36,6 @@ export default function TodayPage() {
   const [closeOpen, setCloseOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Auto-hide toast (same pattern as VoiceCaptureSheet).
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 1800);
@@ -55,59 +53,46 @@ export default function TodayPage() {
 
       <main
         style={{
-          // Reserve room for fixed bottom nav (64px) + safe-area.
-          paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-          maxWidth: 480,
+          // Reserve room for fixed bottom nav (64px, mobile only) + safe-area.
+          paddingBottom:
+            'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
           marginInline: 'auto',
+          width: '100%',
+          paddingInline: 'var(--ag-space-4)',
+          paddingTop: 'var(--ag-space-2)',
         }}
       >
         <PushPermissionBanner />
 
-        <DaySheetMorningSection
-          energyPhysical={4}
-          energyMental={5}
-          energyEmotional={3}
+        <TodayActivitiesBoard
+          morningSection={
+            <DaySheetMorningSection
+              energyPhysical={4}
+              energyMental={5}
+              energyEmotional={3}
+            />
+          }
         />
 
-        <div
+        <button
+          type="button"
+          onClick={() => setCloseOpen(true)}
           style={{
-            paddingInline: 'var(--ag-space-4)',
-            display: 'flex',
-            flexDirection: 'column',
+            appearance: 'none',
+            background: 'transparent',
+            border: '1px solid var(--ag-rule)',
+            borderRadius: 'var(--ag-radius-base)',
+            padding: '12px 16px',
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 15,
+            color: 'var(--ag-ink-soft)',
+            cursor: 'pointer',
+            width: '100%',
+            marginTop: 'var(--ag-space-5)',
           }}
         >
-          {/* Divider before activity list */}
-          <hr
-            style={{
-              margin: 'var(--ag-space-2) 0',
-              border: 'none',
-              borderTop: '1px solid var(--ag-rule)',
-            }}
-          />
-
-          <TodayActivitiesBoard />
-
-          {/* Footer — Cerrar día */}
-          <button
-            type="button"
-            onClick={() => setCloseOpen(true)}
-            style={{
-              appearance: 'none',
-              background: 'transparent',
-              border: '1px solid var(--ag-rule)',
-              borderRadius: 'var(--ag-radius-base)',
-              padding: '12px 16px',
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 15,
-              color: 'var(--ag-ink-soft)',
-              cursor: 'pointer',
-              width: '100%',
-              marginTop: 'var(--ag-space-5)',
-            }}
-          >
-            Cerrar día
-          </button>
-        </div>
+          Cerrar día
+        </button>
       </main>
 
       <CloseDayModal

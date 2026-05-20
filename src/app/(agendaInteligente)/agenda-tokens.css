@@ -88,3 +88,59 @@
   --ag-accent-on: oklch(0.16 0.008 60);
   color-scheme: dark;
 }
+
+/* ---- Responsive chrome utilities (scoped to agenda) ---- */
+/*
+ * AgendaShell uses these classes to toggle the desktop side nav vs the mobile
+ * bottom nav at the 1024px breakpoint. Pure CSS visibility — both DOM trees
+ * always mount so the chrome is consistent on hydration.
+ */
+[data-theme='agenda'] .ag-desktop-only {
+  display: none;
+}
+[data-theme='agenda'] .ag-mobile-only {
+  display: contents;
+}
+@media (min-width: 1024px) {
+  [data-theme='agenda'] .ag-desktop-only {
+    display: block;
+  }
+  [data-theme='agenda'] .ag-mobile-only {
+    display: none;
+  }
+}
+
+/* ---- Today layout (split: pool sidebar + calendar canvas) ---- */
+/*
+ * Mobile: stacked (pool on top, calendar below).
+ * Desktop ≥1024px: pool sidebar (280px) left of the calendar canvas (rest).
+ */
+[data-theme='agenda'] .ag-today-split {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ag-space-4);
+}
+@media (min-width: 1024px) {
+  [data-theme='agenda'] .ag-today-split {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--ag-space-5);
+  }
+  [data-theme='agenda'] .ag-today-pool {
+    width: 280px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 72px;
+    max-height: calc(100dvh - 88px);
+    overflow-y: auto;
+  }
+  [data-theme='agenda'] .ag-today-canvas {
+    flex: 1;
+    min-width: 0;
+  }
+  /* Hide the mobile-only morning-section + pool stack on desktop; they live
+   * inside the sidebar instead. */
+  [data-theme='agenda'] .ag-today-mobile-stack {
+    display: none;
+  }
+}
