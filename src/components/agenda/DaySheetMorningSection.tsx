@@ -3,7 +3,6 @@
  *
  * Visual signature:
  *  - Lateral 4px scope accent bar in `--ag-scope-day` (DD-pattern-3).
- *  - Energy indicators block.
  *  - Italic serif placeholder for "Gratitud" (unfilled).
  *  - Hairline divider in `--ag-rule` (warm ecru, NOT gray).
  *
@@ -11,25 +10,17 @@
  *
  * Note: The "Intención de hoy" field was retired from the morning sheet
  * (user feedback, 2026-05-20) — the day is shaped by activities + wins, not
- * by an additional one-liner. Gratitud + energy remain.
+ * by an additional one-liner. Energy indicators were also dropped from the
+ * prototype (user feedback, 2026-05-20). Only Gratitud remains.
  */
 
-import { EnergyIndicators } from './EnergyIndicators';
 import { SheetField } from './SheetField';
 
 interface DaySheetMorningSectionProps {
   gratitude?: string;
-  energyPhysical: 0 | 1 | 2 | 3 | 4 | 5;
-  energyMental: 0 | 1 | 2 | 3 | 4 | 5;
-  energyEmotional: 0 | 1 | 2 | 3 | 4 | 5;
 }
 
-export function DaySheetMorningSection({
-  gratitude,
-  energyPhysical,
-  energyMental,
-  energyEmotional,
-}: DaySheetMorningSectionProps) {
+export function DaySheetMorningSection({ gratitude }: DaySheetMorningSectionProps) {
   return (
     <section
       aria-labelledby="ag-morning-heading"
@@ -83,24 +74,6 @@ export function DaySheetMorningSection({
         >
           Mañana
         </h2>
-
-        {/* Energy indicators */}
-        <EnergyIndicators
-          rows={[
-            { label: 'Físico', value: energyPhysical },
-            { label: 'Mental', value: energyMental },
-            { label: 'Emocional', value: energyEmotional },
-          ]}
-        />
-
-        {/* Hairline divider before gratitude */}
-        <hr
-          style={{
-            margin: 0,
-            border: 'none',
-            borderTop: '1px solid var(--ag-rule)',
-          }}
-        />
 
         {/* Gratitud — empty state showcases italic serif placeholder */}
         <SheetField

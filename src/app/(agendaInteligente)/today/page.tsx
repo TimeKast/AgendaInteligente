@@ -65,13 +65,7 @@ export default function TodayPage() {
         <PushPermissionBanner />
 
         <TodayActivitiesBoard
-          morningSection={
-            <DaySheetMorningSection
-              energyPhysical={4}
-              energyMental={5}
-              energyEmotional={3}
-            />
-          }
+          morningSection={<DaySheetMorningSection />}
         />
 
         <button
@@ -98,9 +92,6 @@ export default function TodayPage() {
       <CloseDayModal
         open={closeOpen}
         wins={TODAY_WINS}
-        defaultEnergyPhysical={4}
-        defaultEnergyMental={5}
-        defaultEnergyEmotional={3}
         onCancel={() => setCloseOpen(false)}
         onSubmit={handleClose}
       />

@@ -10,6 +10,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  BarChart3,
   Calendar,
   CalendarRange,
   Compass,
@@ -30,6 +31,7 @@ const PRIMARY: NavItem[] = [
   { key: 'today', label: 'Today', href: '/today', Icon: Calendar },
   { key: 'week', label: 'Week', href: '/week', Icon: CalendarRange },
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
+  { key: 'stats', label: 'Stats', href: '/stats', Icon: BarChart3 },
   { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },
   { key: 'settings', label: 'Settings', href: '/settings', Icon: Settings },
 ];

@@ -5,11 +5,14 @@
  * to the evening chat ritual.
  *
  * Sections:
- *   1. Wins planeadas — each row has a 3-way chip group (Cumplida / Parcial /
- *      No). Parcial reveals a 0-100% slider; No reveals a textarea reason.
- *   2. Energy (3 sliders 1-5: Físico / Mental / Emocional) — preloaded from
- *      the morning DaySheet if any value is provided, otherwise defaults to 3.
- *   3. Una línea — textarea (italic serif placeholder).
+ *   1. Wins planeadas — each row has a 3-way chip group (Cumplida / Avanzada /
+ *      No la toqué).
+ *        - Cumplida  → reveals a checkbox "Y además, cerrada (no más iteraciones)".
+ *          Distinción: una tarea puede ser "cumplida" hoy (lo planeado pasó) pero
+ *          NO "cerrada" (el objetivo subyacente sigue abierto, ej: gym recurrente).
+ *        - Avanzada  → reveals a 0-100% slider.
+ *        - No la toqué → reveals a textarea "¿qué pasó?"
+ *   2. Una línea — textarea (italic serif placeholder).
  *
  * Submit → toast "Día cerrado." and close. Visual-only, no persistence.
  *
@@ -19,7 +22,6 @@
  * Visual:
  *  - Scope accent bar (Day) on the left of the sheet.
  *  - Hairline section dividers in --ag-rule.
- *  - Slider track / thumb consistent with EnergyIndicators tone.
  */
 
 import { useEffect, useState } from 'react';
@@ -35,6 +37,8 @@ export interface CloseDayWinInput {
 export interface CloseDayWinResult {
   id: string;
   outcome: WinOutcome;
+  /** Only meaningful when outcome === 'done'. True = objetivo cerrado, no más iteraciones. */
+  closed: boolean;
   /** 0-100; only meaningful when outcome === 'partial'. */
   partialPct: number;
   /** Reason text; only meaningful when outcome === 'missed'. */
@@ -43,43 +47,25 @@ export interface CloseDayWinResult {
 
 export interface CloseDayPayload {
   wins: CloseDayWinResult[];
-  energyPhysical: number;
-  energyMental: number;
-  energyEmotional: number;
   oneLine: string;
 }
 
 interface CloseDayModalProps {
   open: boolean;
   wins: CloseDayWinInput[];
-  /** Preload from the morning DaySheet. Defaults to 3 each when omitted. */
-  defaultEnergyPhysical?: number;
-  defaultEnergyMental?: number;
-  defaultEnergyEmotional?: number;
   onCancel: () => void;
   onSubmit: (payload: CloseDayPayload) => void;
 }
 
 const OUTCOME_OPTIONS: Array<{ id: WinOutcome; label: string; glyph: string }> = [
   { id: 'done', label: 'Cumplida', glyph: '✓' },
-  { id: 'partial', label: 'Parcial', glyph: '◐' },
-  { id: 'missed', label: 'No', glyph: '⊘' },
+  { id: 'partial', label: 'Avanzada', glyph: '◐' },
+  { id: 'missed', label: 'No la toqué', glyph: '⊘' },
 ];
 
-export function CloseDayModal({
-  open,
-  wins,
-  defaultEnergyPhysical = 3,
-  defaultEnergyMental = 3,
-  defaultEnergyEmotional = 3,
-  onCancel,
-  onSubmit,
-}: CloseDayModalProps) {
-  // Per-win state (outcome + partial pct + missed reason).
+export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalProps) {
+  // Per-win state (outcome + closed + partial pct + missed reason).
   const [winState, setWinState] = useState<Record<string, CloseDayWinResult>>({});
-  const [physical, setPhysical] = useState(defaultEnergyPhysical);
-  const [mental, setMental] = useState(defaultEnergyMental);
-  const [emotional, setEmotional] = useState(defaultEnergyEmotional);
   const [oneLine, setOneLine] = useState('');
 
   // Reset form whenever the modal re-opens. Wins list might also change.
@@ -91,13 +77,16 @@ export function CloseDayModal({
     setWinState(() => {
       const next: Record<string, CloseDayWinResult> = {};
       for (const w of wins) {
-        next[w.id] = { id: w.id, outcome: 'done', partialPct: 50, missedReason: '' };
+        next[w.id] = {
+          id: w.id,
+          outcome: 'done',
+          closed: false,
+          partialPct: 50,
+          missedReason: '',
+        };
       }
       return next;
     });
-    setPhysical(defaultEnergyPhysical);
-    setMental(defaultEnergyMental);
-    setEmotional(defaultEnergyEmotional);
     setOneLine('');
     /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -106,7 +95,7 @@ export function CloseDayModal({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [open, wins, defaultEnergyPhysical, defaultEnergyMental, defaultEnergyEmotional, onCancel]);
+  }, [open, wins, onCancel]);
 
   if (!open) return null;
 
@@ -114,6 +103,12 @@ export function CloseDayModal({
     setWinState((prev) => ({
       ...prev,
       [winId]: { ...prev[winId], outcome },
+    }));
+  }
+  function setClosed(winId: string, closed: boolean) {
+    setWinState((prev) => ({
+      ...prev,
+      [winId]: { ...prev[winId], closed },
     }));
   }
   function setPartial(winId: string, pct: number) {
@@ -132,9 +127,6 @@ export function CloseDayModal({
   function submit() {
     onSubmit({
       wins: wins.map((w) => winState[w.id]).filter(Boolean),
-      energyPhysical: physical,
-      energyMental: mental,
-      energyEmotional: emotional,
       oneLine: oneLine.trim(),
     });
   }
@@ -333,6 +325,41 @@ export function CloseDayModal({
                     })}
                   </div>
 
+                  {result.outcome === 'done' ? (
+                    <label
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 'var(--ag-space-2)',
+                        cursor: 'pointer',
+                        paddingTop: 'var(--ag-space-1)',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={result.closed}
+                        onChange={(e) => setClosed(w.id, e.target.checked)}
+                        aria-label={`Cerrar definitivamente ${w.title}`}
+                        style={{
+                          width: 16,
+                          height: 16,
+                          accentColor: 'var(--ag-ink-primary)',
+                          cursor: 'pointer',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontFamily: 'var(--ag-font-display)',
+                          fontStyle: 'italic',
+                          fontSize: 14,
+                          color: 'var(--ag-ink-soft)',
+                        }}
+                      >
+                        Y además, cerrada (no más iteraciones)
+                      </span>
+                    </label>
+                  ) : null}
+
                   {result.outcome === 'partial' ? (
                     <PercentSlider
                       value={result.partialPct}
@@ -365,14 +392,6 @@ export function CloseDayModal({
               );
             })}
           </ul>
-        </section>
-
-        {/* Energy section */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-3)' }}>
-          <SectionCaption>Energy</SectionCaption>
-          <EnergySlider label="Físico" value={physical} onChange={setPhysical} />
-          <EnergySlider label="Mental" value={mental} onChange={setMental} />
-          <EnergySlider label="Emocional" value={emotional} onChange={setEmotional} />
         </section>
 
         {/* One-line section */}
@@ -466,57 +485,6 @@ function SectionCaption({ children }: { children: React.ReactNode }) {
   );
 }
 
-function EnergySlider({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <label
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '92px 1fr 24px',
-        alignItems: 'center',
-        gap: 'var(--ag-space-3)',
-      }}
-    >
-      <span
-        style={{
-          fontFamily: 'var(--ag-font-body)',
-          fontSize: 14,
-          color: 'var(--ag-ink-soft)',
-        }}
-      >
-        {label}
-      </span>
-      <input
-        type="range"
-        min={1}
-        max={5}
-        step={1}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={sliderStyle}
-      />
-      <span
-        aria-hidden
-        style={{
-          fontFamily: 'var(--ag-font-body)',
-          fontSize: 13,
-          color: 'var(--ag-ink-soft)',
-          textAlign: 'right',
-        }}
-      >
-        {value}
-      </span>
-    </label>
-  );
-}
-
 function PercentSlider({
   value,
   onChange,
@@ -540,7 +508,7 @@ function PercentSlider({
         step={5}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        aria-label="Porcentaje cumplido"
+        aria-label="Porcentaje avanzado"
         style={sliderStyle}
       />
       <span

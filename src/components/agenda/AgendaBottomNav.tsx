@@ -12,7 +12,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, CalendarRange, Compass, MessageSquare, Settings } from 'lucide-react';
+import {
+  BarChart3,
+  Calendar,
+  CalendarRange,
+  Compass,
+  MessageSquare,
+  Settings,
+} from 'lucide-react';
 import type { ComponentType } from 'react';
 
 interface NavItem {
@@ -26,6 +33,7 @@ const ITEMS: NavItem[] = [
   { key: 'today', label: 'Today', href: '/today', Icon: Calendar },
   { key: 'week', label: 'Week', href: '/week', Icon: CalendarRange },
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
+  { key: 'stats', label: 'Stats', href: '/stats', Icon: BarChart3 },
   { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },
   { key: 'settings', label: 'Settings', href: '/settings', Icon: Settings },
 ];
@@ -59,7 +67,7 @@ export function AgendaBottomNav() {
           padding: 0,
           height: 64,
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
+          gridTemplateColumns: 'repeat(6, 1fr)',
         }}
       >
         {ITEMS.map(({ key, label, href, Icon }) => {
@@ -87,10 +95,10 @@ export function AgendaBottomNav() {
                   transition: `color var(--ag-duration-base) var(--ag-ease), background-color var(--ag-duration-base) var(--ag-ease)`,
                 }}
               >
-                <Icon size={20} strokeWidth={1.5} />
+                <Icon size={18} strokeWidth={1.5} />
                 <span
                   style={{
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: active ? 500 : 400,
                     letterSpacing: '0.02em',
                   }}
