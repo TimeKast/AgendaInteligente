@@ -1,25 +1,27 @@
 'use client';
 
 /**
- * WeekPoolSection — "PENDIENTES SIN DÍA" droppable column for /week.
+ * WeekPoolSection — "PENDIENTES SIN DÍA" droppable section for /week.
  *
  * Receives activities without scheduledDate. User can drag them out to any
- * day swimlane (or back). Rendered as a vertical list with the activity title
- * and project chip. No time displayed (the Week scope only assigns DATE, not
- * time — that's the Day scope's job).
+ * day section (or back). The single quick-add entry point for the Week scope
+ * lives here — all new activities land in the pool first, then the user
+ * drags them onto a day. No per-day "+ Tarea" anymore (per user feedback).
  *
- * Mobile: collapsed-friendly top section.
- * Desktop: sticky 240px sidebar (caller wraps it accordingly).
+ * Mobile: full-width section above the day stack.
+ * Desktop: 320px sticky sidebar (caller wraps it accordingly).
  */
 
 import { useDroppable } from '@dnd-kit/core';
+import { ActivityQuickAdd, type QuickAddDraft } from './ActivityQuickAdd';
 import { DraggablePoolActivity, type PoolActivity } from './DraggablePoolActivity';
 
 interface WeekPoolSectionProps {
   activities: PoolActivity[];
+  onCreate: (draft: QuickAddDraft) => void;
 }
 
-export function WeekPoolSection({ activities }: WeekPoolSectionProps) {
+export function WeekPoolSection({ activities, onCreate }: WeekPoolSectionProps) {
   const { isOver, setNodeRef } = useDroppable({ id: 'week-pool' });
 
   return (
@@ -79,6 +81,8 @@ export function WeekPoolSection({ activities }: WeekPoolSectionProps) {
           activities.map((a) => <DraggablePoolActivity key={a.id} activity={a} />)
         )}
       </ul>
+
+      <ActivityQuickAdd onCreate={onCreate} />
     </section>
   );
 }
