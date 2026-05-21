@@ -10,8 +10,11 @@
  * have an external Google event blocking the slot).
  */
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { HourSlot } from './HourSlot';
+
+/** Fixed pixel height of a 1-hour calendar slot. SSOT for resize math. */
+export const HOUR_HEIGHT_PX = 60;
 
 interface CalendarGridProps {
   /** "HH" integer 0-23 — first hour shown (default 6). */
@@ -42,8 +45,14 @@ export function CalendarGrid({
     hours.push(`${pad(h)}:00`);
   }
 
+  // Expose HOUR_HEIGHT to descendant slots/rows via CSS variable. Resize
+  // logic reads the same constant from JS (HOUR_HEIGHT_PX) — single source.
+  const gridStyle: CSSProperties = {
+    ['--ag-hour-height' as string]: `${HOUR_HEIGHT_PX}px`,
+  };
+
   return (
-    <section aria-label="Agenda por hora">
+    <section aria-label="Agenda por hora" style={gridStyle}>
       <p
         style={{
           margin: 0,

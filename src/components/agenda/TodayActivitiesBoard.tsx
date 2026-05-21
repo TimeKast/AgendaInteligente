@@ -63,6 +63,14 @@ interface TodayActivity {
   scheduledTime: string | null;
   priority: number;
   projectLabel: string;
+  /**
+   * Duration in minutes. Only meaningful when `scheduledTime != null`; pool
+   * items ignore this field. Defaults to 60 for hour-anchored items via the
+   * initial data below. Editable via the bottom-edge resize handle on desktop
+   * (see DraggableTaskRow). Whole-hour snap on commit, min 60min, max clamped
+   * to calendar end (22:00).
+   */
+  durationMinutes: number;
 }
 
 interface WeekActivity {
@@ -88,6 +96,7 @@ const INITIAL_TODAY: TodayActivity[] = [
     scheduledTime: '08:00',
     priority: 4,
     projectLabel: 'Empresa Genomma',
+    durationMinutes: 60,
   },
   {
     id: 't2',
@@ -96,6 +105,8 @@ const INITIAL_TODAY: TodayActivity[] = [
     scheduledTime: '11:00',
     priority: 5,
     projectLabel: 'Empresa Genomma',
+    // Pre-seeded 2h example so the multi-slot rendering is visible at load.
+    durationMinutes: 120,
   },
   {
     id: 't3',
@@ -104,6 +115,7 @@ const INITIAL_TODAY: TodayActivity[] = [
     scheduledTime: null,
     priority: 3,
     projectLabel: 'Empresa Genomma',
+    durationMinutes: 60,
   },
   {
     id: 't4',
@@ -112,6 +124,7 @@ const INITIAL_TODAY: TodayActivity[] = [
     scheduledTime: null,
     priority: 2,
     projectLabel: 'Personal',
+    durationMinutes: 60,
   },
   {
     id: 't5',
@@ -120,6 +133,7 @@ const INITIAL_TODAY: TodayActivity[] = [
     scheduledTime: '19:00',
     priority: 3,
     projectLabel: 'Personal',
+    durationMinutes: 60,
   },
 ];
 
@@ -155,6 +169,15 @@ const EXTERNAL_EVENTS: ExternalEvent[] = [
 const DROP_POOL_TODAY = 'pool:today';
 const DROP_POOL_WEEK = 'pool:week';
 const HOUR_DROP_PREFIX = 'hour:';
+/** Calendar end hour (exclusive minute boundary). 22 means slot 22:00 is the
+ *  last visible row and an activity may not extend past 22:00. */
+const CALENDAR_END_HOUR = 22;
+
+/** Parse "HH:00" → integer hour. Returns NaN if invalid. */
+function parseHour(time: string): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time);
+  return m ? Number(m[1]) : NaN;
+}
 
 interface TodayActivitiesBoardProps {
   /**
@@ -185,10 +208,33 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const blockedHours = useMemo(
-    () => new Set(EXTERNAL_EVENTS.map((e) => e.hour)),
-    [],
-  );
+  /**
+   * Hours that should reject drops: external Google events (always) PLUS
+   * any "overflow" hours covered by a multi-hour activity (e.g. a 2h activity
+   * at 11:00 blocks 12:00 too — that hour is visually occupied even though
+   * no activity is anchored there).
+   *
+   * The activity's OWN start hour is NOT added — drop on its own slot is a
+   * no-op (it already lives there). The recompute runs on every duration
+   * change because resize updates `todayItems`.
+   */
+  const blockedHours = useMemo(() => {
+    const set = new Set(EXTERNAL_EVENTS.map((e) => e.hour));
+    for (const a of todayItems) {
+      if (!a.scheduledTime) continue;
+      const startHour = parseHour(a.scheduledTime);
+      if (Number.isNaN(startHour)) continue;
+      const spanHours = Math.ceil(a.durationMinutes / 60);
+      // Block subsequent hours covered by the activity (not the start hour
+      // itself — that's where the activity lives).
+      for (let h = startHour + 1; h < startHour + spanHours; h++) {
+        if (h <= CALENDAR_END_HOUR) {
+          set.add(`${h.toString().padStart(2, '0')}:00`);
+        }
+      }
+    }
+    return set;
+  }, [todayItems]);
 
   const activeActivity = useMemo(() => {
     if (!activeId) return null;
@@ -230,7 +276,7 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
         setWeekItems((prev) => prev.filter((a) => a.id !== activeId));
         setTodayItems((prev) => [
           ...prev,
-          { ...moved, scheduledTime: null },
+          { ...moved, scheduledTime: null, durationMinutes: 60 },
         ]);
       }
       return;
@@ -271,7 +317,7 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
         setWeekItems((prev) => prev.filter((a) => a.id !== activeId));
         setTodayItems((prev) => [
           ...prev,
-          { ...moved, scheduledTime: hour },
+          { ...moved, scheduledTime: hour, durationMinutes: 60 },
         ]);
       }
     }
@@ -288,8 +334,17 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
         scheduledTime: draft.scheduledTime ? normalizeHour(draft.scheduledTime) : null,
         priority: draft.priority,
         projectLabel: draft.projectLabel,
+        durationMinutes: 60,
       },
     ]);
+  }
+
+  function handleResize(id: string, nextDurationMinutes: number) {
+    setTodayItems((prev) =>
+      prev.map((a) =>
+        a.id === id ? { ...a, durationMinutes: nextDurationMinutes } : a,
+      ),
+    );
   }
 
   function setTodayStatus(id: string, next: ActivityStatus) {
@@ -317,6 +372,12 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
     // Tasks anchored to each hour
     for (const a of todayItems) {
       if (!a.scheduledTime) continue;
+      const startHour = parseHour(a.scheduledTime);
+      // Max duration = whatever fits between the start hour and the calendar
+      // end (22:00). Example: activity at 21:00 → max 60min (one slot).
+      const maxDurationMinutes = Number.isNaN(startHour)
+        ? 240
+        : Math.max(60, (CALENDAR_END_HOUR - startHour) * 60);
       const existing = map[a.scheduledTime];
       const row = (
         <DraggableTaskRow
@@ -328,6 +389,9 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
           projectLabel={a.projectLabel}
           href={`/activity/${a.id}`}
           onOpenStatus={() => openStatus(a)}
+          durationMinutes={a.durationMinutes}
+          onResize={(next) => handleResize(a.id, next)}
+          maxDurationMinutes={maxDurationMinutes}
         />
       );
       map[a.scheduledTime] = existing ? (

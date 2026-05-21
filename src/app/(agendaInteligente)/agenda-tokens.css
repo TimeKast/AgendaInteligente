@@ -144,3 +144,23 @@
     display: none;
   }
 }
+
+/* ---- Resize handle for hour-anchored activities (desktop only) ---- */
+/*
+ * Hidden by default — only mice/trackpads (pointer: fine) get the bottom-edge
+ * resize affordance on calendar activities. Touch-only devices never see it.
+ * Hover bumps the grip lines from ink-hint to ink-soft for clear affordance.
+ */
+[data-theme='agenda'] .ag-resize-handle {
+  display: none;
+}
+@media (pointer: fine) {
+  [data-theme='agenda'] .ag-resize-handle {
+    display: flex;
+  }
+  [data-theme='agenda'] .ag-resize-handle:hover > span {
+    opacity: 1 !important;
+    background-color: var(--ag-ink-soft) !important;
+    box-shadow: 0 3px 0 -1px var(--ag-ink-soft) !important;
+  }
+}

@@ -46,7 +46,15 @@ export function HourSlot({ time, isDragging, blocked = false, children }: HourSl
         display: 'grid',
         gridTemplateColumns: '56px 1fr',
         alignItems: 'stretch',
-        minHeight: 48,
+        // Fixed 1-hour height — resize math (durationMinutes / 60 * height)
+        // depends on the slot being a strict multiple of 1 hour. Tall
+        // activities overflow into the next slots via position:absolute.
+        // NOTE: we intentionally do NOT set `position: relative` on the outer
+        // slot — that would create a stacking context that would clip the
+        // overflow visually behind subsequent slots. The inner content column
+        // (below) is the positioned ancestor instead.
+        height: 'var(--ag-hour-height, 60px)',
+        overflow: 'visible',
         borderTop: '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
         backgroundColor:
           isOver && isDragging && !blocked
@@ -75,6 +83,7 @@ export function HourSlot({ time, isDragging, blocked = false, children }: HourSl
           flexDirection: 'column',
           gap: 4,
           minWidth: 0,
+          position: 'relative',
         }}
       >
         {children}
