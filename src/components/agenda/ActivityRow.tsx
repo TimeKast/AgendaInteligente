@@ -19,6 +19,7 @@ import type { ReactNode } from 'react';
 import { Check, AlertTriangle, MinusCircle } from 'lucide-react';
 import { PriorityDots } from './PriorityDots';
 import { ProjectChip } from './ProjectChip';
+import { DeadlineBadge } from './DeadlineBadge';
 
 export type ActivityStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
 
@@ -44,6 +45,13 @@ interface ActivityRowProps {
    * trigger navigation.
    */
   trailingSlot?: ReactNode;
+  /** Optional ISO YYYY-MM-DD deadline. Surfaced as a DeadlineBadge. */
+  deadline?: string;
+  /**
+   * Optional progress 0..100. When > 0 and status != 'done', a 2px progress
+   * bar renders at the bottom edge of the row. Independent from status.
+   */
+  progressPercent?: number;
 }
 
 function Checkbox({ status }: { status: ActivityStatus }) {
@@ -137,10 +145,13 @@ export function ActivityRow({
   href,
   dragHandle,
   trailingSlot,
+  deadline,
+  progressPercent,
 }: ActivityRowProps) {
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
   const isSkipped = status === 'skipped';
+  const showProgress = !isDone && (progressPercent ?? 0) > 0;
 
   const rowInner = (
     <>
@@ -185,7 +196,7 @@ export function ActivityRow({
         ) : null}
       </div>
 
-      {/* Right cluster: priority dots + project chip */}
+      {/* Right cluster: priority dots + project chip + optional deadline */}
       <div
         style={{
           display: 'flex',
@@ -196,9 +207,35 @@ export function ActivityRow({
       >
         <PriorityDots priority={priority} />
         <ProjectChip label={projectLabel} />
+        {deadline ? <DeadlineBadge deadline={deadline} /> : null}
       </div>
     </>
   );
+
+  const progressBar = showProgress ? (
+    <span
+      aria-label={`Avance ${progressPercent}%`}
+      style={{
+        display: 'block',
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 2,
+        backgroundColor: 'var(--ag-rule)',
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          display: 'block',
+          width: `${Math.max(0, Math.min(100, progressPercent ?? 0))}%`,
+          height: '100%',
+          backgroundColor: 'var(--ag-ink-soft)',
+        }}
+      />
+    </span>
+  ) : null;
 
   const rowStyle = {
     display: 'grid',
@@ -227,6 +264,7 @@ export function ActivityRow({
           gap: 'var(--ag-space-2)',
           borderBottom:
             '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
+          position: 'relative',
         }}
       >
         {dragHandle ?? null}
@@ -244,12 +282,13 @@ export function ActivityRow({
           <div style={{ ...rowStyle, borderBottom: 'none' }}>{rowInner}</div>
         )}
         {trailingSlot ?? null}
+        {progressBar}
       </li>
     );
   }
 
   return (
-    <li className="ag-activity-row" style={{ listStyle: 'none' }}>
+    <li className="ag-activity-row" style={{ listStyle: 'none', position: 'relative' }}>
       {href ? (
         <Link href={href} style={rowStyle}>
           {rowInner}
@@ -257,6 +296,7 @@ export function ActivityRow({
       ) : (
         <div style={rowStyle}>{rowInner}</div>
       )}
+      {progressBar}
     </li>
   );
 }

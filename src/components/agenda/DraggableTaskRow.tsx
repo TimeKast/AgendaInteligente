@@ -41,6 +41,10 @@ interface DraggableTaskRowProps {
   onOpenStatus?: () => void;
   /** Disable drag entirely (e.g. external/Google events). */
   draggable?: boolean;
+  /** Optional ISO YYYY-MM-DD deadline (rendered inline by ActivityRow). */
+  deadline?: string;
+  /** Optional progress 0..100 (renders bottom-edge bar via ActivityRow). */
+  progressPercent?: number;
   /**
    * Duration in minutes. When set together with `onResize`, the row absolutely
    * positions itself inside its parent HourSlot with height proportional to
@@ -229,7 +233,11 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
     props;
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={anchored ? 'ag-anchored-row' : undefined}
+    >
       <ActivityRow
         {...rowProps}
         dragHandle={handle}
@@ -286,6 +294,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
         <div
           role="separator"
           aria-label={`Cambiar duración de ${props.title}`}
+          title="Arrastrá para extender el tiempo"
           className="ag-resize-handle"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -296,7 +305,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
             left: 0,
             right: 0,
             bottom: 0,
-            height: 8,
+            height: 10,
             cursor: 'ns-resize',
             display: 'flex',
             alignItems: 'center',
@@ -305,20 +314,22 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
             // Visibility toggled via CSS `@media (pointer: fine)` (see
             // agenda-tokens.css → .ag-resize-handle rules). On touch-only
             // devices the handle is `display: none` so it can't tease an
-            // interaction that won't fire.
+            // interaction that won't fire. At rest the two grip lines render
+            // in `--ag-rule` (warm ecru) at 60% opacity so the affordance is
+            // always discoverable without requiring a hover.
           }}
         >
           <span
             aria-hidden
             style={{
               display: 'block',
-              width: 24,
+              width: 28,
               height: 2,
               borderRadius: 2,
-              backgroundColor: 'var(--ag-ink-hint)',
-              opacity: 0.5,
-              boxShadow: '0 3px 0 -1px var(--ag-ink-hint)',
-              transition: 'opacity var(--ag-duration-fast) var(--ag-ease)',
+              backgroundColor: 'var(--ag-rule)',
+              opacity: 0.6,
+              boxShadow: '0 4px 0 -1.5px var(--ag-rule)',
+              transition: 'opacity var(--ag-duration-fast) var(--ag-ease), background-color var(--ag-duration-fast) var(--ag-ease), box-shadow var(--ag-duration-fast) var(--ag-ease)',
             }}
           />
         </div>

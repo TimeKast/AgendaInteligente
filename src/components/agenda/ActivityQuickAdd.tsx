@@ -24,6 +24,8 @@ export interface QuickAddDraft {
   priority: number;
   description?: string;
   scheduledTime?: string;
+  /** Optional ISO YYYY-MM-DD deadline. */
+  deadline?: string;
 }
 
 interface ActivityQuickAddProps {
@@ -42,6 +44,7 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const [deadline, setDeadline] = useState('');
   const titleRef = useRef<HTMLInputElement>(null);
 
   function reset() {
@@ -52,6 +55,7 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
     setMoreOpen(false);
     setDescription('');
     setScheduledTime('');
+    setDeadline('');
   }
 
   function close() {
@@ -70,6 +74,7 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
       priority,
       description: description.trim() || undefined,
       scheduledTime: scheduledTime.trim() || undefined,
+      deadline: deadline.trim() || undefined,
     });
     toast('Guardado.');
     reset();
@@ -254,6 +259,36 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
                 fontFamily: 'var(--ag-font-mono)',
                 fontSize: 14,
                 color: 'var(--ag-ink-primary)',
+                outline: 'none',
+              }}
+            />
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
+            <span
+              style={{
+                fontFamily: 'var(--ag-font-body)',
+                fontSize: 13,
+                color: 'var(--ag-ink-hint)',
+                minWidth: 80,
+              }}
+            >
+              Deadline
+            </span>
+            <input
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              placeholder="Sin deadline"
+              style={{
+                appearance: 'none',
+                backgroundColor: 'transparent',
+                border: '1px solid var(--ag-rule)',
+                borderRadius: 'var(--ag-radius-base)',
+                padding: '6px 10px',
+                fontFamily: 'var(--ag-font-mono)',
+                fontSize: 14,
+                color: deadline ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
+                fontStyle: deadline ? 'normal' : 'italic',
                 outline: 'none',
               }}
             />

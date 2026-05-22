@@ -71,6 +71,10 @@ interface TodayActivity {
    * to calendar end (22:00).
    */
   durationMinutes: number;
+  /** Optional ISO YYYY-MM-DD deadline (inline DeadlineBadge). */
+  deadline?: string;
+  /** Optional 0..100 progress (bottom-edge bar). */
+  progressPercent?: number;
 }
 
 interface WeekActivity {
@@ -79,6 +83,8 @@ interface WeekActivity {
   status: ActivityStatus;
   priority: number;
   projectLabel: string;
+  deadline?: string;
+  progressPercent?: number;
 }
 
 interface ExternalEvent {
@@ -107,6 +113,9 @@ const INITIAL_TODAY: TodayActivity[] = [
     projectLabel: 'Empresa Genomma',
     // Pre-seeded 2h example so the multi-slot rendering is visible at load.
     durationMinutes: 120,
+    // Soon deadline (warning state) + mid progress.
+    deadline: '2026-05-25',
+    progressPercent: 60,
   },
   {
     id: 't3',
@@ -116,6 +125,7 @@ const INITIAL_TODAY: TodayActivity[] = [
     priority: 3,
     projectLabel: 'Empresa Genomma',
     durationMinutes: 60,
+    progressPercent: 25,
   },
   {
     id: 't4',
@@ -134,6 +144,8 @@ const INITIAL_TODAY: TodayActivity[] = [
     priority: 3,
     projectLabel: 'Personal',
     durationMinutes: 60,
+    // Past-due (danger state).
+    deadline: '2026-05-20',
   },
 ];
 
@@ -392,6 +404,8 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
           durationMinutes={a.durationMinutes}
           onResize={(next) => handleResize(a.id, next)}
           maxDurationMinutes={maxDurationMinutes}
+          deadline={a.deadline}
+          progressPercent={a.progressPercent}
         />
       );
       map[a.scheduledTime] = existing ? (
@@ -460,6 +474,8 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
                     projectLabel={a.projectLabel}
                     href={`/activity/${a.id}`}
                     onOpenStatus={() => openStatus(a)}
+                    deadline={a.deadline}
+                    progressPercent={a.progressPercent}
                   />
                 </SwipeableRow>
               ))}
@@ -485,6 +501,8 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
                     status={a.status}
                     priority={a.priority}
                     projectLabel={a.projectLabel}
+                    deadline={a.deadline}
+                    progressPercent={a.progressPercent}
                   />
                 </SwipeableRow>
               ))}

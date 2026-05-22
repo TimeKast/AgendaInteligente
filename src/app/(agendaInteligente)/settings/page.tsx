@@ -30,6 +30,12 @@ export default function SettingsPage() {
             href="/categories"
             hint="Reordenar, renombrar o borrar."
           />
+          <SettingRow
+            label="Proyectos"
+            value="5 activos"
+            href="/projects"
+            hint="Crear, archivar o cerrar."
+          />
         </SettingsSection>
 
         <SettingsSection label="Cuenta">

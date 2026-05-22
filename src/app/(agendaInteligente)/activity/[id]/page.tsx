@@ -1,16 +1,30 @@
+'use client';
+
 /**
  * SCR-040 — Activity detail (mobile portrait prototype)
  *
  * Hardcoded regardless of `id` (visual-only). AgendaShell hides bottom nav
  * + FAB on this route so the action footer ("Marcar como hecha" / "Borrar")
  * is the dominant interaction.
+ *
+ * Local state (prototype only):
+ *   - `deadline` — ISO YYYY-MM-DD, editable via native date picker. Tapping
+ *     the DEADLINE row reveals the input and a DeadlineBadge with semantic
+ *     ink (hint > 7d, warning ≤3d, danger past).
+ *   - `progressPercent` — 0..100 slider under a new AVANCE section. Setting
+ *     to 100% does NOT auto-mark done (status is decoupled).
  */
 
+import { useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { PriorityDots } from '@/components/agenda/PriorityDots';
 import { TagChip } from '@/components/agenda/TagChip';
 import { SubtaskRow } from '@/components/agenda/SubtaskRow';
+import { DeadlineBadge } from '@/components/agenda/DeadlineBadge';
+
+/** Frozen "today" matching the rest of the prototype (2026-05-22). */
+const PROTO_TODAY = '2026-05-22';
 
 function FieldRow({
   label,
@@ -69,6 +83,9 @@ function FieldRow({
 }
 
 export default function ActivityDetailPage() {
+  const [deadline, setDeadline] = useState<string>('');
+  const [progressPercent, setProgressPercent] = useState<number>(35);
+
   return (
     <>
       <AgendaHeader
@@ -151,9 +168,33 @@ export default function ActivityDetailPage() {
         </FieldRow>
 
         <FieldRow label="Deadline">
-          <span style={{ color: 'var(--ag-ink-hint)', fontStyle: 'italic' }}>
-            No definido
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)', flexWrap: 'wrap' }}>
+            <input
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              aria-label="Elegí un deadline"
+              style={{
+                appearance: 'none',
+                backgroundColor: 'transparent',
+                border: '1px solid var(--ag-rule)',
+                borderRadius: 'var(--ag-radius-base)',
+                padding: '6px 10px',
+                fontFamily: 'var(--ag-font-mono)',
+                fontSize: 14,
+                color: deadline ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
+                fontStyle: deadline ? 'normal' : 'italic',
+                outline: 'none',
+              }}
+            />
+            {deadline ? (
+              <DeadlineBadge deadline={deadline} today={PROTO_TODAY} />
+            ) : (
+              <span style={{ color: 'var(--ag-ink-hint)', fontStyle: 'italic' }}>
+                No definido
+              </span>
+            )}
+          </div>
         </FieldRow>
 
         <FieldRow label="Tiempo estimado">15 min</FieldRow>
@@ -164,6 +205,84 @@ export default function ActivityDetailPage() {
             <TagChip label="follow-up" />
           </span>
         </FieldRow>
+
+        {/* AVANCE — progress percent slider */}
+        <section
+          aria-labelledby="ag-progress-heading"
+          style={{
+            paddingBlock: 'var(--ag-space-4)',
+            borderBottom: '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'baseline',
+              gap: 'var(--ag-space-2)',
+            }}
+          >
+            <h2
+              id="ag-progress-heading"
+              style={{
+                margin: 0,
+                fontFamily: 'var(--ag-font-body)',
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'var(--ag-slate)',
+              }}
+            >
+              Avance
+            </h2>
+            <span
+              aria-live="polite"
+              style={{
+                fontFamily: 'var(--ag-font-mono)',
+                fontSize: 13,
+                color: 'var(--ag-ink-soft)',
+              }}
+            >
+              {progressPercent}%
+            </span>
+          </div>
+
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            list="ag-progress-marks"
+            value={progressPercent}
+            onChange={(e) => setProgressPercent(Number(e.target.value))}
+            aria-label="Porcentaje de avance"
+            style={{
+              width: '100%',
+              accentColor: 'var(--ag-ink-soft)',
+              marginTop: 'var(--ag-space-2)',
+            }}
+          />
+          <datalist id="ag-progress-marks">
+            <option value="0" />
+            <option value="25" />
+            <option value="50" />
+            <option value="75" />
+            <option value="100" />
+          </datalist>
+
+          <p
+            style={{
+              margin: 'var(--ag-space-1) 0 0 0',
+              fontFamily: 'var(--ag-font-display)',
+              fontStyle: 'italic',
+              fontSize: 13,
+              color: 'var(--ag-ink-hint)',
+            }}
+          >
+            Cuánto llevás avanzado. Independiente de si terminaste hoy.
+          </p>
+        </section>
 
         {/* Subtasks */}
         <section style={{ paddingTop: 'var(--ag-space-5)' }}>

@@ -3,10 +3,7 @@
 /**
  * WeekSwimlane — 7-day vertical-stack planner for /week.
  *
- * REFACTOR (Round 5): the previous "7 narrow horizontal columns" layout was
- * too cramped on mobile (and made it impossible to drag from the pool onto a
- * far-away day without first scrolling). New layout:
- *
+ * Layout responsibility:
  *   Mobile (<1024px):
  *     - Sticky 7-day strip at the top (`WeekDayStrip`) — each button is a
  *       droppable AND a scroll-into-view jump for that day's section.
@@ -16,17 +13,27 @@
  *   Desktop (≥1024px):
  *     - Pool sticky sidebar on the left (320px).
  *     - Canvas on the right: 7 day SECTIONS stacked vertically, each spanning
- *       the full canvas width. Days are no longer cramped narrow columns.
+ *       the full canvas width.
  *
- * Single source of truth: ONE `activities` array. Pool vs. day membership is
- * derived via `useMemo` on `scheduledDate`. Drag handlers always MUTATE the
- * matching entry by id (`map`), never push duplicates. Each activity can only
- * appear in one place (pool OR a single day) by construction.
+ * Multi-day assignment (Round 7):
+ *   An activity now carries `scheduledDates: string[]` instead of a single
+ *   `scheduledDate`. Semantics:
  *
- * Drop targets handled by `onDragEnd`:
- *   - `week-pool`              → clears scheduledDate (back to pool).
- *   - `YYYY-MM-DD`             → day section drop.
- *   - `day-button-YYYY-MM-DD`  → mobile day-strip drop (same semantics).
+ *     []                                → pool (no day assigned)
+ *     ['2026-05-26']                    → one day
+ *     ['2026-05-26','2026-05-28', ...]  → multiple days, renders in each
+ *
+ *   Drag semantics (kept MOVE, never copy):
+ *     - Pool → day D                    → [D]
+ *     - Pool ← any day (drop on pool)   → []
+ *     - Day A → day B (single-day item) → replace A with B → [B]
+ *     - Day A → day B (multi-day item)  → replace A with B inside the array,
+ *                                          keeping the other days. Source day
+ *                                          is inferred from the DragStart
+ *                                          drop-source isoDate captured via
+ *                                          composite drag id `aid::isoDate`.
+ *   For copying onto more days, use the explicit MultiDayPicker (per-row
+ *   icon button in DayRow) → no accidental duplicates via drag.
  */
 
 import { useMemo, useState } from 'react';
@@ -40,13 +47,17 @@ import {
 } from '@dnd-kit/core';
 import type { QuickAddDraft } from './ActivityQuickAdd';
 import { WeekPoolSection } from './WeekPoolSection';
-import { DayRow } from './DayRow';
+import { DayRow, type DayRowActivity } from './DayRow';
 import { WeekDayStrip, type WeekDayStripDay } from './WeekDayStrip';
 import type { PoolActivity } from './DraggablePoolActivity';
+import { MultiDayPicker, buildWeekDays } from './MultiDayPicker';
 
-interface WeekSwimlaneActivity extends PoolActivity {
-  /** ISO YYYY-MM-DD or null = pool. */
-  scheduledDate: string | null;
+export interface WeekSwimlaneActivity extends PoolActivity {
+  /**
+   * ISO YYYY-MM-DD entries. Empty array = pool. Order is preserved for
+   * stability but Set semantics apply to membership (no duplicates).
+   */
+  scheduledDates: string[];
 }
 
 interface WeekSwimlaneProps {
@@ -83,15 +94,9 @@ function addDays(d: Date, n: number): Date {
 }
 
 function dayCaption(d: Date): string {
-  // "lun. 26 may" → "LUN 26 MAY"
   return DAY_LABEL_FMT.format(d).replace(/\./g, '').toUpperCase();
 }
 
-/**
- * Defensive dedupe — guarantees we never render two entries with the same id
- * even if seed data accidentally repeats one. Keeps the first occurrence,
- * drops the rest.
- */
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>();
   const out: T[] = [];
@@ -103,16 +108,26 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
   return out;
 }
 
+/** Set-style add: returns a new array with `iso` present (no duplicates). */
+function addDate(arr: string[], iso: string): string[] {
+  return arr.includes(iso) ? arr : [...arr, iso];
+}
+
+/** Set-style remove: returns a new array without `iso`. */
+function removeDate(arr: string[], iso: string): string[] {
+  return arr.filter((d) => d !== iso);
+}
+
 export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimlaneProps) {
   const [activities, setActivities] = useState<WeekSwimlaneActivity[]>(() =>
     dedupeById(seedActivities),
   );
+  const [pickerActivityId, setPickerActivityId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  // 7 day descriptors for the week being viewed.
   const days = useMemo(() => {
     const todayIso = toIsoDate(today);
     return Array.from({ length: 7 }).map((_, i) => {
@@ -139,53 +154,75 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
     [days],
   );
 
-  // Derived slices — single source of truth means duplicates are structurally
-  // impossible: each activity belongs to exactly one bucket (pool OR a day)
-  // based on its scheduledDate, never both.
   const poolActivities = useMemo(
-    () => activities.filter((a) => a.scheduledDate === null),
+    () => activities.filter((a) => a.scheduledDates.length === 0),
     [activities],
   );
 
   const activitiesByDay = useMemo(() => {
-    const map: Record<string, WeekSwimlaneActivity[]> = {};
+    const map: Record<string, DayRowActivity[]> = {};
     for (const d of days) map[d.iso] = [];
     for (const a of activities) {
-      if (a.scheduledDate && map[a.scheduledDate]) {
-        map[a.scheduledDate].push(a);
+      for (const iso of a.scheduledDates) {
+        if (map[iso]) {
+          map[iso].push({ ...a, totalAssignedDays: a.scheduledDates.length });
+        }
       }
     }
     return map;
   }, [activities, days]);
 
+  function resolveDropTarget(overId: string): string | null {
+    // Returns ISO date string or null = pool. Unknown drops → return special
+    // sentinel by throwing; caller handles via try/catch is overkill — instead
+    // we return null only for pool, ISO otherwise; unknown ids are ignored
+    // upstream by the caller checking startsWith.
+    if (overId === POOL_DROP_ID) return null;
+    if (overId.startsWith(DAY_BUTTON_PREFIX)) return overId.slice(DAY_BUTTON_PREFIX.length);
+    return overId;
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = String(active.id);
-    const overId = String(over.id);
+    // Active id is composite when dragged from a day section: "aid::isoDate".
+    // From the pool it's plain "aid". Parse accordingly.
+    const rawId = String(active.id);
+    const [activeId, sourceIso] = rawId.includes('::')
+      ? (rawId.split('::') as [string, string])
+      : [rawId, null];
 
-    // Resolve target scheduledDate (null = pool, else YYYY-MM-DD).
-    let nextScheduledDate: string | null;
-    if (overId === POOL_DROP_ID) {
-      nextScheduledDate = null;
-    } else if (overId.startsWith(DAY_BUTTON_PREFIX)) {
-      nextScheduledDate = overId.slice(DAY_BUTTON_PREFIX.length);
-    } else {
-      // Plain day-section drop target — the id IS the iso date.
-      nextScheduledDate = overId;
-    }
+    const overId = String(over.id);
+    const target = resolveDropTarget(overId);
 
     setActivities((prev) =>
-      prev.map((a) =>
-        a.id === activeId ? { ...a, scheduledDate: nextScheduledDate } : a,
-      ),
+      prev.map((a) => {
+        if (a.id !== activeId) return a;
+
+        // Drop on pool → clear all dates.
+        if (target === null) {
+          return { ...a, scheduledDates: [] };
+        }
+
+        // Drop on a specific day:
+        //   - If dragged from a day section (sourceIso known): replace
+        //     sourceIso with target (preserves other dates of multi-day items).
+        //   - If dragged from pool (no sourceIso): set to [target] only when
+        //     it was empty; otherwise add to existing set (defensive).
+        if (sourceIso) {
+          // No-op when source == target (drop on its own day).
+          if (sourceIso === target) return a;
+          const without = removeDate(a.scheduledDates, sourceIso);
+          return { ...a, scheduledDates: addDate(without, target) };
+        }
+        // Pool → day: single assignment (matches the documented contract).
+        return { ...a, scheduledDates: [target] };
+      }),
     );
   }
 
   function handleQuickAdd(draft: QuickAddDraft) {
-    // Pool quick-add: new activities always land in the pool, regardless of
-    // the dateLabel the user picked. Assigning a date is a deliberate drag.
     const id = `pool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     setActivities((prev) => [
       ...prev,
@@ -194,14 +231,39 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
         title: draft.title,
         status: 'todo',
         projectLabel: draft.projectLabel,
-        scheduledDate: null,
+        scheduledDates: [],
       },
     ]);
   }
 
+  function handleSaveMultiDay(nextDates: string[]) {
+    if (!pickerActivityId) return;
+    const id = pickerActivityId;
+    // Apply Set semantics + drop dates outside the visible week's day list
+    // ONLY when they aren't deliberately preserved. Keep behavior simple here:
+    // the picker only exposes the visible week's 7 days, so anything outside
+    // would not appear as a chip → we still preserve it. But since user can
+    // only toggle within the visible week, the new list IS the truth for
+    // those 7 days. Off-week dates (none in this prototype) stay untouched.
+    setActivities((prev) =>
+      prev.map((a) => {
+        if (a.id !== id) return a;
+        const weekIsos = new Set(days.map((d) => d.iso));
+        const offWeek = a.scheduledDates.filter((iso) => !weekIsos.has(iso));
+        // Dedupe with Set semantics — never store duplicates.
+        const merged = Array.from(new Set([...offWeek, ...nextDates]));
+        return { ...a, scheduledDates: merged };
+      }),
+    );
+    setPickerActivityId(null);
+  }
+
+  const pickerActivity = pickerActivityId
+    ? activities.find((a) => a.id === pickerActivityId) ?? null
+    : null;
+
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
-      {/* Mobile-only sticky day-strip — hidden on desktop via CSS. */}
       <div className="ag-week-strip-wrap">
         <WeekDayStrip days={stripDays} />
       </div>
@@ -221,15 +283,29 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
               caption={d.caption}
               isToday={d.isToday}
               activities={activitiesByDay[d.iso] ?? []}
+              onOpenMultiDay={(activityId) => setPickerActivityId(activityId)}
             />
           ))}
         </div>
       </div>
 
+      <MultiDayPicker
+        open={pickerActivity !== null}
+        activityTitle={pickerActivity?.title ?? ''}
+        weekDays={buildWeekDays(weekStarting)}
+        initialDates={
+          pickerActivity
+            ? pickerActivity.scheduledDates.filter((iso) =>
+                days.some((d) => d.iso === iso),
+              )
+            : []
+        }
+        onCancel={() => setPickerActivityId(null)}
+        onSave={handleSaveMultiDay}
+      />
+
       <style>{`
         .ag-week-strip-wrap {
-          /* Mobile-only — hidden on desktop where the sticky sidebar pool +
-             vertical day rows already make jumping unnecessary. */
           display: block;
         }
         .ag-week-swimlane {

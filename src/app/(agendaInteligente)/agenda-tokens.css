@@ -149,7 +149,15 @@
 /*
  * Hidden by default — only mice/trackpads (pointer: fine) get the bottom-edge
  * resize affordance on calendar activities. Touch-only devices never see it.
- * Hover bumps the grip lines from ink-hint to ink-soft for clear affordance.
+ *
+ * Visibility tiers (desktop):
+ *   - At rest: thin warm ecru bottom border on the anchored row + two grip
+ *     lines visible at 60% opacity (warm ecru). User can see the affordance
+ *     without hovering.
+ *   - Row hover: grip lines lift to 100% opacity (ink-soft tone) inviting
+ *     interaction.
+ *   - Handle hover: grip lines pop to ink-soft + grow a hair for direct
+ *     manipulation feedback.
  */
 [data-theme='agenda'] .ag-resize-handle {
   display: none;
@@ -158,9 +166,21 @@
   [data-theme='agenda'] .ag-resize-handle {
     display: flex;
   }
+  /* Bottom-border demarcation on the parent anchored row — warm ecru hairline
+     so the resize area reads as a deliberate edge, not random whitespace. */
+  [data-theme='agenda'] .ag-anchored-row {
+    border-bottom: 1px solid var(--ag-rule) !important;
+  }
+  /* When the user hovers the row, brighten the grip to invite the gesture. */
+  [data-theme='agenda'] .ag-anchored-row:hover .ag-resize-handle > span {
+    opacity: 0.9 !important;
+    background-color: var(--ag-ink-soft) !important;
+    box-shadow: 0 4px 0 -1.5px var(--ag-ink-soft) !important;
+  }
+  /* Direct hover on the handle = full strength. */
   [data-theme='agenda'] .ag-resize-handle:hover > span {
     opacity: 1 !important;
     background-color: var(--ag-ink-soft) !important;
-    box-shadow: 0 3px 0 -1px var(--ag-ink-soft) !important;
+    box-shadow: 0 4px 0 -1.5px var(--ag-ink-soft) !important;
   }
 }

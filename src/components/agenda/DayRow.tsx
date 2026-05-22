@@ -15,12 +15,23 @@
  *   - Header: uppercase caption (e.g. "LUN 26 MAY") + activity count badge.
  *   - Droppable activity list ({@link useDroppable} id = `isoDate`).
  *
- * The "+ Tarea" inline quick-add was removed (per user feedback); all new
- * activities go to the pool first and are dragged onto a day.
+ * Each activity row gets a small "+ días" Calendar icon button that calls
+ * `onOpenMultiDay` so WeekSwimlane can pop the MultiDayPicker modal. Same
+ * activity may appear in multiple DayRows when assigned to several dates —
+ * by design (see WeekSwimlane).
  */
 
 import { useDroppable } from '@dnd-kit/core';
+import { CalendarPlus } from 'lucide-react';
 import { DraggablePoolActivity, type PoolActivity } from './DraggablePoolActivity';
+
+export interface DayRowActivity extends PoolActivity {
+  /**
+   * Total number of days this activity is assigned to. When > 1, an inline
+   * "+ N días más" caption renders below the row.
+   */
+  totalAssignedDays: number;
+}
 
 interface DayRowProps {
   /** ISO YYYY-MM-DD used as droppable id AND the section's DOM id (for the
@@ -30,10 +41,12 @@ interface DayRowProps {
   caption: string;
   /** True if this day is "today" — accent header + ring. */
   isToday: boolean;
-  activities: PoolActivity[];
+  activities: DayRowActivity[];
+  /** Open multi-day picker for the given activity id. */
+  onOpenMultiDay: (activityId: string) => void;
 }
 
-export function DayRow({ isoDate, caption, isToday, activities }: DayRowProps) {
+export function DayRow({ isoDate, caption, isToday, activities, onOpenMultiDay }: DayRowProps) {
   const { isOver, setNodeRef } = useDroppable({ id: isoDate });
 
   return (
@@ -114,7 +127,48 @@ export function DayRow({ isoDate, caption, isToday, activities }: DayRowProps) {
             Sin tareas. Asigna desde pendientes.
           </li>
         ) : (
-          activities.map((a) => <DraggablePoolActivity key={a.id} activity={a} />)
+          activities.map((a) => {
+            const extra = a.totalAssignedDays - 1;
+            // Use a composite key — same activity id can render in multiple
+            // DayRows when assigned to multiple dates, so isoDate disambiguates.
+            return (
+              <DraggablePoolActivity
+                key={`${a.id}::${isoDate}`}
+                activity={a}
+                dragId={`${a.id}::${isoDate}`}
+                inlineCaption={extra > 0 ? `+ ${extra} ${extra === 1 ? 'día más' : 'días más'}` : undefined}
+                trailingSlot={
+                  <button
+                    type="button"
+                    aria-label={`Asignar ${a.title} a más días`}
+                    title="Asignar a más días"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onOpenMultiDay(a.id);
+                    }}
+                    onPointerDown={(e) => {
+                      // Don't let dnd-kit's PointerSensor pick this up as a drag.
+                      e.stopPropagation();
+                    }}
+                    style={{
+                      appearance: 'none',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--ag-ink-hint)',
+                      cursor: 'pointer',
+                      padding: 4,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <CalendarPlus size={14} strokeWidth={1.5} aria-hidden />
+                  </button>
+                }
+              />
+            );
+          })
         )}
       </ul>
     </section>

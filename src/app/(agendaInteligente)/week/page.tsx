@@ -25,24 +25,28 @@ import { WeekSwimlane } from '@/components/agenda/WeekSwimlane';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Hardcoded seed data for the prototype. Mix of pool + per-day activities.
-const SEED_ACTIVITIES = [
-  // Pool — no scheduledDate yet
-  { id: 'p1', title: 'Llamada con cliente Genomma', status: 'todo' as const, projectLabel: 'Genomma', scheduledDate: null },
-  { id: 'p2', title: 'Revisar contrato proveedor', status: 'todo' as const, projectLabel: 'Operaciones', scheduledDate: null },
-  { id: 'p3', title: 'Mandar reporte trimestral', status: 'todo' as const, projectLabel: 'Reportes', scheduledDate: null },
-  { id: 'p4', title: 'Estudiar alemán 30min', status: 'todo' as const, projectLabel: 'Personal', scheduledDate: null },
-  { id: 'p5', title: 'Limpiar inbox a cero', status: 'todo' as const, projectLabel: 'Inbox', scheduledDate: null },
-  { id: 'p6', title: 'Comprar regalo cumpleaños', status: 'todo' as const, projectLabel: 'Personal', scheduledDate: null },
+// Some activities carry `deadline` (3 states: distant/soon/past) and one is
+// scheduled to MULTIPLE days to demonstrate the new multi-day model.
+const SEED_ACTIVITIES: import('@/components/agenda/WeekSwimlane').WeekSwimlaneActivity[] = [
+  // Pool — no scheduledDates yet
+  { id: 'p1', title: 'Llamada con cliente Genomma', status: 'todo', projectLabel: 'Genomma', scheduledDates: [], deadline: '2026-05-29' },
+  { id: 'p2', title: 'Revisar contrato proveedor', status: 'todo', projectLabel: 'Operaciones', scheduledDates: [] },
+  { id: 'p3', title: 'Mandar reporte trimestral', status: 'todo', projectLabel: 'Reportes', scheduledDates: [], deadline: '2026-05-18' },
+  { id: 'p4', title: 'Estudiar alemán 30min', status: 'todo', projectLabel: 'Personal', scheduledDates: [] },
+  { id: 'p5', title: 'Limpiar inbox a cero', status: 'todo', projectLabel: 'Inbox', scheduledDates: [] },
+  { id: 'p6', title: 'Comprar regalo cumpleaños', status: 'todo', projectLabel: 'Personal', scheduledDates: [], deadline: '2026-06-15' },
   // Day-anchored (week of 2026-05-17 to 2026-05-23 — Sunday start)
-  { id: 'd1', title: 'Reunión equipo', status: 'done' as const, projectLabel: 'AgendaIA', scheduledDate: '2026-05-18' },
-  { id: 'd2', title: 'Diseño Today', status: 'in_progress' as const, projectLabel: 'AgendaIA', scheduledDate: '2026-05-18' },
-  { id: 'd3', title: 'Push deploy staging', status: 'todo' as const, projectLabel: 'AgendaIA', scheduledDate: '2026-05-19' },
-  { id: 'd4', title: 'Gym', status: 'done' as const, projectLabel: 'Personal', scheduledDate: '2026-05-19' },
-  { id: 'd5', title: 'Revisar PR del equipo', status: 'todo' as const, projectLabel: 'AgendaIA', scheduledDate: '2026-05-20' },
-  { id: 'd6', title: 'Café con Lucas', status: 'todo' as const, projectLabel: 'Personal', scheduledDate: '2026-05-20' },
-  { id: 'd7', title: 'Doc onboarding', status: 'todo' as const, projectLabel: 'AgendaIA', scheduledDate: '2026-05-21' },
-  { id: 'd8', title: 'Llamada inversor', status: 'todo' as const, projectLabel: 'AgendaIA', scheduledDate: '2026-05-22' },
-  { id: 'd9', title: 'Review semanal', status: 'todo' as const, projectLabel: 'Rituales', scheduledDate: '2026-05-23' },
+  { id: 'd1', title: 'Reunión equipo', status: 'done', projectLabel: 'AgendaIA', scheduledDates: ['2026-05-18'] },
+  { id: 'd2', title: 'Diseño Today', status: 'in_progress', projectLabel: 'AgendaIA', scheduledDates: ['2026-05-18'] },
+  { id: 'd3', title: 'Push deploy staging', status: 'todo', projectLabel: 'AgendaIA', scheduledDates: ['2026-05-19'] },
+  { id: 'd4', title: 'Gym', status: 'done', projectLabel: 'Personal', scheduledDates: ['2026-05-19'] },
+  { id: 'd5', title: 'Revisar PR del equipo', status: 'todo', projectLabel: 'AgendaIA', scheduledDates: ['2026-05-20'] },
+  { id: 'd6', title: 'Café con Lucas', status: 'todo', projectLabel: 'Personal', scheduledDates: ['2026-05-20'] },
+  { id: 'd7', title: 'Doc onboarding', status: 'todo', projectLabel: 'AgendaIA', scheduledDates: ['2026-05-21'] },
+  { id: 'd8', title: 'Llamada inversor', status: 'todo', projectLabel: 'AgendaIA', scheduledDates: ['2026-05-22'] },
+  { id: 'd9', title: 'Review semanal', status: 'todo', projectLabel: 'Rituales', scheduledDates: ['2026-05-23'] },
+  // Multi-day example — same activity shown across multiple days.
+  { id: 'd10', title: 'Estudiar alemán', status: 'in_progress', projectLabel: 'Personal', scheduledDates: ['2026-05-20', '2026-05-22'] },
 ];
 
 export default function WeekPage() {
