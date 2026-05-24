@@ -36,13 +36,10 @@ export function AgendaShell({ children }: AgendaShellProps) {
   const pathname = usePathname() ?? '/';
 
   const isOnboarding = pathname.startsWith('/onboarding');
-  const isChat = pathname.startsWith('/chat');
-  const isActivityDetail = pathname.startsWith('/activity/');
-  const isCatalogDetail =
-    pathname.startsWith('/projects/') ||
-    /^\/goals\/[^/]+/.test(pathname);
-
-  const showChrome = !isOnboarding && !isChat && !isActivityDetail && !isCatalogDetail;
+  // Chrome persiste en todo excepto onboarding (que tiene su propio layout
+  // con progress dots). Chat, Detail screens, etc TODOS muestran el menú
+  // — UX feedback consistente: nav siempre accesible.
+  const showChrome = !isOnboarding;
 
   return (
     <div
