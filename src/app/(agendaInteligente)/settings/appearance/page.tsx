@@ -70,7 +70,7 @@ export default function AppearanceSettingsPage() {
     <>
       <AgendaHeader dateLabel="Apariencia" backHref="/settings" />
 
-      <main style={mainStyle}>
+      <main className="ag-settings-content" style={mainStyle}>
         <SettingsSection label="Tema">
           {OPTIONS.map((opt) => (
             <ThemeRadioCard
@@ -192,6 +192,4 @@ function ThemeRadioCard({
 
 const mainStyle: CSSProperties = {
   paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-  maxWidth: 480,
-  marginInline: 'auto',
 };

@@ -48,7 +48,7 @@ export default function PrivacySettingsPage() {
     <>
       <AgendaHeader dateLabel="Privacy & data" backHref="/settings" />
 
-      <main style={mainStyle}>
+      <main className="ag-settings-content" style={mainStyle}>
         <SettingsSection label="Tu data">
           <div
             style={{
@@ -169,6 +169,4 @@ export default function PrivacySettingsPage() {
 
 const mainStyle: CSSProperties = {
   paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-  maxWidth: 480,
-  marginInline: 'auto',
 };

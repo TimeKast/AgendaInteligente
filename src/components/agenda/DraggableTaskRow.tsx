@@ -16,7 +16,7 @@
  *   resize handle. Resize uses native pointer events (NOT dnd-kit) with
  *   `setPointerCapture` for the duration of the gesture; on `pointerup` the
  *   duration snaps to the nearest 60min and is committed via `onResize`.
- *   The handle is hidden on touch-only devices via `@media (pointer: fine)`.
+ *   The handle is hidden on touch-only devices via `@media (any-pointer: fine)`.
  *
  * Props mirror ActivityRow's contract plus an `id` for dnd-kit identity and an
  * optional `onOpenStatus` for the trailing "⋯" menu (status modal).
@@ -311,7 +311,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
             alignItems: 'center',
             justifyContent: 'center',
             touchAction: 'none',
-            // Visibility toggled via CSS `@media (pointer: fine)` (see
+            // Visibility toggled via CSS `@media (any-pointer: fine)` (see
             // agenda-tokens.css → .ag-resize-handle rules). On touch-only
             // devices the handle is `display: none` so it can't tease an
             // interaction that won't fire. At rest the two grip lines render

@@ -16,7 +16,7 @@ export default function BillingSettingsPage() {
     <>
       <AgendaHeader dateLabel="Plan" backHref="/settings" />
 
-      <main style={mainStyle}>
+      <main className="ag-settings-content" style={mainStyle}>
         <div style={{ padding: 'var(--ag-space-4)' }}>
           <PlanCard
             planName="Free"
@@ -55,6 +55,4 @@ export default function BillingSettingsPage() {
 
 const mainStyle: CSSProperties = {
   paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-  maxWidth: 480,
-  marginInline: 'auto',
 };

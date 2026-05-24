@@ -17,10 +17,9 @@ export default function SettingsPage() {
       <AgendaHeader dateLabel="Settings" initials="F" />
 
       <main
+        className="ag-settings-content ag-settings-content--hub"
         style={{
           paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-          maxWidth: 480,
-          marginInline: 'auto',
         }}
       >
         <SettingsSection label="Organización">

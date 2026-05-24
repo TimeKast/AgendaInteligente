@@ -145,10 +145,37 @@
   }
 }
 
+/* ---- Settings content width ---- */
+/*
+ * Settings pages historically capped at 480px (mobile-portrait baseline), which
+ * left a 480px column orphan-floated on desktop ≥1024px next to the 240px side
+ * nav. We widen on desktop only:
+ *   - Hub  (`/settings`): up to 720px — hub has multiple grouped sections.
+ *   - Sub  (`/settings/*`): up to 580px — forms scan better narrow.
+ * Mobile (<1024px): unchanged, full-width up to 480px.
+ */
+[data-theme='agenda'] .ag-settings-content {
+  max-width: 480px;
+  margin-inline: auto;
+}
+@media (min-width: 1024px) {
+  [data-theme='agenda'] .ag-settings-content {
+    max-width: 580px;
+  }
+  [data-theme='agenda'] .ag-settings-content--hub {
+    max-width: 720px;
+  }
+}
+
 /* ---- Resize handle for hour-anchored activities (desktop only) ---- */
 /*
- * Hidden by default — only mice/trackpads (pointer: fine) get the bottom-edge
+ * Hidden by default — only mice/trackpads (any-pointer: fine) get the bottom-edge
  * resize affordance on calendar activities. Touch-only devices never see it.
+ *
+ * NOTE: `any-pointer: fine` (NOT `pointer: fine`) so touchscreen-PCs where the
+ * "primary" pointer reports `coarse` still expose the handle to the trackpad
+ * /mouse. `any-pointer: fine` is true if ANY input device is fine — covers
+ * Surface, ThinkPad-with-touch, MacBook + Magic Mouse, etc.
  *
  * Visibility tiers (desktop):
  *   - At rest: thin warm ecru bottom border on the anchored row + two grip
@@ -162,7 +189,7 @@
 [data-theme='agenda'] .ag-resize-handle {
   display: none;
 }
-@media (pointer: fine) {
+@media (any-pointer: fine) {
   [data-theme='agenda'] .ag-resize-handle {
     display: flex;
   }

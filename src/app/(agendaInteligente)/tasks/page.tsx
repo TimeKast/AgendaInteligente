@@ -13,7 +13,8 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import Link from 'next/link';
+import { Search, X, FolderTree, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import {
@@ -338,6 +339,27 @@ export default function TasksPage() {
             'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
         }}
       >
+        {/* Quick links to organization catalogs */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--ag-space-2)',
+            paddingTop: 'var(--ag-space-3)',
+          }}
+        >
+          <TasksQuickLink
+            href="/categories"
+            icon={<FolderTree size={14} strokeWidth={1.5} aria-hidden />}
+            label="Categorías"
+          />
+          <TasksQuickLink
+            href="/projects"
+            icon={<Briefcase size={14} strokeWidth={1.5} aria-hidden />}
+            label="Proyectos"
+          />
+        </div>
+
         {quickAddOpen ? (
           <div style={{ paddingTop: 'var(--ag-space-3)' }}>
             <ActivityQuickAdd
@@ -532,6 +554,54 @@ export default function TasksPage() {
         }}
       />
     </>
+  );
+}
+
+/**
+ * TasksQuickLink — small ghost link button used in the tasks toolbar.
+ * Mobile (<640px): icon-only, label is `aria-label` only.
+ * Desktop: icon + visible text label.
+ */
+function TasksQuickLink({
+  href,
+  icon,
+  label,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        border: '1px solid var(--ag-rule)',
+        borderRadius: 'var(--ag-radius-pill)',
+        padding: '6px 10px',
+        fontFamily: 'var(--ag-font-body)',
+        fontSize: 13,
+        color: 'var(--ag-ink-soft)',
+        textDecoration: 'none',
+        backgroundColor: 'transparent',
+      }}
+    >
+      {icon}
+      <span className="ag-quicklink-label">{label}</span>
+      <style>{`
+        .ag-quicklink-label {
+          display: none;
+        }
+        @media (min-width: 640px) {
+          .ag-quicklink-label {
+            display: inline;
+          }
+        }
+      `}</style>
+    </Link>
   );
 }
 

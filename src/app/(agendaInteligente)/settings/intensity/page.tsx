@@ -14,10 +14,9 @@ export default function IntensitySettingsPage() {
       <AgendaHeader dateLabel="Intensity mode" backHref="/settings" />
 
       <main
+        className="ag-settings-content"
         style={{
           paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-          maxWidth: 480,
-          marginInline: 'auto',
         }}
       >
         <p

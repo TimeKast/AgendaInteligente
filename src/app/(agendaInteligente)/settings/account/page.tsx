@@ -18,7 +18,7 @@ export default function AccountSettingsPage() {
     <>
       <AgendaHeader dateLabel="Cuenta" backHref="/settings" />
 
-      <main style={mainStyle}>
+      <main className="ag-settings-content" style={mainStyle}>
         <ProfileHeader
           initials="F"
           name="Federico Levi"
@@ -87,6 +87,4 @@ function ExplanationRow({ children }: { children: React.ReactNode }) {
 
 const mainStyle: CSSProperties = {
   paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-  maxWidth: 480,
-  marginInline: 'auto',
 };

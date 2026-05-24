@@ -26,14 +26,19 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    template: `${process.env.NEXT_PUBLIC_APP_NAME || 'TimeKast Factory'} | %s`,
-    default: process.env.NEXT_PUBLIC_APP_NAME || 'TimeKast Factory',
+    template: `${process.env.NEXT_PUBLIC_APP_NAME || 'AgendaInteligente'} | %s`,
+    default: process.env.NEXT_PUBLIC_APP_NAME || 'AgendaInteligente',
   },
-  description: process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'TimeKast Factory — Starter Kit',
+  description:
+    process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
+    'Agenda con asistente IA — la app que no te deja mentirte sobre tu tiempo.',
+  openGraph: {
+    title: process.env.NEXT_PUBLIC_APP_NAME || 'AgendaInteligente',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: process.env.NEXT_PUBLIC_APP_NAME || 'TimeKast Factory',
+    title: process.env.NEXT_PUBLIC_APP_NAME || 'AgendaInteligente',
   },
   icons: {
     icon: '/icon.png', // Transparent favicon for browser tab
