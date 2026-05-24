@@ -21,6 +21,7 @@ import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { WeekSheetKickoffSection } from '@/components/agenda/WeekSheetKickoffSection';
 import { WeekNavigation, sundayOf } from '@/components/agenda/WeekNavigation';
 import { WeekSwimlane } from '@/components/agenda/WeekSwimlane';
+import { WeekMonthTabs } from '@/components/agenda/WeekMonthTabs';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -75,6 +76,8 @@ export default function WeekPage() {
           width: '100%',
         }}
       >
+        <WeekMonthTabs active="week" />
+
         <WeekNavigation
           weekStarting={currentWeekStarting}
           today={today}

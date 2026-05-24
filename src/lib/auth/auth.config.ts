@@ -124,6 +124,7 @@ export const authConfig = {
         // AgendaInteligente prototype — visual-only, no backend.
         '/today',
         '/week',
+        '/month',
         '/goals',
         '/chat',
         '/settings',

@@ -41,6 +41,16 @@ const ITEMS: NavItem[] = [
 
 function isActive(pathname: string, href: string) {
   if (href === '/today') return pathname === '/today';
+  // The Week tab covers both /week and /month — they share a nav slot via
+  // the tab toggle inside each page (see WeekMonthTabs).
+  if (href === '/week') {
+    return (
+      pathname === '/week' ||
+      pathname.startsWith('/week/') ||
+      pathname === '/month' ||
+      pathname.startsWith('/month/')
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

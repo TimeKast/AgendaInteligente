@@ -44,6 +44,16 @@ const SECONDARY: NavItem[] = [
 
 function isActive(pathname: string, href: string) {
   if (href === '/today') return pathname === '/today';
+  // The Week item also lights up on /month — both share the same nav slot
+  // via the WeekMonthTabs toggle inside the pages.
+  if (href === '/week') {
+    return (
+      pathname === '/week' ||
+      pathname.startsWith('/week/') ||
+      pathname === '/month' ||
+      pathname.startsWith('/month/')
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
