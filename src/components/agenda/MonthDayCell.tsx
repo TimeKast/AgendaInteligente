@@ -18,8 +18,8 @@
  */
 
 import { useDroppable } from '@dnd-kit/core';
-import { Target } from 'lucide-react';
-import { memo, type CSSProperties } from 'react';
+import { Plus, Target } from 'lucide-react';
+import { memo, useRef, type CSSProperties, type KeyboardEvent } from 'react';
 
 export interface MonthCellActivity {
   id: string;
@@ -47,6 +47,8 @@ interface MonthDayCellProps {
   /** Caller-controlled max chips shown before collapsing into "+ N más". */
   maxVisible?: number;
   onSelect: (iso: string) => void;
+  /** Tap "+" → request quick-add anchored at the given button element. */
+  onQuickAdd?: (iso: string, anchor: HTMLElement) => void;
 }
 
 const SCOPE_VAR: Record<MonthCellGoalMarker['scopeKind'], string> = {
@@ -66,8 +68,10 @@ function MonthDayCellInner({
   goalMarkers,
   maxVisible = 3,
   onSelect,
+  onQuickAdd,
 }: MonthDayCellProps) {
   const { isOver, setNodeRef } = useDroppable({ id: `month-day-${iso}` });
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   const visible = activities.slice(0, maxVisible);
   const overflow = Math.max(0, activities.length - visible.length);
@@ -99,11 +103,20 @@ function MonthDayCellInner({
       'background-color var(--ag-duration-base) var(--ag-ease), border-color var(--ag-duration-base) var(--ag-ease)',
   };
 
+  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(iso);
+    }
+  }
+
   return (
-    <button
-      type="button"
+    <div
       ref={setNodeRef}
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect(iso)}
+      onKeyDown={handleKeyDown}
       aria-label={`Día ${dayNumber}, ${activities.length} ${
         activities.length === 1 ? 'actividad' : 'actividades'
       }`}
@@ -136,19 +149,63 @@ function MonthDayCellInner({
         >
           {dayNumber}
         </span>
-        {activities.length > 0 ? (
-          <span
-            aria-hidden
-            style={{
-              fontFamily: 'var(--ag-font-mono)',
-              fontSize: 9,
-              color: 'var(--ag-ink-hint)',
-              lineHeight: 1,
-            }}
-          >
-            {activities.length}
-          </span>
-        ) : null}
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          {activities.length > 0 ? (
+            <span
+              aria-hidden
+              style={{
+                fontFamily: 'var(--ag-font-mono)',
+                fontSize: 9,
+                color: 'var(--ag-ink-hint)',
+                lineHeight: 1,
+              }}
+            >
+              {activities.length}
+            </span>
+          ) : null}
+          {onQuickAdd ? (
+            <button
+              ref={addButtonRef}
+              type="button"
+              aria-label={`Agregar tarea al día ${dayNumber}`}
+              title="Agregar tarea"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (addButtonRef.current) onQuickAdd(iso, addButtonRef.current);
+              }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+              }}
+              className="ag-month-cell__add"
+              style={{
+                appearance: 'none',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--ag-ink-hint)',
+                cursor: 'pointer',
+                padding: 0,
+                width: 16,
+                height: 16,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}
+            >
+              <Plus size={12} strokeWidth={1.5} aria-hidden />
+            </button>
+          ) : null}
+        </span>
       </span>
 
       {/* Activity chips (compact) */}
@@ -230,7 +287,7 @@ function MonthDayCellInner({
           ))}
         </span>
       ) : null}
-    </button>
+    </div>
   );
 }
 

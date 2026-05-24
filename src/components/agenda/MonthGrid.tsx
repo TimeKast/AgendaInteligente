@@ -45,6 +45,8 @@ interface MonthGridProps {
   /** Map ISO → goal-deadline markers to render in that cell. */
   goalsByDay: Record<string, MonthCellGoalMarker[]>;
   onSelectDay: (iso: string) => void;
+  /** Tap "+" inside a cell → quick-add anchored at the button element. */
+  onQuickAddDay?: (iso: string, anchor: HTMLElement) => void;
 }
 
 interface GridCell {
@@ -86,6 +88,7 @@ export function MonthGrid({
   activitiesByDay,
   goalsByDay,
   onSelectDay,
+  onQuickAddDay,
 }: MonthGridProps) {
   const cells = buildCells(monthStart);
   const todayIso = toIsoDate(today);
@@ -157,6 +160,7 @@ export function MonthGrid({
               activities={activities}
               goalMarkers={goalMarkers}
               onSelect={onSelectDay}
+              onQuickAdd={onQuickAddDay}
             />
           );
         })}
@@ -166,9 +170,23 @@ export function MonthGrid({
         .ag-month-grid > .ag-month-cell {
           min-height: 64px;
         }
+        /* "+" quick-add button is always visible on mobile (touch-friendly). */
+        .ag-month-cell__add {
+          opacity: 1;
+          transition: opacity var(--ag-duration-base) var(--ag-ease);
+        }
         @media (min-width: 1024px) {
           .ag-month-grid > .ag-month-cell {
             min-height: 110px;
+          }
+          /* Desktop: only show "+" on hover/focus of the cell. */
+          .ag-month-cell .ag-month-cell__add {
+            opacity: 0;
+          }
+          .ag-month-cell:hover .ag-month-cell__add,
+          .ag-month-cell:focus-within .ag-month-cell__add,
+          .ag-month-cell__add:focus-visible {
+            opacity: 1;
           }
         }
       `}</style>

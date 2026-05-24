@@ -21,8 +21,9 @@
  * by design (see WeekSwimlane).
  */
 
+import { useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { CalendarPlus } from 'lucide-react';
+import { CalendarPlus, Plus } from 'lucide-react';
 import { DraggablePoolActivity, type PoolActivity } from './DraggablePoolActivity';
 
 export interface DayRowActivity extends PoolActivity {
@@ -44,10 +45,20 @@ interface DayRowProps {
   activities: DayRowActivity[];
   /** Open multi-day picker for the given activity id. */
   onOpenMultiDay: (activityId: string) => void;
+  /** Tap "+" in the day header → quick-add anchored at the button element. */
+  onQuickAdd?: (isoDate: string, anchor: HTMLElement) => void;
 }
 
-export function DayRow({ isoDate, caption, isToday, activities, onOpenMultiDay }: DayRowProps) {
+export function DayRow({
+  isoDate,
+  caption,
+  isToday,
+  activities,
+  onOpenMultiDay,
+  onQuickAdd,
+}: DayRowProps) {
   const { isOver, setNodeRef } = useDroppable({ id: isoDate });
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <section
@@ -88,12 +99,47 @@ export function DayRow({ isoDate, caption, isToday, activities, onOpenMultiDay }
         </span>
         <span
           style={{
-            fontFamily: 'var(--ag-font-mono)',
-            fontSize: 11,
-            color: 'var(--ag-ink-hint)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 'var(--ag-space-2)',
           }}
         >
-          {activities.length}
+          <span
+            style={{
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: 11,
+              color: 'var(--ag-ink-hint)',
+            }}
+          >
+            {activities.length}
+          </span>
+          {onQuickAdd ? (
+            <button
+              ref={addButtonRef}
+              type="button"
+              aria-label={`Agregar tarea a ${caption}`}
+              title="Agregar tarea"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (addButtonRef.current) onQuickAdd(isoDate, addButtonRef.current);
+              }}
+              style={{
+                appearance: 'none',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--ag-ink-hint)',
+                cursor: 'pointer',
+                padding: 2,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}
+            >
+              <Plus size={14} strokeWidth={1.5} aria-hidden />
+            </button>
+          ) : null}
         </span>
       </header>
 

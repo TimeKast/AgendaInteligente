@@ -51,6 +51,7 @@ import { DayRow, type DayRowActivity } from './DayRow';
 import { WeekDayStrip, type WeekDayStripDay } from './WeekDayStrip';
 import type { PoolActivity } from './DraggablePoolActivity';
 import { MultiDayPicker, buildWeekDays } from './MultiDayPicker';
+import { QuickAddDayPopover } from './QuickAddDayPopover';
 
 export interface WeekSwimlaneActivity extends PoolActivity {
   /**
@@ -73,6 +74,11 @@ const DAY_LABEL_FMT = new Intl.DateTimeFormat('es-MX', {
   weekday: 'short',
   day: 'numeric',
   month: 'short',
+});
+
+const QUICK_ADD_LABEL_FMT = new Intl.DateTimeFormat('es-MX', {
+  weekday: 'long',
+  day: 'numeric',
 });
 
 const DAY_LETTERS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
@@ -123,6 +129,8 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
     dedupeById(seedActivities),
   );
   const [pickerActivityId, setPickerActivityId] = useState<string | null>(null);
+  const [quickAddIso, setQuickAddIso] = useState<string | null>(null);
+  const [quickAddAnchor, setQuickAddAnchor] = useState<HTMLElement | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -236,6 +244,26 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
     ]);
   }
 
+  function handleAddActivityToDay(dayIso: string, title: string) {
+    const id = `pool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    setActivities((prev) => [
+      ...prev,
+      {
+        id,
+        title,
+        status: 'todo',
+        projectLabel: 'Inbox',
+        scheduledDates: [dayIso],
+      },
+    ]);
+  }
+
+  function formatQuickAddLabel(iso: string): string {
+    const [y, m, d] = iso.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    return QUICK_ADD_LABEL_FMT.format(date).replace(/\./g, '');
+  }
+
   function handleSaveMultiDay(nextDates: string[]) {
     if (!pickerActivityId) return;
     const id = pickerActivityId;
@@ -284,6 +312,10 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
               isToday={d.isToday}
               activities={activitiesByDay[d.iso] ?? []}
               onOpenMultiDay={(activityId) => setPickerActivityId(activityId)}
+              onQuickAdd={(iso, anchor) => {
+                setQuickAddIso(iso);
+                setQuickAddAnchor(anchor);
+              }}
             />
           ))}
         </div>
@@ -302,6 +334,20 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
         }
         onCancel={() => setPickerActivityId(null)}
         onSave={handleSaveMultiDay}
+      />
+
+      <QuickAddDayPopover
+        key={quickAddIso ?? 'closed'}
+        open={quickAddIso !== null}
+        anchorEl={quickAddAnchor}
+        dayLabel={quickAddIso ? formatQuickAddLabel(quickAddIso) : ''}
+        onCreate={(title) => {
+          if (quickAddIso) handleAddActivityToDay(quickAddIso, title);
+        }}
+        onClose={() => {
+          setQuickAddIso(null);
+          setQuickAddAnchor(null);
+        }}
       />
 
       <style>{`

@@ -41,6 +41,7 @@ import {
 } from './DayActivitiesSheet';
 import type { PoolActivity } from './DraggablePoolActivity';
 import type { MonthCellActivity, MonthCellGoalMarker } from './MonthDayCell';
+import { QuickAddDayPopover } from './QuickAddDayPopover';
 
 export interface MonthPlannerActivity extends PoolActivity {
   /** Empty array = pool. */
@@ -73,6 +74,11 @@ const SHEET_LABEL_FMT = new Intl.DateTimeFormat('es-MX', {
   year: 'numeric',
 });
 
+const QUICK_ADD_LABEL_FMT = new Intl.DateTimeFormat('es-MX', {
+  weekday: 'long',
+  day: 'numeric',
+});
+
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>();
   const out: T[] = [];
@@ -95,6 +101,11 @@ function formatSheetLabel(iso: string): string {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
+function formatQuickAddLabel(iso: string): string {
+  const d = parseIso(iso);
+  return QUICK_ADD_LABEL_FMT.format(d).replace(/\./g, '');
+}
+
 export function MonthPlanner({
   monthStart,
   today,
@@ -106,6 +117,8 @@ export function MonthPlanner({
   );
   const [poolOpenMobile, setPoolOpenMobile] = useState(false);
   const [selectedIso, setSelectedIso] = useState<string | null>(null);
+  const [quickAddIso, setQuickAddIso] = useState<string | null>(null);
+  const [quickAddAnchor, setQuickAddAnchor] = useState<HTMLElement | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -195,6 +208,20 @@ export function MonthPlanner({
     ]);
   }
 
+  function handleAddActivityToDay(dayIso: string, title: string) {
+    const id = `pool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    setActivities((prev) => [
+      ...prev,
+      {
+        id,
+        title,
+        status: 'todo',
+        projectLabel: 'Inbox',
+        scheduledDates: [dayIso],
+      },
+    ]);
+  }
+
   function handleRemoveFromDay(activityId: string) {
     if (!selectedIso) return;
     const iso = selectedIso;
@@ -275,6 +302,10 @@ export function MonthPlanner({
             activitiesByDay={activitiesByDay}
             goalsByDay={goalsByDay}
             onSelectDay={setSelectedIso}
+            onQuickAddDay={(iso, anchor) => {
+              setQuickAddIso(iso);
+              setQuickAddAnchor(anchor);
+            }}
           />
         </div>
       </div>
@@ -286,6 +317,20 @@ export function MonthPlanner({
         activities={sheetActivities}
         onClose={() => setSelectedIso(null)}
         onRemoveFromDay={handleRemoveFromDay}
+      />
+
+      <QuickAddDayPopover
+        key={quickAddIso ?? 'closed'}
+        open={quickAddIso !== null}
+        anchorEl={quickAddAnchor}
+        dayLabel={quickAddIso ? formatQuickAddLabel(quickAddIso) : ''}
+        onCreate={(title) => {
+          if (quickAddIso) handleAddActivityToDay(quickAddIso, title);
+        }}
+        onClose={() => {
+          setQuickAddIso(null);
+          setQuickAddAnchor(null);
+        }}
       />
 
       <style>{`

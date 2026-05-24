@@ -3,7 +3,9 @@
 /**
  * AgendaBottomNav — 64px tall, 6-item bottom navigation (mobile).
  *
- * Items: Today / Week / Tasks / Goals / Chat / Settings.
+ * Items: Today / Plan / Tasks / Goals / Chat / Settings.
+ * The "Plan" slot covers both /week (Semana tab) and /month (Mes tab) —
+ * the inner WeekMonthTabs toggles between the two.
  * Stats moved to Settings (accessible as a sub-row).
  * Active state: ink-primary text + 2px top border + subtle bg-elevated fill.
  * NO blue accent — strictly warm-book tokens. Lucide icons stroke 1.5.
@@ -32,7 +34,7 @@ interface NavItem {
 
 const ITEMS: NavItem[] = [
   { key: 'today', label: 'Today', href: '/today', Icon: Calendar },
-  { key: 'week', label: 'Week', href: '/week', Icon: CalendarRange },
+  { key: 'week', label: 'Plan', href: '/week', Icon: CalendarRange },
   { key: 'tasks', label: 'Tasks', href: '/tasks', Icon: ListChecks },
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
   { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },

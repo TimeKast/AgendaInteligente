@@ -30,7 +30,7 @@ interface NavItem {
 
 const PRIMARY: NavItem[] = [
   { key: 'today', label: 'Today', href: '/today', Icon: Calendar },
-  { key: 'week', label: 'Week', href: '/week', Icon: CalendarRange },
+  { key: 'week', label: 'Plan', href: '/week', Icon: CalendarRange },
   { key: 'tasks', label: 'Tasks', href: '/tasks', Icon: ListChecks },
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
   { key: 'stats', label: 'Stats', href: '/stats', Icon: BarChart3 },
