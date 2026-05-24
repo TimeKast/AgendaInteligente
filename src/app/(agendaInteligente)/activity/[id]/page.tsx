@@ -16,12 +16,17 @@
  */
 
 import { useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, ChevronDown } from 'lucide-react';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { PriorityDots } from '@/components/agenda/PriorityDots';
 import { TagChip } from '@/components/agenda/TagChip';
 import { SubtaskRow } from '@/components/agenda/SubtaskRow';
 import { DeadlineBadge } from '@/components/agenda/DeadlineBadge';
+import {
+  RecurrencePicker,
+  formatRecurrence,
+  type RecurrenceRule,
+} from '@/components/agenda/RecurrencePicker';
 
 /** Frozen "today" matching the rest of the prototype (2026-05-22). */
 const PROTO_TODAY = '2026-05-22';
@@ -85,6 +90,8 @@ function FieldRow({
 export default function ActivityDetailPage() {
   const [deadline, setDeadline] = useState<string>('');
   const [progressPercent, setProgressPercent] = useState<number>(35);
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule>('weekly:MO,WE,FR');
+  const [recurrenceOpen, setRecurrenceOpen] = useState<boolean>(false);
 
   return (
     <>
@@ -196,6 +203,79 @@ export default function ActivityDetailPage() {
             )}
           </div>
         </FieldRow>
+
+        {/* RECURRENCIA — tap to expand picker */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--ag-space-1)',
+            paddingBlock: 'var(--ag-space-3)',
+            borderBottom: '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setRecurrenceOpen((v) => !v)}
+            aria-expanded={recurrenceOpen}
+            style={{
+              appearance: 'none',
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              textAlign: 'left',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--ag-space-1)',
+              width: '100%',
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontFamily: 'var(--ag-font-body)',
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'var(--ag-slate)',
+              }}
+            >
+              Recurrencia
+              <ChevronDown
+                size={12}
+                strokeWidth={1.5}
+                aria-hidden
+                style={{
+                  transform: recurrenceOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform var(--ag-duration-base) var(--ag-ease)',
+                }}
+              />
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--ag-font-display)',
+                fontStyle: 'italic',
+                fontSize: 14,
+                color: 'var(--ag-ink-soft)',
+              }}
+            >
+              {formatRecurrence(recurrenceRule)}
+            </span>
+          </button>
+          {recurrenceOpen ? (
+            <div style={{ paddingTop: 'var(--ag-space-2)' }}>
+              <RecurrencePicker
+                value={recurrenceRule}
+                onChange={setRecurrenceRule}
+                referenceDate={PROTO_TODAY}
+              />
+            </div>
+          ) : null}
+        </div>
 
         <FieldRow label="Tiempo estimado">15 min</FieldRow>
 

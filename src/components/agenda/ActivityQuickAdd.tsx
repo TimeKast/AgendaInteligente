@@ -16,6 +16,7 @@ import { useRef, useState } from 'react';
 import { ChevronDown, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PriorityDots } from './PriorityDots';
+import { RecurrencePicker, type RecurrenceRule } from './RecurrencePicker';
 
 export interface QuickAddDraft {
   title: string;
@@ -26,6 +27,8 @@ export interface QuickAddDraft {
   scheduledTime?: string;
   /** Optional ISO YYYY-MM-DD deadline. */
   deadline?: string;
+  /** Optional recurrence rule (simplified DSL — see RecurrencePicker). */
+  recurrenceRule?: RecurrenceRule;
 }
 
 interface ActivityQuickAddProps {
@@ -45,6 +48,7 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
   const [description, setDescription] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule>(null);
   const titleRef = useRef<HTMLInputElement>(null);
 
   function reset() {
@@ -56,6 +60,7 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
     setDescription('');
     setScheduledTime('');
     setDeadline('');
+    setRecurrenceRule(null);
   }
 
   function close() {
@@ -75,6 +80,7 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
       description: description.trim() || undefined,
       scheduledTime: scheduledTime.trim() || undefined,
       deadline: deadline.trim() || undefined,
+      recurrenceRule: recurrenceRule,
     });
     toast('Guardado.');
     reset();
@@ -293,6 +299,24 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
               }}
             />
           </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-2)' }}>
+            <span
+              style={{
+                fontFamily: 'var(--ag-font-body)',
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'var(--ag-slate)',
+              }}
+            >
+              Recurrencia
+            </span>
+            <RecurrencePicker
+              value={recurrenceRule}
+              onChange={setRecurrenceRule}
+            />
+          </div>
         </div>
       ) : null}
 

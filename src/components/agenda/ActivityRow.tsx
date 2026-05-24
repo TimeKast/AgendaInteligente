@@ -16,10 +16,11 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Check, AlertTriangle, MinusCircle } from 'lucide-react';
+import { Check, AlertTriangle, MinusCircle, Repeat } from 'lucide-react';
 import { PriorityDots } from './PriorityDots';
 import { ProjectChip } from './ProjectChip';
 import { DeadlineBadge } from './DeadlineBadge';
+import { formatRecurrence } from './RecurrencePicker';
 
 export type ActivityStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
 
@@ -52,6 +53,11 @@ interface ActivityRowProps {
    * bar renders at the bottom edge of the row. Independent from status.
    */
   progressPercent?: number;
+  /**
+   * Optional recurrence rule (simplified DSL — see RecurrencePicker). When
+   * non-null, a small Repeat icon renders inline after the title.
+   */
+  recurrenceRule?: string | null;
 }
 
 function Checkbox({ status }: { status: ActivityStatus }) {
@@ -147,6 +153,7 @@ export function ActivityRow({
   trailingSlot,
   deadline,
   progressPercent,
+  recurrenceRule,
 }: ActivityRowProps) {
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
@@ -168,19 +175,43 @@ export function ActivityRow({
       >
         <span
           style={{
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 16,
-            lineHeight: 1.4,
-            color: isDone || isSkipped ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
-            fontStyle: isInProgress ? 'italic' : 'normal',
-            textDecoration: isDone ? 'line-through' : 'none',
-            textDecorationColor: 'var(--ag-rule)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            minWidth: 0,
           }}
         >
-          {title}
+          <span
+            style={{
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 16,
+              lineHeight: 1.4,
+              color: isDone || isSkipped ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
+              fontStyle: isInProgress ? 'italic' : 'normal',
+              textDecoration: isDone ? 'line-through' : 'none',
+              textDecorationColor: 'var(--ag-rule)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0,
+            }}
+          >
+            {title}
+          </span>
+          {recurrenceRule ? (
+            <span
+              role="img"
+              aria-label={`Se repite: ${formatRecurrence(recurrenceRule)}`}
+              title={`Se repite: ${formatRecurrence(recurrenceRule)}`}
+              style={{
+                display: 'inline-flex',
+                color: 'var(--ag-ink-hint)',
+                flexShrink: 0,
+              }}
+            >
+              <Repeat size={12} strokeWidth={1.5} aria-hidden />
+            </span>
+          ) : null}
         </span>
         {scheduledTime ? (
           <span

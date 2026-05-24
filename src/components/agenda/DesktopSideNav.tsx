@@ -14,6 +14,7 @@ import {
   Calendar,
   CalendarRange,
   Compass,
+  ListChecks,
   MessageSquare,
   Settings,
   Folder,
@@ -30,6 +31,7 @@ interface NavItem {
 const PRIMARY: NavItem[] = [
   { key: 'today', label: 'Today', href: '/today', Icon: Calendar },
   { key: 'week', label: 'Week', href: '/week', Icon: CalendarRange },
+  { key: 'tasks', label: 'Tasks', href: '/tasks', Icon: ListChecks },
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
   { key: 'stats', label: 'Stats', href: '/stats', Icon: BarChart3 },
   { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },

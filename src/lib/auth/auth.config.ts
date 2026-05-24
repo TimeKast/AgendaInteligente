@@ -132,6 +132,7 @@ export const authConfig = {
         '/categories',
         '/projects',
         '/stats',
+        '/tasks',
       ];
 
       const isPublicRoute =

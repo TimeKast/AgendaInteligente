@@ -36,6 +36,12 @@ export default function SettingsPage() {
             href="/projects"
             hint="Crear, archivar o cerrar."
           />
+          <SettingRow
+            label="Stats"
+            value="Esta semana"
+            href="/stats"
+            hint="Patrones, rachas y métricas."
+          />
         </SettingsSection>
 
         <SettingsSection label="Cuenta">

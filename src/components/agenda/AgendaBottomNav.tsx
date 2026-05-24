@@ -1,9 +1,10 @@
 'use client';
 
 /**
- * AgendaBottomNav — 64px tall, 5-item bottom navigation (mobile).
+ * AgendaBottomNav — 64px tall, 6-item bottom navigation (mobile).
  *
- * Items: Today / Week / Goals / Chat / Settings.
+ * Items: Today / Week / Tasks / Goals / Chat / Settings.
+ * Stats moved to Settings (accessible as a sub-row).
  * Active state: ink-primary text + 2px top border + subtle bg-elevated fill.
  * NO blue accent — strictly warm-book tokens. Lucide icons stroke 1.5.
  *
@@ -13,10 +14,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  BarChart3,
   Calendar,
   CalendarRange,
   Compass,
+  ListChecks,
   MessageSquare,
   Settings,
 } from 'lucide-react';
@@ -32,8 +33,8 @@ interface NavItem {
 const ITEMS: NavItem[] = [
   { key: 'today', label: 'Today', href: '/today', Icon: Calendar },
   { key: 'week', label: 'Week', href: '/week', Icon: CalendarRange },
+  { key: 'tasks', label: 'Tasks', href: '/tasks', Icon: ListChecks },
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
-  { key: 'stats', label: 'Stats', href: '/stats', Icon: BarChart3 },
   { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },
   { key: 'settings', label: 'Settings', href: '/settings', Icon: Settings },
 ];
