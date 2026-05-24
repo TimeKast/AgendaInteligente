@@ -39,7 +39,6 @@ export function AgendaShell({ children }: AgendaShellProps) {
   const isChat = pathname.startsWith('/chat');
   const isActivityDetail = pathname.startsWith('/activity/');
   const isCatalogDetail =
-    pathname.startsWith('/categories') ||
     pathname.startsWith('/projects/') ||
     /^\/goals\/[^/]+/.test(pathname);
 

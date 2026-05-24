@@ -305,31 +305,28 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
             left: 0,
             right: 0,
             bottom: 0,
-            height: 10,
+            height: 14,
             cursor: 'ns-resize',
-            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             touchAction: 'none',
-            // Visibility toggled via CSS `@media (any-pointer: fine)` (see
-            // agenda-tokens.css → .ag-resize-handle rules). On touch-only
-            // devices the handle is `display: none` so it can't tease an
-            // interaction that won't fire. At rest the two grip lines render
-            // in `--ag-rule` (warm ecru) at 60% opacity so the affordance is
-            // always discoverable without requiring a hover.
+            backgroundColor: 'var(--ag-bg-sunken)',
+            borderTop: '1px solid var(--ag-rule)',
+            // `display` controlled vía CSS .ag-resize-handle (none default,
+            // flex bajo @media any-pointer:fine). Solo desktop con mouse/
+            // trackpad muestra el handle.
           }}
         >
           <span
             aria-hidden
             style={{
               display: 'block',
-              width: 28,
-              height: 2,
+              width: 36,
+              height: 3,
               borderRadius: 2,
-              backgroundColor: 'var(--ag-rule)',
-              opacity: 0.6,
-              boxShadow: '0 4px 0 -1.5px var(--ag-rule)',
-              transition: 'opacity var(--ag-duration-fast) var(--ag-ease), background-color var(--ag-duration-fast) var(--ag-ease), box-shadow var(--ag-duration-fast) var(--ag-ease)',
+              backgroundColor: 'var(--ag-ink-soft)',
+              boxShadow: '0 5px 0 0 var(--ag-ink-soft)',
+              transition: 'background-color var(--ag-duration-fast) var(--ag-ease)',
             }}
           />
         </div>
