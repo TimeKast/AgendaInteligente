@@ -17,10 +17,84 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Check, AlertTriangle, MinusCircle, Repeat } from 'lucide-react';
-import { PriorityDots } from './PriorityDots';
-import { ProjectChip } from './ProjectChip';
 import { DeadlineBadge } from './DeadlineBadge';
 import { formatRecurrence } from './RecurrencePicker';
+
+/**
+ * PriorityPip — compact 1-dot priority indicator.
+ * Reemplaza PriorityDots (5 dots) que ocupaba mucho ancho horizontal.
+ * Color scale: 5=wine, 4=burnt orange, 3=sage, 2=ink-hint, 1=rule.
+ */
+function PriorityPip({ priority }: { priority: number }) {
+  const p = Math.max(1, Math.min(5, priority));
+  const colors: Record<number, string> = {
+    5: 'var(--ag-scope-life)',
+    4: 'var(--ag-scope-year)',
+    3: 'var(--ag-scope-quarter)',
+    2: 'var(--ag-ink-hint)',
+    1: 'var(--ag-rule)',
+  };
+  const labels: Record<number, string> = {
+    5: 'Prioridad alta',
+    4: 'Prioridad alta',
+    3: 'Prioridad media',
+    2: 'Prioridad baja',
+    1: 'Prioridad mínima',
+  };
+  return (
+    <span
+      aria-label={`${labels[p]} (${p})`}
+      title={`${labels[p]} (${p}/5)`}
+      style={{
+        display: 'inline-block',
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        backgroundColor: colors[p],
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+/**
+ * ProjectDot — circular 10px dot con color hashed del nombre del proyecto.
+ * Reemplaza ProjectChip (texto largo, ej "Empresa Genomma") en rows compactos.
+ * Title attr muestra el nombre en hover. Paleta warm-book.
+ */
+const PROJECT_PALETTE = [
+  'var(--ag-scope-quarter)', // sage
+  'var(--ag-scope-year)', // burnt orange
+  'var(--ag-scope-5year)', // steel blue
+  'var(--ag-scope-life)', // wine
+  'var(--ag-ink-soft)', // warm charcoal
+  '#A89072', // warm tan
+  '#7C8B5C', // olive
+  '#8B5C7C', // dusty mauve
+];
+function hashStringToIndex(s: string, mod: number): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % mod;
+}
+function ProjectDot({ label }: { label: string }) {
+  if (!label) return null;
+  const color = PROJECT_PALETTE[hashStringToIndex(label, PROJECT_PALETTE.length)];
+  return (
+    <span
+      aria-label={`Proyecto: ${label}`}
+      title={label}
+      style={{
+        display: 'inline-block',
+        width: 10,
+        height: 10,
+        borderRadius: '50%',
+        backgroundColor: color,
+        flexShrink: 0,
+      }}
+    />
+  );
+}
 
 export type ActivityStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
 
@@ -227,17 +301,20 @@ export function ActivityRow({
         ) : null}
       </div>
 
-      {/* Right cluster: priority dots + project chip + optional deadline */}
+      {/* Right cluster: compacto — dots de color para priority + project +
+          deadline. Antes era texto largo (ProjectChip "Empresa Genomma" +
+          5 PriorityDots) que comprimía el título. Ahora dots con tooltips
+          dejan el título primary. */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 'var(--ag-space-3)',
+          gap: 'var(--ag-space-2)',
           flexShrink: 0,
         }}
       >
-        <PriorityDots priority={priority} />
-        <ProjectChip label={projectLabel} />
+        <PriorityPip priority={priority} />
+        <ProjectDot label={projectLabel} />
         {deadline ? <DeadlineBadge deadline={deadline} /> : null}
       </div>
     </>
