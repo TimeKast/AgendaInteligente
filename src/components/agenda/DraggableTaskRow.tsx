@@ -291,48 +291,79 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
       ) : null}
 
       {anchored ? (
-        <div
-          role="separator"
-          aria-label={`Cambiar duración de ${props.title}`}
-          title="Arrastrá para extender el tiempo"
-          className="ag-resize-handle"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={finishResize}
-          onPointerCancel={finishResize}
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 20,
-            cursor: 'ns-resize',
-            alignItems: 'center',
-            justifyContent: 'center',
-            touchAction: 'none',
-            backgroundColor: 'var(--ag-ink-soft)',
-            color: 'var(--ag-bg)',
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-            zIndex: 10,
-            // display controlled vía CSS .ag-resize-handle (display:flex siempre).
-            // z-index: 10 forces sobre cualquier Link/button del ActivityRow.
-          }}
-        >
-          <span
-            aria-hidden
+        <>
+          {/* Top handle — drag desde el borde superior */}
+          <div
+            role="separator"
+            aria-label={`Cambiar duración de ${props.title} (desde arriba)`}
+            title="Arrastrá para cambiar duración"
+            className="ag-resize-handle ag-resize-handle--top"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={finishResize}
+            onPointerCancel={finishResize}
             style={{
-              display: 'inline-flex',
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 0,
+              height: 14,
+              cursor: 'ns-resize',
               alignItems: 'center',
-              gap: 4,
+              justifyContent: 'center',
+              touchAction: 'none',
+              backgroundColor: 'var(--ag-ink-soft)',
+              color: 'var(--ag-bg)',
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              zIndex: 9999,
+              pointerEvents: 'auto',
             }}
           >
-            ↕ Arrastrá para extender
-          </span>
-        </div>
+            <span aria-hidden>↕</span>
+          </div>
+          {/* Bottom handle — drag desde el borde inferior */}
+          <div
+            role="separator"
+            aria-label={`Cambiar duración de ${props.title} (desde abajo)`}
+            title="Arrastrá para extender el tiempo"
+            className="ag-resize-handle ag-resize-handle--bottom"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={finishResize}
+            onPointerCancel={finishResize}
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 20,
+              cursor: 'ns-resize',
+              alignItems: 'center',
+              justifyContent: 'center',
+              touchAction: 'none',
+              backgroundColor: 'var(--ag-ink-soft)',
+              color: 'var(--ag-bg)',
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              zIndex: 9999,
+              pointerEvents: 'auto',
+            }}
+          >
+            <span
+              aria-hidden
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            >
+              ↕ Arrastrá para extender
+            </span>
+          </div>
+        </>
       ) : null}
     </div>
   );
