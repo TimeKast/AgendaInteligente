@@ -20,7 +20,6 @@
 import { usePathname } from 'next/navigation';
 import { AgendaBottomNav } from './AgendaBottomNav';
 import { FabMic } from './FabMic';
-import { DebugPointerBadge } from './DebugPointerBadge';
 
 interface AgendaShellProps {
   children: React.ReactNode;
@@ -54,8 +53,6 @@ export function AgendaShell({ children }: AgendaShellProps) {
 
       {showChrome ? <FabMic /> : null}
       {showChrome ? <AgendaBottomNav /> : null}
-      {/* Debug badge — diagnóstico de pointer detection. Remover pre-release. */}
-      <DebugPointerBadge />
     </div>
   );
 }
