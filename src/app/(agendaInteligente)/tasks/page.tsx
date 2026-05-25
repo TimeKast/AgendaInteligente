@@ -331,9 +331,8 @@ export default function TasksPage() {
       />
 
       <main
+        className="ag-page-wide"
         style={{
-          maxWidth: 640,
-          marginInline: 'auto',
           paddingInline: 'var(--ag-space-4)',
           paddingBottom:
             'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',

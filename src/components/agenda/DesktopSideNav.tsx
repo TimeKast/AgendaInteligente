@@ -2,9 +2,10 @@
 
 /**
  * DesktopSideNav — 240px vertical nav rendered on screens ≥1024px in place of
- * the mobile AgendaBottomNav. Same 5 destinations (Today/Week/Goals/Chat/
- * Settings) plus a small "Configurar" subgroup (Categorías) hinted in the
- * desktop wireframe. Pure prototype — no settings persistence.
+ * the mobile AgendaBottomNav.
+ *
+ * Order: Today / Plan / Tasks / Goals / Stats / Chat / Categorías / Settings.
+ * Categorías sits BEFORE Settings (last functional before the final Settings).
  */
 
 import Link from 'next/link';
@@ -14,10 +15,10 @@ import {
   Calendar,
   CalendarRange,
   Compass,
+  FolderTree,
   ListChecks,
   MessageSquare,
   Settings,
-  Folder,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -35,11 +36,8 @@ const PRIMARY: NavItem[] = [
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
   { key: 'stats', label: 'Stats', href: '/stats', Icon: BarChart3 },
   { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },
+  { key: 'categories', label: 'Categorías', href: '/categories', Icon: FolderTree },
   { key: 'settings', label: 'Settings', href: '/settings', Icon: Settings },
-];
-
-const SECONDARY: NavItem[] = [
-  { key: 'categories', label: 'Categorías', href: '/categories', Icon: Folder },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -77,14 +75,6 @@ export function DesktopSideNav() {
       }}
     >
       <NavList items={PRIMARY} pathname={pathname} />
-      <hr
-        style={{
-          margin: '12px 8px',
-          border: 'none',
-          borderTop: '1px solid var(--ag-rule)',
-        }}
-      />
-      <NavList items={SECONDARY} pathname={pathname} />
     </nav>
   );
 }
@@ -114,7 +104,7 @@ function NavList({ items, pathname }: { items: NavItem[]; pathname: string }) {
                 transition: `background-color var(--ag-duration-base) var(--ag-ease), color var(--ag-duration-base) var(--ag-ease)`,
               }}
             >
-              <Icon size={18} strokeWidth={1.5} aria-hidden />
+              <Icon size={20} strokeWidth={1.5} aria-hidden />
               <span>{label}</span>
             </Link>
           </li>

@@ -48,11 +48,11 @@ export default async function GoalsPage({ searchParams }: GoalsPageProps) {
       <GoalsTabs active={scope} />
 
       <main
+        className="ag-page-wide"
         style={{
           paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
           paddingTop: 'var(--ag-space-3)',
-          maxWidth: 480,
-          marginInline: 'auto',
+          paddingInline: 'var(--ag-space-4)',
         }}
       >
         {scope === 'quarter' ? (

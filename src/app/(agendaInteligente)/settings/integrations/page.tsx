@@ -3,15 +3,22 @@
 /**
  * SCR-033 — Settings / Integraciones
  *
- * Visual-only. Google Calendar card simulates connect with 1.5s loading,
- * then shows connected state with sync + disconnect buttons. WhatsApp and
- * Outlook shown as disabled placeholders ("Próximamente v2").
+ * Multi-account calendar provider sections (Google + Outlook placeholder) +
+ * Discord card. Visual-only; no real OAuth.
+ *
+ * Google: 1 mocked email pre-connected. "+ Conectar otra cuenta" appends.
+ * Outlook: disabled "Próximamente v2" but with the same multi-connection
+ *          scaffolding visible.
+ * Discord: single connection + multi-server picker.
+ * WhatsApp: kept as legacy IntegrationCard placeholder.
  */
 
 import type { CSSProperties } from 'react';
 import { Calendar, MessageCircle, Mail } from 'lucide-react';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { IntegrationCard } from '@/components/agenda/IntegrationCard';
+import { CalendarConnectionsList } from '@/components/agenda/CalendarConnectionsList';
+import { DiscordIntegrationCard } from '@/components/agenda/DiscordIntegrationCard';
 
 export default function IntegrationsSettingsPage() {
   return (
@@ -27,25 +34,33 @@ export default function IntegrationsSettingsPage() {
             padding: 'var(--ag-space-4)',
           }}
         >
-          <IntegrationCard
+          <CalendarConnectionsList
             icon={<Calendar size={20} strokeWidth={1.5} />}
-            name="Google Calendar"
-            description="Conectá para que Agenda vea tus eventos y sugiera bloques libres."
-            initialState="disconnected"
+            providerName="Google Calendar"
+            description="Conectá una o más cuentas — Agenda lee tus eventos y sugiere bloques libres."
+            initialConnections={[
+              {
+                id: 'g-1',
+                email: 'federico@gmail.com',
+                lastSyncLabel: 'Última sync: hace 8 min · primary',
+              },
+            ]}
           />
+
+          <CalendarConnectionsList
+            icon={<Mail size={20} strokeWidth={1.5} />}
+            providerName="Outlook Calendar"
+            description="Misma idea que Google Calendar, para cuentas Microsoft."
+            disabled
+            disabledBadge="Próximamente v2"
+          />
+
+          <DiscordIntegrationCard />
 
           <IntegrationCard
             icon={<MessageCircle size={20} strokeWidth={1.5} />}
             name="WhatsApp"
             description="Recibí check-ins en WhatsApp cuando no abrís la app."
-            initialState="disabled"
-            disabledBadge="Próximamente v2"
-          />
-
-          <IntegrationCard
-            icon={<Mail size={20} strokeWidth={1.5} />}
-            name="Outlook Calendar"
-            description="Misma idea que Google Calendar, para cuentas Microsoft."
             initialState="disabled"
             disabledBadge="Próximamente v2"
           />

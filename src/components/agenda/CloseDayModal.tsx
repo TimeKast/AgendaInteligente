@@ -34,6 +34,21 @@ export interface CloseDayWinInput {
   title: string;
 }
 
+export interface CloseDayActivityInput {
+  id: string;
+  title: string;
+  projectLabel: string;
+  /** 0..100 starting progress (optional, defaults 50 when "Avanzada"). */
+  progressPercent?: number;
+}
+
+export interface CloseDayActivityResult {
+  id: string;
+  outcome: WinOutcome;
+  /** Only meaningful when outcome === 'partial'. */
+  partialPct: number;
+}
+
 export interface CloseDayWinResult {
   id: string;
   outcome: WinOutcome;
@@ -47,12 +62,15 @@ export interface CloseDayWinResult {
 
 export interface CloseDayPayload {
   wins: CloseDayWinResult[];
+  activities: CloseDayActivityResult[];
   oneLine: string;
 }
 
 interface CloseDayModalProps {
   open: boolean;
   wins: CloseDayWinInput[];
+  /** Optional list of today's activities for the per-row progress capture. */
+  activities?: CloseDayActivityInput[];
   onCancel: () => void;
   onSubmit: (payload: CloseDayPayload) => void;
 }
@@ -63,9 +81,19 @@ const OUTCOME_OPTIONS: Array<{ id: WinOutcome; label: string; glyph: string }> =
   { id: 'missed', label: 'No la toqué', glyph: '⊘' },
 ];
 
-export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalProps) {
+export function CloseDayModal({
+  open,
+  wins,
+  activities = [],
+  onCancel,
+  onSubmit,
+}: CloseDayModalProps) {
   // Per-win state (outcome + closed + partial pct + missed reason).
   const [winState, setWinState] = useState<Record<string, CloseDayWinResult>>({});
+  // Per-activity state (outcome + partial pct only — no "closed" semantics here).
+  const [activityState, setActivityState] = useState<
+    Record<string, CloseDayActivityResult>
+  >({});
   const [oneLine, setOneLine] = useState('');
 
   // Reset form whenever the modal re-opens. Wins list might also change.
@@ -87,6 +115,17 @@ export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalP
       }
       return next;
     });
+    setActivityState(() => {
+      const next: Record<string, CloseDayActivityResult> = {};
+      for (const a of activities) {
+        next[a.id] = {
+          id: a.id,
+          outcome: 'partial',
+          partialPct: a.progressPercent ?? 50,
+        };
+      }
+      return next;
+    });
     setOneLine('');
     /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -95,7 +134,7 @@ export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalP
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [open, wins, onCancel]);
+  }, [open, wins, activities, onCancel]);
 
   if (!open) return null;
 
@@ -124,9 +163,23 @@ export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalP
     }));
   }
 
+  function setActivityOutcome(id: string, outcome: WinOutcome) {
+    setActivityState((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], outcome },
+    }));
+  }
+  function setActivityPartial(id: string, pct: number) {
+    setActivityState((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], partialPct: pct },
+    }));
+  }
+
   function submit() {
     onSubmit({
       wins: wins.map((w) => winState[w.id]).filter(Boolean),
+      activities: activities.map((a) => activityState[a.id]).filter(Boolean),
       oneLine: oneLine.trim(),
     });
   }
@@ -165,15 +218,14 @@ export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalP
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: 480,
+          maxWidth: 560,
           maxHeight: '92vh',
           overflowY: 'auto',
           backgroundColor: 'var(--ag-bg)',
           borderTopLeftRadius: 'var(--ag-radius-card)',
           borderTopRightRadius: 'var(--ag-radius-card)',
-          padding: 'var(--ag-space-5) var(--ag-space-5) var(--ag-space-6)',
+          padding: 'var(--ag-space-5) var(--ag-space-5) 0',
           paddingLeft: 'calc(var(--ag-space-5) + 4px)',
-          paddingBottom: 'calc(var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
           boxShadow: '0 -2px 10px rgba(42, 40, 38, 0.08)',
           display: 'flex',
           flexDirection: 'column',
@@ -394,6 +446,134 @@ export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalP
           </ul>
         </section>
 
+        {/* Activities section — optional, only when activities array provided */}
+        {activities.length > 0 ? (
+          <section
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--ag-space-2)',
+            }}
+          >
+            <SectionCaption>Actividades de hoy</SectionCaption>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: 'var(--ag-font-display)',
+                fontStyle: 'italic',
+                fontSize: 14,
+                color: 'var(--ag-ink-hint)',
+                lineHeight: 1.4,
+              }}
+            >
+              ¿Cuánto avanzaste hoy?
+            </p>
+            <ActivitiesGrid>
+              {activities.map((act, idx) => {
+                const result = activityState[act.id];
+                if (!result) return null;
+                return (
+                  <article
+                    key={act.id}
+                    style={{
+                      paddingBlock: 'var(--ag-space-3)',
+                      borderTop: idx < 2 ? '1px solid var(--ag-rule)' : 'none',
+                      borderBottom: '1px solid var(--ag-rule)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'var(--ag-space-2)',
+                    }}
+                  >
+                    <header
+                      style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        justifyContent: 'space-between',
+                        gap: 'var(--ag-space-2)',
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          fontFamily: 'var(--ag-font-body)',
+                          fontSize: 14,
+                          color: 'var(--ag-ink-primary)',
+                          flex: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        {act.title}
+                      </p>
+                      <span
+                        style={{
+                          fontFamily: 'var(--ag-font-body)',
+                          fontSize: 11,
+                          color: 'var(--ag-ink-hint)',
+                          border: '1px solid var(--ag-rule)',
+                          borderRadius: 'var(--ag-radius-pill)',
+                          padding: '2px 8px',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {act.projectLabel}
+                      </span>
+                    </header>
+                    <div
+                      role="radiogroup"
+                      aria-label={`Avance de ${act.title}`}
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 6,
+                      }}
+                    >
+                      {OUTCOME_OPTIONS.map((opt) => {
+                        const active = result.outcome === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setActivityOutcome(act.id, opt.id)}
+                            style={{
+                              appearance: 'none',
+                              backgroundColor: active
+                                ? 'var(--ag-ink-primary)'
+                                : 'var(--ag-bg-elevated)',
+                              border: '1px solid var(--ag-rule)',
+                              borderRadius: 'var(--ag-radius-pill)',
+                              padding: '4px 10px',
+                              fontFamily: 'var(--ag-font-body)',
+                              fontSize: 12,
+                              color: active
+                                ? 'var(--ag-accent-on)'
+                                : 'var(--ag-ink-soft)',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <span aria-hidden>{opt.glyph}</span>
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {result.outcome === 'partial' ? (
+                      <PercentSlider
+                        value={result.partialPct}
+                        onChange={(v) => setActivityPartial(act.id, v)}
+                      />
+                    ) : null}
+                  </article>
+                );
+              })}
+            </ActivitiesGrid>
+          </section>
+        ) : null}
+
         {/* One-line section */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-2)' }}>
           <SectionCaption>Una línea</SectionCaption>
@@ -418,13 +598,22 @@ export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalP
           />
         </section>
 
-        {/* Footer */}
+        {/* Footer — sticky to bottom so it stays visible even when modal scrolls */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'flex-end',
             gap: 'var(--ag-space-2)',
             marginTop: 'var(--ag-space-2)',
+            position: 'sticky',
+            bottom: 0,
+            backgroundColor: 'var(--ag-bg)',
+            paddingBlock: 'var(--ag-space-3)',
+            paddingBottom:
+              'calc(var(--ag-space-4) + env(safe-area-inset-bottom, 0px))',
+            borderTop: '1px solid var(--ag-rule)',
+            marginInline: 'calc(var(--ag-space-5) * -1)',
+            paddingInline: 'var(--ag-space-5)',
           }}
         >
           <button
@@ -465,6 +654,27 @@ export function CloseDayModal({ open, wins, onCancel, onSubmit }: CloseDayModalP
         </div>
       </div>
     </div>
+  );
+}
+
+function ActivitiesGrid({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <div className="ag-close-day-activities">{children}</div>
+      <style>{`
+        .ag-close-day-activities {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 0;
+        }
+        @media (min-width: 720px) {
+          .ag-close-day-activities {
+            grid-template-columns: 1fr 1fr;
+            column-gap: var(--ag-space-3);
+          }
+        }
+      `}</style>
+    </>
   );
 }
 

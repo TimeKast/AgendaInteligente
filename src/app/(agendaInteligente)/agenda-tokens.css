@@ -149,9 +149,9 @@
 /*
  * Settings pages historically capped at 480px (mobile-portrait baseline), which
  * left a 480px column orphan-floated on desktop ≥1024px next to the 240px side
- * nav. We widen on desktop only:
- *   - Hub  (`/settings`): up to 720px — hub has multiple grouped sections.
- *   - Sub  (`/settings/*`): up to 580px — forms scan better narrow.
+ * nav. Widened iteration 6:
+ *   - Hub  (`/settings`): up to 1100px — hub has multiple grouped sections.
+ *   - Sub  (`/settings/*`): up to 960px — más respiro en desktop.
  * Mobile (<1024px): unchanged, full-width up to 480px.
  */
 [data-theme='agenda'] .ag-settings-content {
@@ -160,9 +160,32 @@
 }
 @media (min-width: 1024px) {
   [data-theme='agenda'] .ag-settings-content {
-    max-width: 580px;
+    max-width: 960px;
   }
   [data-theme='agenda'] .ag-settings-content--hub {
+    max-width: 1100px;
+  }
+}
+
+/* ---- Page width utility classes ---- */
+/*
+ * Shared width policy for main pages (tasks, goals, categories, projects list).
+ *
+ *   .ag-page-wide   → mobile full-width; desktop ≥1024px max 1100px (centered)
+ *   .ag-page-narrow → mobile full-width; desktop ≥1024px max 720px (chat-style)
+ *
+ * Detail screens keep their 580px ad-hoc cap inline (focused reading width).
+ */
+[data-theme='agenda'] .ag-page-wide,
+[data-theme='agenda'] .ag-page-narrow {
+  width: 100%;
+  margin-inline: auto;
+}
+@media (min-width: 1024px) {
+  [data-theme='agenda'] .ag-page-wide {
+    max-width: 1100px;
+  }
+  [data-theme='agenda'] .ag-page-narrow {
     max-width: 720px;
   }
 }

@@ -16,7 +16,6 @@
  */
 
 import { useState } from 'react';
-import Link from 'next/link';
 import {
   DndContext,
   PointerSensor,
@@ -96,7 +95,6 @@ export default function CategoryListPage() {
   return (
     <>
       <AgendaHeader
-        backHref="/settings"
         dateLabel="Categorías"
         rightSlot={
           <button
@@ -119,11 +117,10 @@ export default function CategoryListPage() {
       />
 
       <main
+        className="ag-page-wide"
         style={{
-          maxWidth: 480,
-          marginInline: 'auto',
           paddingInline: 'var(--ag-space-4)',
-          paddingBottom: 'calc(var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <p
@@ -172,20 +169,6 @@ export default function CategoryListPage() {
           </ul>
         </div>
 
-        <div style={{ paddingTop: 'var(--ag-space-5)' }}>
-          <Link
-            href="/settings"
-            style={{
-              display: 'inline-block',
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 13,
-              color: 'var(--ag-ink-hint)',
-              textDecoration: 'none',
-            }}
-          >
-            ← Volver a Settings
-          </Link>
-        </div>
       </main>
 
       <NewCategoryModal

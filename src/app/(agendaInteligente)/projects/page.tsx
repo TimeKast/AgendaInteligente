@@ -178,11 +178,10 @@ export default function ProjectListPage() {
       />
 
       <main
+        className="ag-page-wide"
         style={{
-          maxWidth: 480,
-          marginInline: 'auto',
           paddingInline: 'var(--ag-space-4)',
-          paddingBottom: 'calc(var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <div

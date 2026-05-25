@@ -24,12 +24,6 @@ export default function SettingsPage() {
       >
         <SettingsSection label="Organización">
           <SettingRow
-            label="Categorías"
-            value="4 categorías"
-            href="/categories"
-            hint="Reordenar, renombrar o borrar."
-          />
-          <SettingRow
             label="Proyectos"
             value="5 activos"
             href="/projects"

@@ -1,14 +1,18 @@
 'use client';
 
 /**
- * AgendaBottomNav — 64px tall, 6-item bottom navigation (mobile).
+ * AgendaBottomNav — 64px tall, 7-item bottom navigation (mobile).
  *
- * Items: Today / Plan / Tasks / Goals / Chat / Settings.
+ * Items: Today / Plan / Tasks / Goals / Chat / Categorías / Settings.
  * The "Plan" slot covers both /week (Semana tab) and /month (Mes tab) —
  * the inner WeekMonthTabs toggles between the two.
  * Stats moved to Settings (accessible as a sub-row).
+ * Categorías promoted to top-level nav (sits BEFORE Settings).
  * Active state: ink-primary text + 2px top border + subtle bg-elevated fill.
  * NO blue accent — strictly warm-book tokens. Lucide icons stroke 1.5.
+ *
+ * 7 items at 375px → ~53px per cell. Icon shrinks to 16px and label to 9px
+ * (vs 18/10) to avoid horizontal scroll on iPhone SE baseline.
  *
  * Active route inferred from `usePathname()`. Each item is a `<Link>`.
  */
@@ -19,6 +23,7 @@ import {
   Calendar,
   CalendarRange,
   Compass,
+  FolderTree,
   ListChecks,
   MessageSquare,
   Settings,
@@ -38,6 +43,7 @@ const ITEMS: NavItem[] = [
   { key: 'tasks', label: 'Tasks', href: '/tasks', Icon: ListChecks },
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
   { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },
+  { key: 'categories', label: 'Categorías', href: '/categories', Icon: FolderTree },
   { key: 'settings', label: 'Settings', href: '/settings', Icon: Settings },
 ];
 
@@ -80,19 +86,20 @@ export function AgendaBottomNav() {
           padding: 0,
           height: 64,
           display: 'grid',
-          gridTemplateColumns: 'repeat(6, 1fr)',
+          gridTemplateColumns: 'repeat(7, 1fr)',
         }}
       >
         {ITEMS.map(({ key, label, href, Icon }) => {
           const active = isActive(pathname, href);
           return (
-            <li key={key} style={{ display: 'flex' }}>
+            <li key={key} style={{ display: 'flex', minWidth: 0 }}>
               <Link
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 style={{
                   flex: 1,
                   height: '100%',
+                  minWidth: 0,
                   background: active ? 'var(--ag-bg-elevated)' : 'transparent',
                   border: 'none',
                   borderTop: active ? '2px solid var(--ag-ink-primary)' : '2px solid transparent',
@@ -106,14 +113,19 @@ export function AgendaBottomNav() {
                   fontFamily: 'var(--ag-font-body)',
                   textDecoration: 'none',
                   transition: `color var(--ag-duration-base) var(--ag-ease), background-color var(--ag-duration-base) var(--ag-ease)`,
+                  paddingInline: 2,
                 }}
               >
-                <Icon size={18} strokeWidth={1.5} />
+                <Icon size={16} strokeWidth={1.5} />
                 <span
                   style={{
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: active ? 500 : 400,
                     letterSpacing: '0.02em',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {label}
