@@ -1,19 +1,21 @@
 'use client';
 
 /**
- * AgendaBottomNav — 64px tall, 7-item bottom navigation (mobile).
+ * AgendaBottomNav — horizontal bottom nav, rendered on ALL breakpoints.
  *
  * Items: Today / Plan / Tasks / Goals / Chat / Categorías / Settings.
- * The "Plan" slot covers both /week (Semana tab) and /month (Mes tab) —
- * the inner WeekMonthTabs toggles between the two.
- * Stats moved to Settings (accessible as a sub-row).
- * Categorías promoted to top-level nav (sits BEFORE Settings).
+ * The "Plan" slot covers both /week and /month — the inner WeekMonthTabs
+ * toggles between the two.
+ *
+ * Responsive sizing (handled via the `.ag-bottom-nav` CSS class scoped in this
+ * file via a <style jsx global>-equivalent: an inline injected <style> tag):
+ *   - Mobile (<768px): 64px tall, icons 16px, label 9px — compact for iPhone SE
+ *     baseline (375px / 7 items ≈ 53px per cell).
+ *   - Desktop (≥768px): 72px tall, icons 22px, label 13px sentence case —
+ *     generous breathing room (≈110px+ per cell at 768px; scales up).
+ *
  * Active state: ink-primary text + 2px top border + subtle bg-elevated fill.
  * NO blue accent — strictly warm-book tokens. Lucide icons stroke 1.5.
- *
- * 7 items at 375px → ~53px per cell. Icon shrinks to 16px and label to 9px
- * (vs 18/10) to avoid horizontal scroll on iPhone SE baseline.
- *
  * Active route inferred from `usePathname()`. Each item is a `<Link>`.
  */
 
@@ -27,14 +29,14 @@ import {
   ListChecks,
   MessageSquare,
   Settings,
+  type LucideIcon,
 } from 'lucide-react';
-import type { ComponentType } from 'react';
 
 interface NavItem {
   key: string;
   label: string;
   href: string;
-  Icon: ComponentType<{ size?: number; strokeWidth?: number }>;
+  Icon: LucideIcon;
 }
 
 const ITEMS: NavItem[] = [
@@ -49,8 +51,6 @@ const ITEMS: NavItem[] = [
 
 function isActive(pathname: string, href: string) {
   if (href === '/today') return pathname === '/today';
-  // The Week tab covers both /week and /month — they share a nav slot via
-  // the tab toggle inside each page (see WeekMonthTabs).
   if (href === '/week') {
     return (
       pathname === '/week' ||
@@ -62,79 +62,107 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+// Responsive sizing via a scoped style tag. Inline `style` can't host media
+// queries; this keeps everything in the component file without touching
+// globals.css. Two icon instances (compact + generous) toggled by viewport.
+const RESPONSIVE_CSS = `
+[data-theme='agenda'] .ag-bottom-nav-list { height: 64px; }
+[data-theme='agenda'] .ag-bottom-nav-icon-desktop { display: none; }
+[data-theme='agenda'] .ag-bottom-nav-icon-mobile { display: inline-flex; }
+[data-theme='agenda'] .ag-bottom-nav-label { font-size: 9px; }
+@media (min-width: 768px) {
+  [data-theme='agenda'] .ag-bottom-nav-list { height: 72px; }
+  [data-theme='agenda'] .ag-bottom-nav-icon-desktop { display: inline-flex; }
+  [data-theme='agenda'] .ag-bottom-nav-icon-mobile { display: none; }
+  [data-theme='agenda'] .ag-bottom-nav-label { font-size: 13px; letter-spacing: 0.01em; }
+  [data-theme='agenda'] .ag-bottom-nav-item { gap: 4px; }
+}
+`;
+
 export function AgendaBottomNav() {
   const pathname = usePathname() ?? '/today';
 
   return (
-    <nav
-      aria-label="Navegación principal"
-      style={{
-        position: 'fixed',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 30,
-        backgroundColor: 'var(--ag-bg)',
-        borderTop: '1px solid var(--ag-rule)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-      }}
-    >
-      <ul
+    <>
+      <style>{RESPONSIVE_CSS}</style>
+      <nav
+        aria-label="Navegación principal"
         style={{
-          listStyle: 'none',
-          margin: 0,
-          padding: 0,
-          height: 64,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 30,
+          backgroundColor: 'var(--ag-bg)',
+          borderTop: '1px solid var(--ag-rule)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
-        {ITEMS.map(({ key, label, href, Icon }) => {
-          const active = isActive(pathname, href);
-          return (
-            <li key={key} style={{ display: 'flex', minWidth: 0 }}>
-              <Link
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                style={{
-                  flex: 1,
-                  height: '100%',
-                  minWidth: 0,
-                  background: active ? 'var(--ag-bg-elevated)' : 'transparent',
-                  border: 'none',
-                  borderTop: active ? '2px solid var(--ag-ink-primary)' : '2px solid transparent',
-                  color: active ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
-                  display: 'inline-flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 2,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--ag-font-body)',
-                  textDecoration: 'none',
-                  transition: `color var(--ag-duration-base) var(--ag-ease), background-color var(--ag-duration-base) var(--ag-ease)`,
-                  paddingInline: 2,
-                }}
-              >
-                <Icon size={16} strokeWidth={1.5} />
-                <span
+        <ul
+          className="ag-bottom-nav-list"
+          style={{
+            listStyle: 'none',
+            margin: 0,
+            padding: 0,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+          }}
+        >
+          {ITEMS.map(({ key, label, href, Icon }) => {
+            const active = isActive(pathname, href);
+            return (
+              <li key={key} style={{ display: 'flex', minWidth: 0 }}>
+                <Link
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className="ag-bottom-nav-item"
                   style={{
-                    fontSize: 9,
-                    fontWeight: active ? 500 : 400,
-                    letterSpacing: '0.02em',
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    flex: 1,
+                    height: '100%',
+                    minWidth: 0,
+                    background: active ? 'var(--ag-bg-elevated)' : 'transparent',
+                    border: 'none',
+                    borderTop: active
+                      ? '2px solid var(--ag-ink-primary)'
+                      : '2px solid transparent',
+                    color: active ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
+                    display: 'inline-flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 2,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--ag-font-body)',
+                    textDecoration: 'none',
+                    transition: `color var(--ag-duration-base) var(--ag-ease), background-color var(--ag-duration-base) var(--ag-ease)`,
+                    paddingInline: 2,
                   }}
                 >
-                  {label}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+                  <span aria-hidden className="ag-bottom-nav-icon-mobile">
+                    <Icon size={16} strokeWidth={1.5} />
+                  </span>
+                  <span aria-hidden className="ag-bottom-nav-icon-desktop">
+                    <Icon size={22} strokeWidth={1.5} />
+                  </span>
+                  <span
+                    className="ag-bottom-nav-label"
+                    style={{
+                      fontWeight: active ? 500 : 400,
+                      letterSpacing: '0.02em',
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </>
   );
 }

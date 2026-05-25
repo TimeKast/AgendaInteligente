@@ -15,6 +15,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { GripVertical, MoreHorizontal, Pencil, Palette, Plus, Trash2 } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -117,61 +118,74 @@ export function CategoryRow({ category, onDelete, onAddProject }: CategoryRowPro
           </button>
         )}
 
-        {/* Icon swatch */}
-        <span
-          aria-hidden
+        {/* Icon swatch + name + count — wrapped in <Link> so tapping the row
+            body navigates to the category detail. Grip, "+ Proyecto" pill, and
+            ⋯ menu stay OUTSIDE the link so their taps don't trigger nav. The
+            Link spans two grid columns (icon + label) via display:contents. */}
+        <Link
+          href={`/categories/${category.id}`}
+          aria-label={`Abrir ${category.name}`}
           style={{
-            width: 28,
-            height: 28,
-            borderRadius: 'var(--ag-radius-sm)',
-            backgroundColor: colorMeta.hex,
-            color: '#fff',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'contents',
+            color: 'inherit',
+            textDecoration: 'none',
           }}
         >
-          <IconComponent size={15} strokeWidth={1.75} />
-        </span>
+          <span
+            aria-hidden
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 'var(--ag-radius-sm)',
+              backgroundColor: colorMeta.hex,
+              color: '#fff',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <IconComponent size={15} strokeWidth={1.75} />
+          </span>
 
-        {/* Name + count */}
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <span
-            style={{
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 15,
-              color: 'var(--ag-ink-primary)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {category.name}
-            {category.system ? (
-              <span
-                style={{
-                  marginLeft: 6,
-                  fontFamily: 'var(--ag-font-display)',
-                  fontStyle: 'italic',
-                  fontSize: 12,
-                  color: 'var(--ag-ink-hint)',
-                }}
-              >
-                (default)
-              </span>
-            ) : null}
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 12,
-              color: 'var(--ag-ink-hint)',
-            }}
-          >
-            {category.projectCount}{' '}
-            {category.projectCount === 1 ? 'proyecto' : 'proyectos'}
-          </span>
-        </div>
+          {/* Name + count */}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span
+              style={{
+                fontFamily: 'var(--ag-font-body)',
+                fontSize: 15,
+                color: 'var(--ag-ink-primary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {category.name}
+              {category.system ? (
+                <span
+                  style={{
+                    marginLeft: 6,
+                    fontFamily: 'var(--ag-font-display)',
+                    fontStyle: 'italic',
+                    fontSize: 12,
+                    color: 'var(--ag-ink-hint)',
+                  }}
+                >
+                  (default)
+                </span>
+              ) : null}
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--ag-font-body)',
+                fontSize: 12,
+                color: 'var(--ag-ink-hint)',
+              }}
+            >
+              {category.projectCount}{' '}
+              {category.projectCount === 1 ? 'proyecto' : 'proyectos'}
+            </span>
+          </div>
+        </Link>
 
         {/* Inline "+ Proyecto" — quick affordance to create project in this cat */}
         {onAddProject ? (

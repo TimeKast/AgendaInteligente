@@ -15,45 +15,74 @@
  */
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
-import { Check, AlertTriangle, MinusCircle, Repeat } from 'lucide-react';
+import type { ComponentType, ReactNode } from 'react';
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUp,
+  ArrowUpRight,
+  Check,
+  MinusCircle,
+  Repeat,
+} from 'lucide-react';
 import { DeadlineBadge } from './DeadlineBadge';
 import { formatRecurrence } from './RecurrencePicker';
 
 /**
- * PriorityPip — compact 1-dot priority indicator.
- * Reemplaza PriorityDots (5 dots) que ocupaba mucho ancho horizontal.
- * Color scale: 5=wine, 4=burnt orange, 3=sage, 2=ink-hint, 1=rule.
+ * PriorityArrow — directional arrow priority indicator.
+ *
+ * Replaces the legacy PriorityPip (single color dot). The arrow direction
+ * encodes priority on a compass scale: ↑ (most) → ↗ → → → ↘ → ↓ (least).
+ * Color also varies subtly for double-encoding (accessibility + scannability).
+ *
+ *   5 (más prioritario) → ArrowUp          ↑   wine
+ *   4                   → ArrowUpRight     ↗   burnt orange
+ *   3                   → ArrowRight       →   ink-soft (charcoal)
+ *   2                   → ArrowDownRight   ↘   ink-hint
+ *   1 (menos prio.)     → ArrowDown        ↓   rule
  */
-function PriorityPip({ priority }: { priority: number }) {
-  const p = Math.max(1, Math.min(5, priority));
-  const colors: Record<number, string> = {
+function PriorityArrow({ priority }: { priority: number }) {
+  const p = Math.max(1, Math.min(5, priority)) as 1 | 2 | 3 | 4 | 5;
+  const icons: Record<1 | 2 | 3 | 4 | 5, ComponentType<{ size?: number; strokeWidth?: number }>> = {
+    5: ArrowUp,
+    4: ArrowUpRight,
+    3: ArrowRight,
+    2: ArrowDownRight,
+    1: ArrowDown,
+  };
+  const colors: Record<1 | 2 | 3 | 4 | 5, string> = {
     5: 'var(--ag-scope-life)',
     4: 'var(--ag-scope-year)',
-    3: 'var(--ag-scope-quarter)',
+    3: 'var(--ag-ink-soft)',
     2: 'var(--ag-ink-hint)',
     1: 'var(--ag-rule)',
   };
-  const labels: Record<number, string> = {
+  const labels: Record<1 | 2 | 3 | 4 | 5, string> = {
     5: 'Prioridad alta',
     4: 'Prioridad alta',
     3: 'Prioridad media',
     2: 'Prioridad baja',
     1: 'Prioridad mínima',
   };
+  const Icon = icons[p];
   return (
     <span
-      aria-label={`${labels[p]} (${p})`}
+      aria-label={`${labels[p]} (${p}/5)`}
       title={`${labels[p]} (${p}/5)`}
       style={{
-        display: 'inline-block',
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        backgroundColor: colors[p],
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 14,
+        height: 14,
+        color: colors[p],
         flexShrink: 0,
       }}
-    />
+    >
+      <Icon size={14} strokeWidth={2} />
+    </span>
   );
 }
 
@@ -313,7 +342,7 @@ export function ActivityRow({
           flexShrink: 0,
         }}
       >
-        <PriorityPip priority={priority} />
+        <PriorityArrow priority={priority} />
         <ProjectDot label={projectLabel} />
         {deadline ? <DeadlineBadge deadline={deadline} /> : null}
       </div>
