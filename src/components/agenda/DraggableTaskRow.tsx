@@ -173,7 +173,11 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   // When the row is anchored to an hour and has a duration, it absolutely
   // positions itself inside the parent HourSlot's right column so it can
   // overflow into the next slots below.
-  const anchored = isResizable && props.scheduledTime !== undefined;
+  // Anchored = layout absoluto con resize handles. Solo requiere durationMinutes
+  // + onResize. scheduledTime es metadata para mostrar la hora; no se necesita
+  // para el detection (era bug: TodayActivitiesBoard no pasaba scheduledTime
+  // → anchored siempre false → handles nunca renderizaban).
+  const anchored = isResizable;
   const heightPx = anchored
     ? (displayDuration / 60) * HOUR_HEIGHT_PX
     : undefined;
