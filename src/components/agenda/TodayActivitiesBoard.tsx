@@ -505,6 +505,20 @@ export function TodayActivitiesBoard({
     );
   }
 
+  function handleResizeStart(
+    id: string,
+    nextStartTime: string,
+    nextDurationMinutes: number,
+  ) {
+    setScheduled((prev) =>
+      prev.map((a) =>
+        a.id === id
+          ? { ...a, scheduledTime: nextStartTime, durationMinutes: nextDurationMinutes }
+          : a,
+      ),
+    );
+  }
+
   function setScheduledStatus(id: string, next: ActivityStatus) {
     setScheduled((prev) => prev.map((a) => (a.id === id ? { ...a, status: next } : a)));
     setPool((prev) => prev.map((a) => (a.id === id ? { ...a, status: next } : a)));
@@ -539,22 +553,32 @@ export function TodayActivitiesBoard({
     for (const a of scheduled) {
       const startHour = parseHour(a.scheduledTime);
       let maxDurationMinutes = 240;
+      let minStartHour = 6;
       if (!Number.isNaN(startHour)) {
+        // Para el bottom handle: hora más temprana ocupada DESPUÉS del start
         let nextOccupiedHour = CALENDAR_END_HOUR;
+        // Para el top handle: hora más reciente ocupada (incluyendo end de
+        // otra activity, o un Google event) ANTES del start. minStartHour es
+        // el clamp más temprano permitido.
+        let prevOccupiedEnd = 6;
         for (const e of EXTERNAL_EVENTS) {
           const eh = parseHour(e.hour);
-          if (!Number.isNaN(eh) && eh > startHour && eh < nextOccupiedHour) {
-            nextOccupiedHour = eh;
-          }
+          if (Number.isNaN(eh)) continue;
+          if (eh > startHour && eh < nextOccupiedHour) nextOccupiedHour = eh;
+          // Google events asumimos 1h, así que su end = eh + 1
+          const eEnd = eh + 1;
+          if (eEnd <= startHour && eEnd > prevOccupiedEnd) prevOccupiedEnd = eEnd;
         }
         for (const other of scheduled) {
           if (other.id === a.id) continue;
           const oh = parseHour(other.scheduledTime);
-          if (!Number.isNaN(oh) && oh > startHour && oh < nextOccupiedHour) {
-            nextOccupiedHour = oh;
-          }
+          if (Number.isNaN(oh)) continue;
+          if (oh > startHour && oh < nextOccupiedHour) nextOccupiedHour = oh;
+          const oEnd = oh + Math.ceil(other.durationMinutes / 60);
+          if (oEnd <= startHour && oEnd > prevOccupiedEnd) prevOccupiedEnd = oEnd;
         }
         maxDurationMinutes = Math.max(60, (nextOccupiedHour - startHour) * 60);
+        minStartHour = prevOccupiedEnd;
       }
       const existing = map[a.scheduledTime];
       const row = (
@@ -569,7 +593,10 @@ export function TodayActivitiesBoard({
           onOpenStatus={() => openStatus(a)}
           durationMinutes={a.durationMinutes}
           onResize={(next) => handleResize(a.id, next)}
+          onResizeStart={(t, d) => handleResizeStart(a.id, t, d)}
           maxDurationMinutes={maxDurationMinutes}
+          minStartHour={minStartHour}
+          scheduledTime={a.scheduledTime}
           deadline={a.deadline}
           progressPercent={a.progressPercent}
         />

@@ -63,6 +63,19 @@ interface DraggableTaskRowProps {
    * 4h if not provided.
    */
   maxDurationMinutes?: number;
+  /**
+   * Called when the user drags the TOP handle. Drag arriba mueve el inicio
+   * más temprano (con duration creciendo), drag abajo mueve el inicio más
+   * tarde (duration achicando). El end se mantiene fijo.
+   * Args: nuevo scheduledTime ("HH:00") + nueva durationMinutes.
+   */
+  onResizeStart?: (nextStartTime: string, nextDurationMinutes: number) => void;
+  /**
+   * Hora mínima de inicio (clamp para el top handle). Computado por el parent
+   * basado en hora calendar start (06:00) + la próxima activity/event arriba.
+   * Default 6 (06:00).
+   */
+  minStartHour?: number;
 }
 
 /** Minimum committed duration after snapping (kept whole hours for prototype). */
@@ -87,35 +100,78 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   });
 
   // ---- Resize state (local, live preview) ----
-  // `liveDuration` is null when no resize is in flight; otherwise it overrides
-  // the committed duration for visual feedback until pointerup commits/snaps.
+  // 2 modos:
+  //   BOTTOM handle → solo cambia duration (end se mueve, start fijo)
+  //   TOP handle    → cambia start + duration inversamente (end fijo).
+  //                   Drag arriba → start más temprano, duration crece.
+  //                   Drag abajo  → start más tarde, duration achica.
+  // `liveStartMin` y `liveDuration` overriden los committed values durante drag.
   const [liveDuration, setLiveDuration] = useState<number | null>(null);
+  const [liveStartMin, setLiveStartMin] = useState<number | null>(null);
   const resizeStateRef = useRef<{
     startY: number;
     startDuration: number;
+    startHourMin: number; // minutos desde midnight (committed start hour)
     pointerId: number;
+    mode: 'top' | 'bottom';
   } | null>(null);
 
   const isResizable = props.durationMinutes !== undefined && props.onResize !== undefined;
   const committedDuration = props.durationMinutes ?? 0;
   const displayDuration = liveDuration ?? committedDuration;
   const maxDuration = props.maxDurationMinutes ?? 240;
+  const minStartHour = props.minStartHour ?? 6;
+  const minStartMin = minStartHour * 60;
 
-  const handlePointerDown = useCallback(
+  // Parse scheduledTime ("HH:00") to minutes since midnight for top-handle math.
+  function parseTimeToMin(t?: string): number {
+    if (!t) return 0;
+    const [h, m] = t.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  }
+  function formatMinToTime(min: number): string {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  const committedStartMin = parseTimeToMin(props.scheduledTime);
+  const displayStartMin = liveStartMin ?? committedStartMin;
+
+  const handleBottomPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (!isResizable) return;
-      // Prevent dnd-kit from interpreting this as a drag-to-move grab.
       e.stopPropagation();
       e.preventDefault();
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       resizeStateRef.current = {
         startY: e.clientY,
         startDuration: committedDuration,
+        startHourMin: committedStartMin,
         pointerId: e.pointerId,
+        mode: 'bottom',
       };
       setLiveDuration(committedDuration);
     },
-    [committedDuration, isResizable],
+    [committedDuration, committedStartMin, isResizable],
+  );
+
+  const handleTopPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isResizable) return;
+      e.stopPropagation();
+      e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      resizeStateRef.current = {
+        startY: e.clientY,
+        startDuration: committedDuration,
+        startHourMin: committedStartMin,
+        pointerId: e.pointerId,
+        mode: 'top',
+      };
+      setLiveDuration(committedDuration);
+      setLiveStartMin(committedStartMin);
+    },
+    [committedDuration, committedStartMin, isResizable],
   );
 
   const handlePointerMove = useCallback(
@@ -125,13 +181,30 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
       e.stopPropagation();
       const deltaY = e.clientY - s.startY;
       const deltaMin = (deltaY / HOUR_HEIGHT_PX) * 60;
-      const next = Math.min(
-        maxDuration,
-        Math.max(MIN_PREVIEW_DURATION_MIN, s.startDuration + deltaMin),
-      );
-      setLiveDuration(next);
+
+      if (s.mode === 'bottom') {
+        // Bottom: extiende/encoge duration directamente.
+        const next = Math.min(
+          maxDuration,
+          Math.max(MIN_PREVIEW_DURATION_MIN, s.startDuration + deltaMin),
+        );
+        setLiveDuration(next);
+      } else {
+        // Top: mueve start, duration cambia inversamente (end fijo).
+        // newStart = oldStart + deltaMin; newDuration = oldDuration - deltaMin
+        // Clamp newStart >= minStartMin AND newDuration >= MIN_PREVIEW_DURATION_MIN
+        const oldEndMin = s.startHourMin + s.startDuration;
+        let nextStartMin = s.startHourMin + deltaMin;
+        if (nextStartMin < minStartMin) nextStartMin = minStartMin;
+        if (oldEndMin - nextStartMin < MIN_PREVIEW_DURATION_MIN) {
+          nextStartMin = oldEndMin - MIN_PREVIEW_DURATION_MIN;
+        }
+        const nextDuration = oldEndMin - nextStartMin;
+        setLiveStartMin(nextStartMin);
+        setLiveDuration(nextDuration);
+      }
     },
-    [maxDuration],
+    [maxDuration, minStartMin],
   );
 
   const finishResize = useCallback(
@@ -144,22 +217,43 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
       } catch {
         // pointer may already be released — ignore.
       }
-      const preview = liveDuration ?? s.startDuration;
-      // Snap to nearest whole hour, clamp to [MIN_DURATION_MIN, maxDuration].
-      const snapped = Math.min(
-        maxDuration,
-        Math.max(
-          MIN_DURATION_MIN,
-          Math.round(preview / SNAP_INCREMENT_MIN) * SNAP_INCREMENT_MIN,
-        ),
-      );
-      resizeStateRef.current = null;
-      setLiveDuration(null);
-      if (snapped !== s.startDuration) {
-        props.onResize?.(snapped);
+
+      if (s.mode === 'bottom') {
+        const preview = liveDuration ?? s.startDuration;
+        const snapped = Math.min(
+          maxDuration,
+          Math.max(
+            MIN_DURATION_MIN,
+            Math.round(preview / SNAP_INCREMENT_MIN) * SNAP_INCREMENT_MIN,
+          ),
+        );
+        resizeStateRef.current = null;
+        setLiveDuration(null);
+        if (snapped !== s.startDuration) {
+          props.onResize?.(snapped);
+        }
+      } else {
+        // Top: snap startMin a hora entera, recalcular duration manteniendo end.
+        const oldEndMin = s.startHourMin + s.startDuration;
+        const previewStart = liveStartMin ?? s.startHourMin;
+        // Snap a hora entera más cercana
+        let snappedStart = Math.round(previewStart / SNAP_INCREMENT_MIN) * SNAP_INCREMENT_MIN;
+        if (snappedStart < minStartMin) snappedStart = minStartMin;
+        let snappedDuration = oldEndMin - snappedStart;
+        // Min duration check
+        if (snappedDuration < MIN_DURATION_MIN) {
+          snappedDuration = MIN_DURATION_MIN;
+          snappedStart = oldEndMin - MIN_DURATION_MIN;
+        }
+        resizeStateRef.current = null;
+        setLiveDuration(null);
+        setLiveStartMin(null);
+        if (snappedStart !== s.startHourMin) {
+          props.onResizeStart?.(formatMinToTime(snappedStart), snappedDuration);
+        }
       }
     },
-    [liveDuration, maxDuration, props],
+    [liveDuration, liveStartMin, maxDuration, minStartMin, props],
   );
 
   // Safety: if the component unmounts mid-gesture, clear the ref.
@@ -181,11 +275,17 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   const heightPx = anchored
     ? (displayDuration / 60) * HOUR_HEIGHT_PX
     : undefined;
+  // Top drag offset: cuando el start se mueve durante un top-resize, el card
+  // se renderiza visualmente más arriba que su hour slot original. Usamos top
+  // negativo basado en la diferencia minutos × pixels-por-minuto.
+  const startOffsetPx = anchored
+    ? ((displayStartMin - committedStartMin) / 60) * HOUR_HEIGHT_PX
+    : 0;
 
   const style: CSSProperties = anchored
     ? {
         position: 'absolute',
-        top: 0,
+        top: startOffsetPx,
         left: 0,
         right: 0,
         height: heightPx,
@@ -301,12 +401,12 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
             {activityRowEl}
           </div>
 
-          {/* Top handle */}
+          {/* Top handle — mueve el START (inicio); end queda fijo */}
           <div
             role="separator"
-            aria-label={`Cambiar duración de ${props.title} (desde arriba)`}
-            title="Arrastrá para cambiar duración"
-            onPointerDown={handlePointerDown}
+            aria-label={`Cambiar inicio de ${props.title}`}
+            title="Arrastrá para mover el inicio"
+            onPointerDown={handleTopPointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={finishResize}
             onPointerCancel={finishResize}
@@ -332,12 +432,12 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
             <span aria-hidden style={{ display: 'none' }} />
           </div>
 
-          {/* Bottom handle */}
+          {/* Bottom handle — extiende el END (duración); start queda fijo */}
           <div
             role="separator"
-            aria-label={`Cambiar duración de ${props.title} (desde abajo)`}
+            aria-label={`Extender ${props.title}`}
             title="Arrastrá para extender el tiempo"
-            onPointerDown={handlePointerDown}
+            onPointerDown={handleBottomPointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={finishResize}
             onPointerCancel={finishResize}
