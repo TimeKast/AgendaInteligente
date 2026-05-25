@@ -241,8 +241,8 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   // físicamente que el Link de ActivityRow se solape con los handles —
   // el wrapper hace overflow:hidden y los handles existen FUERA del wrapper,
   // así no hay forma de que el Link intercepte sus pointer events.
-  const TOP_HANDLE_PX = 10;
-  const BOTTOM_HANDLE_PX = 12;
+  const TOP_HANDLE_PX = 5;
+  const BOTTOM_HANDLE_PX = 6;
 
   const activityRowEl = (
     <ActivityRow
@@ -329,7 +329,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
               userSelect: 'none',
             }}
           >
-            <span aria-hidden>· · ·</span>
+            <span aria-hidden style={{ display: 'none' }} />
           </div>
 
           {/* Bottom handle */}
@@ -360,7 +360,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
               userSelect: 'none',
             }}
           >
-            <span aria-hidden>· · ·</span>
+            <span aria-hidden style={{ display: 'none' }} />
           </div>
 
           {liveDuration !== null ? (

@@ -385,11 +385,30 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
     for (const a of todayItems) {
       if (!a.scheduledTime) continue;
       const startHour = parseHour(a.scheduledTime);
-      // Max duration = whatever fits between the start hour and the calendar
-      // end (22:00). Example: activity at 21:00 → max 60min (one slot).
-      const maxDurationMinutes = Number.isNaN(startHour)
-        ? 240
-        : Math.max(60, (CALENDAR_END_HOUR - startHour) * 60);
+      // Max duration = fits entre startHour y (a) calendar end OR (b) la
+      // próxima hora ocupada por OTRA tarea o evento externo. Evita overlap
+      // al resize. Ejemplo: activity a las 09:00 + otra a las 11:00 → max
+      // duration = 2h (no llega a las 11).
+      let maxDurationMinutes = 240;
+      if (!Number.isNaN(startHour)) {
+        let nextOccupiedHour = CALENDAR_END_HOUR;
+        // External events (Google Calendar mock)
+        for (const e of EXTERNAL_EVENTS) {
+          const eh = parseHour(e.hour);
+          if (!Number.isNaN(eh) && eh > startHour && eh < nextOccupiedHour) {
+            nextOccupiedHour = eh;
+          }
+        }
+        // Other anchored activities
+        for (const other of todayItems) {
+          if (other.id === a.id || !other.scheduledTime) continue;
+          const oh = parseHour(other.scheduledTime);
+          if (!Number.isNaN(oh) && oh > startHour && oh < nextOccupiedHour) {
+            nextOccupiedHour = oh;
+          }
+        }
+        maxDurationMinutes = Math.max(60, (nextOccupiedHour - startHour) * 60);
+      }
       const existing = map[a.scheduledTime];
       const row = (
         <DraggableTaskRow
