@@ -305,30 +305,33 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
             left: 0,
             right: 0,
             bottom: 0,
-            height: 14,
+            height: 20,
             cursor: 'ns-resize',
             alignItems: 'center',
             justifyContent: 'center',
             touchAction: 'none',
-            backgroundColor: 'var(--ag-bg-sunken)',
-            borderTop: '1px solid var(--ag-rule)',
-            // `display` controlled vía CSS .ag-resize-handle (none default,
-            // flex bajo @media any-pointer:fine). Solo desktop con mouse/
-            // trackpad muestra el handle.
+            backgroundColor: 'var(--ag-ink-soft)',
+            color: 'var(--ag-bg)',
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            zIndex: 10,
+            // display controlled vía CSS .ag-resize-handle (display:flex siempre).
+            // z-index: 10 forces sobre cualquier Link/button del ActivityRow.
           }}
         >
           <span
             aria-hidden
             style={{
-              display: 'block',
-              width: 36,
-              height: 3,
-              borderRadius: 2,
-              backgroundColor: 'var(--ag-ink-soft)',
-              boxShadow: '0 5px 0 0 var(--ag-ink-soft)',
-              transition: 'background-color var(--ag-duration-fast) var(--ag-ease)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
             }}
-          />
+          >
+            ↕ Arrastrá para extender
+          </span>
         </div>
       ) : null}
     </div>
