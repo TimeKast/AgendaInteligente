@@ -169,15 +169,17 @@
 
 /* ---- Page width utility classes ---- */
 /*
- * Shared width policy for main pages (tasks, goals, categories, projects list).
+ * Shared width policy for main pages.
  *
  *   .ag-page-wide   → mobile full-width; desktop ≥1024px max 1100px (centered)
- *   .ag-page-narrow → mobile full-width; desktop ≥1024px max 720px (chat-style)
+ *   .ag-page-narrow → mobile full-width; desktop ≥1024px max 720px (detail / reading)
+ *   .ag-page-chat   → mobile full-width; desktop ≥1024px max 900px (chat reading)
  *
- * Detail screens keep their 580px ad-hoc cap inline (focused reading width).
+ * Onboarding flows stay narrow on purpose (single-column 480px inline).
  */
 [data-theme='agenda'] .ag-page-wide,
-[data-theme='agenda'] .ag-page-narrow {
+[data-theme='agenda'] .ag-page-narrow,
+[data-theme='agenda'] .ag-page-chat {
   width: 100%;
   margin-inline: auto;
 }
@@ -187,6 +189,9 @@
   }
   [data-theme='agenda'] .ag-page-narrow {
     max-width: 720px;
+  }
+  [data-theme='agenda'] .ag-page-chat {
+    max-width: 900px;
   }
 }
 

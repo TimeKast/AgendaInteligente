@@ -47,12 +47,10 @@ export default function StatsPage() {
       <AgendaHeader dateLabel="Progreso" initials="F" />
 
       <main
+        className="ag-page-wide"
         style={{
           paddingBottom:
             'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-          maxWidth: 720,
-          marginInline: 'auto',
-          width: '100%',
           paddingInline: 'var(--ag-space-4)',
           paddingTop: 'var(--ag-space-4)',
           display: 'flex',

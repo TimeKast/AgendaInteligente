@@ -46,11 +46,9 @@ export default function ChatPage() {
       />
 
       <main
+        className="ag-page-chat"
         style={{
           flex: 1,
-          maxWidth: 480,
-          marginInline: 'auto',
-          width: '100%',
         }}
       >
         <Conversation>

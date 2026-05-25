@@ -125,9 +125,8 @@ export default function GoalDetailPage({ params }: GoalDetailPageProps) {
       />
 
       <main
+        className="ag-page-narrow"
         style={{
-          maxWidth: 480,
-          marginInline: 'auto',
           paddingInline: 'var(--ag-space-4)',
           paddingBottom: 'calc(var(--ag-space-8) + env(safe-area-inset-bottom, 0px))',
         }}

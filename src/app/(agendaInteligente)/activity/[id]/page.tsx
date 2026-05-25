@@ -118,10 +118,9 @@ export default function ActivityDetailPage() {
       />
 
       <main
+        className="ag-page-narrow"
         style={{
           paddingBottom: 'calc(var(--ag-space-6) + 96px + env(safe-area-inset-bottom, 0px))',
-          maxWidth: 480,
-          marginInline: 'auto',
           paddingInline: 'var(--ag-space-4)',
         }}
       >

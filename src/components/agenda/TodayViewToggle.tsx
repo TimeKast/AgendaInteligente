@@ -1,24 +1,28 @@
 'use client';
 
 /**
- * TodayViewToggle — pill segmented control for the Today view modes.
+ * TodayViewToggle — pill segmented control para el modo de organización
+ * del pool sidebar en /today.
  *
- *   - 'calendar' (default) → drag-and-drop hour grid with pool sidebar.
- *   - 'matrix'             → Eisenhower 2x2 (Q1..Q4) by urgency × importance.
- *   - 'list'               → 4 vertical sections (sin horario / con horario /
- *                            esta semana / pendientes).
+ *   - 'fecha'  (default) → pool agrupado por scope temporal
+ *                          (Hoy sin horario / Esta semana / Pendientes).
+ *   - 'matriz'           → pool agrupado por cuadrante Eisenhower
+ *                          (Q1 / Q2 / Q3 / Q4).
+ *
+ * En AMBAS vistas el calendar grid (06:00-22:00) sigue siendo el target
+ * principal: cualquier ítem del pool se arrastra a una hora para programarlo.
+ * La diferencia es solamente cómo se agrupan los ítems no programados.
  *
  * Pure presentational. State is owned by the parent page.
  */
 
-import { Calendar, Grid2x2, ListChecks } from 'lucide-react';
+import { Calendar, Grid2x2 } from 'lucide-react';
 
-export type TodayView = 'calendar' | 'matrix' | 'list';
+export type TodayView = 'fecha' | 'matriz';
 
 const OPTIONS: Array<{ id: TodayView; label: string; Icon: typeof Calendar }> = [
-  { id: 'calendar', label: 'Calendario', Icon: Calendar },
-  { id: 'matrix', label: 'Matriz', Icon: Grid2x2 },
-  { id: 'list', label: 'Lista', Icon: ListChecks },
+  { id: 'fecha', label: 'Por fecha', Icon: Calendar },
+  { id: 'matriz', label: 'Por matriz', Icon: Grid2x2 },
 ];
 
 interface TodayViewToggleProps {
@@ -30,7 +34,7 @@ export function TodayViewToggle({ value, onChange }: TodayViewToggleProps) {
   return (
     <div
       role="tablist"
-      aria-label="Modo de vista"
+      aria-label="Modo de organización del pool"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -68,7 +72,7 @@ export function TodayViewToggle({ value, onChange }: TodayViewToggleProps) {
             }}
           >
             <Icon size={14} strokeWidth={1.75} aria-hidden />
-            <span>Vista {label.toLowerCase()}</span>
+            <span>{label}</span>
           </button>
         );
       })}

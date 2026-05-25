@@ -15,7 +15,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { GripVertical, MoreHorizontal, Pencil, Palette, Trash2 } from 'lucide-react';
+import { GripVertical, MoreHorizontal, Pencil, Palette, Plus, Trash2 } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { CATEGORY_COLORS, type CategoryColorId } from './ColorPicker';
@@ -33,9 +33,15 @@ export interface CategoryItem {
 interface CategoryRowProps {
   category: CategoryItem;
   onDelete: (id: string) => void;
+  /**
+   * Optional handler invoked when the user taps the inline "+ Proyecto" affordance.
+   * When omitted the button is hidden. Inbox (system) categories ignore taps —
+   * the button is rendered disabled.
+   */
+  onAddProject?: (categoryId: string) => void;
 }
 
-export function CategoryRow({ category, onDelete }: CategoryRowProps) {
+export function CategoryRow({ category, onDelete, onAddProject }: CategoryRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,7 +83,7 @@ export function CategoryRow({ category, onDelete }: CategoryRowProps) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'auto auto 1fr auto',
+          gridTemplateColumns: 'auto auto 1fr auto auto',
           alignItems: 'center',
           gap: 'var(--ag-space-3)',
           padding: 'var(--ag-space-3) 0',
@@ -166,6 +172,45 @@ export function CategoryRow({ category, onDelete }: CategoryRowProps) {
             {category.projectCount === 1 ? 'proyecto' : 'proyectos'}
           </span>
         </div>
+
+        {/* Inline "+ Proyecto" — quick affordance to create project in this cat */}
+        {onAddProject ? (
+          <button
+            type="button"
+            aria-label={
+              category.system
+                ? 'Inbox no admite proyectos manuales'
+                : `Nuevo proyecto en ${category.name}`
+            }
+            title={
+              category.system
+                ? 'Inbox no admite proyectos manuales'
+                : `Nuevo proyecto en ${category.name}`
+            }
+            disabled={category.system}
+            onClick={() => {
+              if (!category.system) onAddProject(category.id);
+            }}
+            style={{
+              appearance: 'none',
+              background: 'transparent',
+              border: '1px solid var(--ag-rule)',
+              color: category.system ? 'var(--ag-ink-hint)' : 'var(--ag-ink-soft)',
+              cursor: category.system ? 'not-allowed' : 'pointer',
+              padding: '4px 8px',
+              borderRadius: 'var(--ag-radius-pill)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 12,
+              opacity: category.system ? 0.5 : 1,
+            }}
+          >
+            <Plus size={14} strokeWidth={1.75} aria-hidden />
+            <span>Proyecto</span>
+          </button>
+        ) : null}
 
         {/* Menu trigger */}
         <div style={{ position: 'relative' }} ref={menuRef}>

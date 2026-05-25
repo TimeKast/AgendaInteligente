@@ -39,6 +39,14 @@ interface CategoryOption {
 interface NewProjectModalProps {
   open: boolean;
   categories: CategoryOption[];
+  /**
+   * Optional category name to pre-select (and lock) when the modal opens.
+   * Used when launching the modal from a specific CategoryRow so the user
+   * doesn't need to pick the category again.
+   */
+  defaultCategoryName?: string;
+  /** When true and `defaultCategoryName` is provided, the select becomes read-only. */
+  lockCategory?: boolean;
   onCancel: () => void;
   onCreate: (data: NewProjectPayload) => void;
 }
@@ -53,17 +61,20 @@ const STATUS_OPTIONS: Array<{ id: ProjectStatus; label: string; hint: string }> 
 export function NewProjectModal({
   open,
   categories,
+  defaultCategoryName,
+  lockCategory = false,
   onCancel,
   onCreate,
 }: NewProjectModalProps) {
-  // Default category: first non-inbox, fallback to first.
-  const defaultCategoryName =
+  // Default category: explicit prop wins, else first non-inbox, fallback to first.
+  const initialCategoryName =
+    defaultCategoryName ??
     categories.find((c) => c.name.toLowerCase() !== 'inbox')?.name ??
     categories[0]?.name ??
     '';
 
   const [name, setName] = useState('');
-  const [categoryName, setCategoryName] = useState(defaultCategoryName);
+  const [categoryName, setCategoryName] = useState(initialCategoryName);
   const [description, setDescription] = useState('');
   const [outcome, setOutcome] = useState('');
   const [deadline, setDeadline] = useState('');
@@ -193,6 +204,8 @@ export function NewProjectModal({
           <select
             value={categoryName}
             onChange={(e) => setCategoryName(e.target.value)}
+            disabled={lockCategory}
+            aria-readonly={lockCategory || undefined}
             style={{
               appearance: 'none',
               backgroundColor: 'transparent',
@@ -201,9 +214,10 @@ export function NewProjectModal({
               padding: '8px 0',
               fontFamily: 'var(--ag-font-body)',
               fontSize: 16,
-              color: 'var(--ag-ink-primary)',
+              color: lockCategory ? 'var(--ag-ink-soft)' : 'var(--ag-ink-primary)',
               outline: 'none',
-              cursor: 'pointer',
+              cursor: lockCategory ? 'not-allowed' : 'pointer',
+              opacity: lockCategory ? 0.8 : 1,
             }}
           >
             {categories.map((c) => (
@@ -212,6 +226,18 @@ export function NewProjectModal({
               </option>
             ))}
           </select>
+          {lockCategory ? (
+            <span
+              style={{
+                fontFamily: 'var(--ag-font-display)',
+                fontStyle: 'italic',
+                fontSize: 12,
+                color: 'var(--ag-ink-hint)',
+              }}
+            >
+              Pre-seleccionada desde la categoría.
+            </span>
+          ) : null}
         </label>
 
         {/* Descripción */}

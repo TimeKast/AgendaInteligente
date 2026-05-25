@@ -15,7 +15,7 @@
  *   - "+ Nuevo" → NewCategoryModal, on submit appends to state.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -36,6 +36,7 @@ import { CategoryRow, type CategoryItem } from '@/components/agenda/CategoryRow'
 import {
   NewCategoryModal,
 } from '@/components/agenda/NewCategoryModal';
+import { NewProjectModal } from '@/components/agenda/NewProjectModal';
 import { ConfirmDeleteModal } from '@/components/agenda/ConfirmDeleteModal';
 
 const INITIAL: CategoryItem[] = [
@@ -69,6 +70,17 @@ export default function CategoryListPage() {
   const [categories, setCategories] = useState<CategoryItem[]>(INITIAL);
   const [createOpen, setCreateOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<CategoryItem | null>(null);
+  // Inline "+ Proyecto" affordance state — opens NewProjectModal pre-filled
+  // with the targeted category. Remount-key avoids stale form fields.
+  const [projectFor, setProjectFor] = useState<CategoryItem | null>(null);
+  const [projectKey, setProjectKey] = useState(0);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 1800);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -150,6 +162,12 @@ export default function CategoryListPage() {
                     const c = categories.find((x) => x.id === id);
                     if (c) setPendingDelete(c);
                   }}
+                  onAddProject={(id) => {
+                    const c = categories.find((x) => x.id === id);
+                    if (!c) return;
+                    setProjectKey((k) => k + 1);
+                    setProjectFor(c);
+                  }}
                 />
               ))}
             </ul>
@@ -165,7 +183,11 @@ export default function CategoryListPage() {
           }}
         >
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            <CategoryRow category={INBOX} onDelete={() => undefined} />
+            <CategoryRow
+              category={INBOX}
+              onDelete={() => undefined}
+              onAddProject={() => undefined}
+            />
           </ul>
         </div>
 
@@ -188,6 +210,49 @@ export default function CategoryListPage() {
           setCreateOpen(false);
         }}
       />
+
+      <NewProjectModal
+        key={projectKey}
+        open={!!projectFor}
+        categories={[...categories, INBOX].map((c) => ({ id: c.id, name: c.name }))}
+        defaultCategoryName={projectFor?.name}
+        lockCategory={!!projectFor}
+        onCancel={() => setProjectFor(null)}
+        onCreate={(payload) => {
+          const targetName = projectFor?.name ?? payload.categoryName;
+          setProjectFor(null);
+          setCategories((items) =>
+            items.map((c) =>
+              c.name === targetName ? { ...c, projectCount: c.projectCount + 1 } : c,
+            ),
+          );
+          setToast(`Proyecto creado en ${targetName}.`);
+        }}
+      />
+
+      {toast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            bottom: 'calc(64px + 24px + env(safe-area-inset-bottom, 0px))',
+            zIndex: 80,
+            backgroundColor: 'var(--ag-ink-primary)',
+            color: 'var(--ag-accent-on)',
+            padding: '10px 16px',
+            borderRadius: 'var(--ag-radius-pill)',
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 14,
+            boxShadow:
+              '0 1px 2px rgba(42, 40, 38, 0.12), 0 2px 6px rgba(42, 40, 38, 0.08)',
+          }}
+        >
+          {toast}
+        </div>
+      ) : null}
 
       <ConfirmDeleteModal
         open={!!pendingDelete}

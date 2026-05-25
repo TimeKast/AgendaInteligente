@@ -1,32 +1,44 @@
 'use client';
 
 /**
- * TodayActivitiesBoard — pool + calendar grid orchestrator for Today.
+ * TodayActivitiesBoard — pool + calendar grid orchestrator for /today.
  *
- * Replaces the previous 4-section (Mañana/Tarde/Noche/Anytime) time-block
- * layout with a calendar-style model:
+ * Modelo conceptual:
  *
- *   - POOL ("HOY SIN HORARIO")  → activities with scheduledDate=today and
- *                                  scheduledTime=null. Rendered as a top list.
- *   - CALENDAR GRID ("AGENDA")  → 06:00 → 22:00, one row per hour. Activities
- *                                  with scheduledTime live in their hour slot.
+ *   POOL (sidebar):  todo lo no programado en una hora del calendario hoy.
+ *                    Vive en una de 3 secciones (vista "fecha") o 4 secciones
+ *                    (vista "matriz"). Todos los ítems son draggables al
+ *                    calendar grid Y entre secciones del pool.
+ *
+ *   CALENDAR GRID:   06:00 → 22:00, una fila por hora. Ítems con
+ *                    `scheduledTime` viven en su hora. Sin cambios visuales
+ *                    vs iteraciones anteriores.
+ *
+ * Vista del pool (`view` prop):
+ *
+ *   - "fecha"  (default):
+ *       HOY SIN HORARIO  ← items[scope='today']
+ *       ESTA SEMANA      ← items[scope='week']    (collapsible)
+ *       PENDIENTES       ← items[scope='backlog'] (collapsible)
+ *
+ *   - "matriz":
+ *       Q1 URGENTE+IMPORTANTE  (wine border-left)
+ *       Q2 IMPORTANTE          (sage border-left)
+ *       Q3 URGENTE             (orange border-left, collapsible)
+ *       Q4 NEUTRO              (ink-hint border-left, collapsible)
  *
  * Drag rules:
- *   - Pool → hour slot  : sets scheduledTime = "HH:00".
- *   - Hour slot → pool  : clears scheduledTime.
- *   - Hour A → Hour B   : updates scheduledTime.
+ *   - Cualquier pool item → hora HH:00  : promueve a today + scheduledTime, scope='today'.
+ *   - Hora HH:00 → pool:today           : limpia scheduledTime (mantiene scope='today').
+ *   - Hora HH:00 → pool:week            : pasa a scope='week', limpia time.
+ *   - Hora HH:00 → pool:backlog         : pasa a scope='backlog', limpia time.
+ *   - pool:today → pool:week / backlog  : cambia scope, sin time.
+ *   - pool:week ↔ pool:backlog          : cambia scope.
+ *   - En vista "matriz": los drops a Q1-Q4 cambian cuadrante (mantienen scope).
  *
- * External Google Calendar events are decorative (2 hardcoded entries that
- * block their hour slot — useDroppable disabled inside HourSlot via `blocked`).
+ * External Google Calendar events: 2 hardcoded entries que bloquean su hora.
  *
- * Swipe-to-status (DD-021) stays on pool rows. Calendar-anchored rows do NOT
- * get swipe so the grid feels solid — status changes go through the "⋯" menu.
- *
- * Layout responsibility:
- *   - Mobile <1024px: single-column flow (pool above calendar).
- *   - Desktop ≥1024px: caller wraps this in a `.ag-today-split` flex; here we
- *     render the pool sidebar + calendar canvas as siblings and let CSS rule
- *     the geometry.
+ * Swipe-to-status (DD-021) solo en pool rows. Calendar-anchored no tiene swipe.
  */
 
 import { useMemo, useState } from 'react';
@@ -54,37 +66,37 @@ import {
   type ExtendedActivityStatus,
   type StatusReason,
 } from './ActivityStatusModal';
+import type { TodayView } from './TodayViewToggle';
+import type { Quadrant } from './EisenhowerMatrix';
 
-interface TodayActivity {
+type PoolScope = 'today' | 'week' | 'backlog';
+
+interface PoolActivity {
   id: string;
   title: string;
   status: ActivityStatus;
-  /** "HH:00" string anchors this activity to that hour slot. null → pool. */
-  scheduledTime: string | null;
+  /** Where in the pool taxonomy this item lives. */
+  scope: PoolScope;
+  /** Eisenhower quadrant (1..4) — informativo + agrupador en vista matriz. */
+  quadrant: Quadrant;
   priority: number;
   projectLabel: string;
-  /**
-   * Duration in minutes. Only meaningful when `scheduledTime != null`; pool
-   * items ignore this field. Defaults to 60 for hour-anchored items via the
-   * initial data below. Editable via the bottom-edge resize handle on desktop
-   * (see DraggableTaskRow). Whole-hour snap on commit, min 60min, max clamped
-   * to calendar end (22:00).
-   */
-  durationMinutes: number;
-  /** Optional ISO YYYY-MM-DD deadline (inline DeadlineBadge). */
   deadline?: string;
-  /** Optional 0..100 progress (bottom-edge bar). */
   progressPercent?: number;
 }
 
-interface WeekActivity {
+interface ScheduledActivity {
   id: string;
   title: string;
   status: ActivityStatus;
+  /** "HH:00" string — anchored to that hour slot. */
+  scheduledTime: string;
   priority: number;
   projectLabel: string;
+  durationMinutes: number;
   deadline?: string;
   progressPercent?: number;
+  quadrant: Quadrant;
 }
 
 interface ExternalEvent {
@@ -94,66 +106,80 @@ interface ExternalEvent {
   timeRange: string; // "10:00 – 11:00"
 }
 
-const INITIAL_TODAY: TodayActivity[] = [
+const INITIAL_SCHEDULED: ScheduledActivity[] = [
   {
-    id: 't1',
+    id: 's1',
     title: 'Reunión Genomma — kickoff',
     status: 'todo',
     scheduledTime: '08:00',
     priority: 4,
     projectLabel: 'Empresa Genomma',
     durationMinutes: 60,
+    quadrant: 1,
   },
   {
-    id: 't2',
+    id: 's2',
     title: 'Reporte trimestral',
     status: 'in_progress',
     scheduledTime: '11:00',
     priority: 5,
     projectLabel: 'Empresa Genomma',
-    // Pre-seeded 2h example so the multi-slot rendering is visible at load.
     durationMinutes: 120,
-    // Soon deadline (warning state) + mid progress.
     deadline: '2026-05-25',
     progressPercent: 60,
+    quadrant: 1,
   },
   {
-    id: 't3',
-    title: 'Revisar PR equipo',
-    status: 'todo',
-    scheduledTime: null,
-    priority: 3,
-    projectLabel: 'Empresa Genomma',
-    durationMinutes: 60,
-    progressPercent: 25,
-  },
-  {
-    id: 't4',
-    title: 'Gym 1h',
-    status: 'todo',
-    scheduledTime: null,
-    priority: 2,
-    projectLabel: 'Personal',
-    durationMinutes: 60,
-  },
-  {
-    id: 't5',
+    id: 's3',
     title: 'Llamar a mamá',
     status: 'todo',
     scheduledTime: '19:00',
     priority: 3,
     projectLabel: 'Personal',
     durationMinutes: 60,
-    // Past-due (danger state).
     deadline: '2026-05-20',
+    quadrant: 3,
   },
 ];
 
-const INITIAL_WEEK: WeekActivity[] = [
+const INITIAL_POOL: PoolActivity[] = [
+  // Hoy sin horario (3)
+  {
+    id: 'p1',
+    title: 'Revisar PR equipo',
+    status: 'todo',
+    scope: 'today',
+    quadrant: 2,
+    priority: 3,
+    projectLabel: 'Empresa Genomma',
+    progressPercent: 25,
+  },
+  {
+    id: 'p2',
+    title: 'Gym 1h',
+    status: 'todo',
+    scope: 'today',
+    quadrant: 2,
+    priority: 2,
+    projectLabel: 'Personal',
+  },
+  {
+    id: 'p3',
+    title: 'Responder a Marta',
+    status: 'todo',
+    scope: 'today',
+    quadrant: 3,
+    priority: 2,
+    projectLabel: 'Personal',
+  },
+
+  // Esta semana (4)
   {
     id: 'w1',
     title: 'Borrador propuesta cliente',
     status: 'todo',
+    scope: 'week',
+    quadrant: 1,
     priority: 4,
     projectLabel: 'Empresa Genomma',
   },
@@ -161,6 +187,8 @@ const INITIAL_WEEK: WeekActivity[] = [
     id: 'w2',
     title: 'Estudio alemán — capítulo 3',
     status: 'todo',
+    scope: 'week',
+    quadrant: 2,
     priority: 3,
     projectLabel: 'Personal',
   },
@@ -168,8 +196,77 @@ const INITIAL_WEEK: WeekActivity[] = [
     id: 'w3',
     title: 'Pagar tarjeta',
     status: 'todo',
+    scope: 'week',
+    quadrant: 3,
     priority: 2,
     projectLabel: 'Personal',
+  },
+  {
+    id: 'w4',
+    title: 'Diseñar landing v0.5',
+    status: 'in_progress',
+    scope: 'week',
+    quadrant: 2,
+    priority: 4,
+    projectLabel: 'Empresa Genomma',
+  },
+
+  // Pendientes / backlog (6)
+  {
+    id: 'b1',
+    title: 'Investigar competencia',
+    status: 'todo',
+    scope: 'backlog',
+    quadrant: 4,
+    priority: 3,
+    projectLabel: 'Empresa Genomma',
+    deadline: '2026-07-15',
+  },
+  {
+    id: 'b2',
+    title: 'Refactor schema usuarios',
+    status: 'todo',
+    scope: 'backlog',
+    quadrant: 4,
+    priority: 3,
+    projectLabel: 'Side project Web3',
+    deadline: '2026-06-10',
+  },
+  {
+    id: 'b3',
+    title: 'Leer libro de la semana',
+    status: 'todo',
+    scope: 'backlog',
+    quadrant: 4,
+    priority: 1,
+    projectLabel: 'Personal',
+  },
+  {
+    id: 'b4',
+    title: 'Llamar al dentista',
+    status: 'todo',
+    scope: 'backlog',
+    quadrant: 3,
+    priority: 2,
+    projectLabel: 'Personal',
+  },
+  {
+    id: 'b5',
+    title: 'Planear viaje',
+    status: 'todo',
+    scope: 'backlog',
+    quadrant: 4,
+    priority: 2,
+    projectLabel: 'Personal',
+  },
+  {
+    id: 'b6',
+    title: 'Setup analytics evento beta',
+    status: 'todo',
+    scope: 'backlog',
+    quadrant: 2,
+    priority: 3,
+    projectLabel: 'Empresa Genomma',
   },
 ];
 
@@ -180,10 +277,26 @@ const EXTERNAL_EVENTS: ExternalEvent[] = [
 
 const DROP_POOL_TODAY = 'pool:today';
 const DROP_POOL_WEEK = 'pool:week';
+const DROP_POOL_BACKLOG = 'pool:backlog';
+const DROP_Q_PREFIX = 'quad:';
 const HOUR_DROP_PREFIX = 'hour:';
-/** Calendar end hour (exclusive minute boundary). 22 means slot 22:00 is the
- *  last visible row and an activity may not extend past 22:00. */
 const CALENDAR_END_HOUR = 22;
+
+const POOL_DROP_TARGETS = new Set([DROP_POOL_TODAY, DROP_POOL_WEEK, DROP_POOL_BACKLOG]);
+
+const QUADRANT_ACCENT: Record<Quadrant, string> = {
+  1: 'var(--ag-scope-life)',
+  2: 'var(--ag-scope-quarter)',
+  3: 'var(--ag-scope-year)',
+  4: 'var(--ag-ink-hint)',
+};
+
+const QUADRANT_LABEL: Record<Quadrant, string> = {
+  1: 'Q1 · Urgente + importante',
+  2: 'Q2 · Importante',
+  3: 'Q3 · Urgente',
+  4: 'Q4 · Neutro',
+};
 
 /** Parse "HH:00" → integer hour. Returns NaN if invalid. */
 function parseHour(time: string): number {
@@ -192,20 +305,17 @@ function parseHour(time: string): number {
 }
 
 interface TodayActivitiesBoardProps {
-  /**
-   * When true, render desktop layout: pool sidebar (DaySheet + pool + week) on
-   * the left, calendar canvas on the right — wrapped by CSS class
-   * `.ag-today-split`. When false (mobile), stack everything in single column.
-   *
-   * The caller doesn't actually toggle this — both DOMs are rendered and CSS
-   * shows the right one. Kept as a single layout that responds via CSS.
-   */
   morningSection?: React.ReactNode;
+  /** Modo de agrupación del pool sidebar. Default 'fecha'. */
+  view?: TodayView;
 }
 
-export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardProps) {
-  const [todayItems, setTodayItems] = useState<TodayActivity[]>(INITIAL_TODAY);
-  const [weekItems, setWeekItems] = useState<WeekActivity[]>(INITIAL_WEEK);
+export function TodayActivitiesBoard({
+  morningSection,
+  view = 'fecha',
+}: TodayActivitiesBoardProps) {
+  const [scheduled, setScheduled] = useState<ScheduledActivity[]>(INITIAL_SCHEDULED);
+  const [pool, setPool] = useState<PoolActivity[]>(INITIAL_POOL);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [statusModal, setStatusModal] = useState<{
     id: string;
@@ -214,31 +324,16 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
   } | null>(null);
 
   const sensors = useSensors(
-    // distance: 8 keeps quick taps and horizontal swipes from triggering a
-    // drag — drag wins only after 8px of sustained motion.
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  /**
-   * Hours that should reject drops: external Google events (always) PLUS
-   * any "overflow" hours covered by a multi-hour activity (e.g. a 2h activity
-   * at 11:00 blocks 12:00 too — that hour is visually occupied even though
-   * no activity is anchored there).
-   *
-   * The activity's OWN start hour is NOT added — drop on its own slot is a
-   * no-op (it already lives there). The recompute runs on every duration
-   * change because resize updates `todayItems`.
-   */
   const blockedHours = useMemo(() => {
     const set = new Set(EXTERNAL_EVENTS.map((e) => e.hour));
-    for (const a of todayItems) {
-      if (!a.scheduledTime) continue;
+    for (const a of scheduled) {
       const startHour = parseHour(a.scheduledTime);
       if (Number.isNaN(startHour)) continue;
       const spanHours = Math.ceil(a.durationMinutes / 60);
-      // Block subsequent hours covered by the activity (not the start hour
-      // itself — that's where the activity lives).
       for (let h = startHour + 1; h < startHour + spanHours; h++) {
         if (h <= CALENDAR_END_HOUR) {
           set.add(`${h.toString().padStart(2, '0')}:00`);
@@ -246,19 +341,20 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
       }
     }
     return set;
-  }, [todayItems]);
+  }, [scheduled]);
 
   const activeActivity = useMemo(() => {
     if (!activeId) return null;
-    return todayItems.find((a) => a.id === activeId)
-      ?? weekItems.find((a) => a.id === activeId)
-      ?? null;
-  }, [activeId, todayItems, weekItems]);
+    return (
+      scheduled.find((a) => a.id === activeId) ??
+      pool.find((a) => a.id === activeId) ??
+      null
+    );
+  }, [activeId, scheduled, pool]);
 
   function handleDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));
   }
-
   function handleDragCancel() {
     setActiveId(null);
   }
@@ -268,68 +364,102 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
     setActiveId(null);
     if (!over) return;
 
-    const activeId = String(active.id);
+    const aId = String(active.id);
     const overId = String(over.id);
+    const inScheduled = scheduled.some((a) => a.id === aId);
+    const inPool = pool.some((a) => a.id === aId);
 
-    // Determine source list
-    const inToday = todayItems.some((a) => a.id === activeId);
-    const inWeek = weekItems.some((a) => a.id === activeId);
+    // --- Drop on a pool section ---
+    if (POOL_DROP_TARGETS.has(overId)) {
+      const nextScope: PoolScope =
+        overId === DROP_POOL_TODAY
+          ? 'today'
+          : overId === DROP_POOL_WEEK
+            ? 'week'
+            : 'backlog';
 
-    if (overId === DROP_POOL_TODAY) {
-      // Land in today pool: clear scheduledTime; if it was in week, move it
-      // into today (with scheduledTime=null).
-      if (inToday) {
-        setTodayItems((prev) =>
-          prev.map((a) => (a.id === activeId ? { ...a, scheduledTime: null } : a)),
-        );
-      } else if (inWeek) {
-        const moved = weekItems.find((a) => a.id === activeId);
+      if (inScheduled) {
+        const moved = scheduled.find((a) => a.id === aId);
         if (!moved) return;
-        setWeekItems((prev) => prev.filter((a) => a.id !== activeId));
-        setTodayItems((prev) => [
-          ...prev,
-          { ...moved, scheduledTime: null, durationMinutes: 60 },
-        ]);
-      }
-      return;
-    }
-
-    if (overId === DROP_POOL_WEEK) {
-      // Drag a today item into the week pool: remove from today, append to
-      // week (drops scheduledTime entirely).
-      if (inToday) {
-        const moved = todayItems.find((a) => a.id === activeId);
-        if (!moved) return;
-        setTodayItems((prev) => prev.filter((a) => a.id !== activeId));
-        setWeekItems((prev) => [
+        setScheduled((prev) => prev.filter((a) => a.id !== aId));
+        setPool((prev) => [
           ...prev,
           {
             id: moved.id,
             title: moved.title,
             status: moved.status,
+            scope: nextScope,
+            quadrant: moved.quadrant,
             priority: moved.priority,
             projectLabel: moved.projectLabel,
+            deadline: moved.deadline,
+            progressPercent: moved.progressPercent,
+          },
+        ]);
+      } else if (inPool) {
+        setPool((prev) =>
+          prev.map((a) => (a.id === aId ? { ...a, scope: nextScope } : a)),
+        );
+      }
+      return;
+    }
+
+    // --- Drop on a quadrant section (vista "matriz") ---
+    if (overId.startsWith(DROP_Q_PREFIX)) {
+      const q = Number(overId.slice(DROP_Q_PREFIX.length)) as Quadrant;
+      if (!([1, 2, 3, 4] as const).includes(q)) return;
+      if (inPool) {
+        setPool((prev) => prev.map((a) => (a.id === aId ? { ...a, quadrant: q } : a)));
+      } else if (inScheduled) {
+        // Drag from grid → quadrant: unschedule + change quadrant.
+        const moved = scheduled.find((a) => a.id === aId);
+        if (!moved) return;
+        setScheduled((prev) => prev.filter((a) => a.id !== aId));
+        setPool((prev) => [
+          ...prev,
+          {
+            id: moved.id,
+            title: moved.title,
+            status: moved.status,
+            scope: 'today',
+            quadrant: q,
+            priority: moved.priority,
+            projectLabel: moved.projectLabel,
+            deadline: moved.deadline,
+            progressPercent: moved.progressPercent,
           },
         ]);
       }
       return;
     }
 
+    // --- Drop on an hour slot ---
     if (overId.startsWith(HOUR_DROP_PREFIX)) {
-      const hour = overId.slice(HOUR_DROP_PREFIX.length); // "HH:00"
-      if (blockedHours.has(hour)) return; // can't land on Google-blocked slot
-      if (inToday) {
-        setTodayItems((prev) =>
-          prev.map((a) => (a.id === activeId ? { ...a, scheduledTime: hour } : a)),
+      const hour = overId.slice(HOUR_DROP_PREFIX.length);
+      if (blockedHours.has(hour)) return;
+
+      if (inScheduled) {
+        setScheduled((prev) =>
+          prev.map((a) => (a.id === aId ? { ...a, scheduledTime: hour } : a)),
         );
-      } else if (inWeek) {
-        // Drag from week to a specific hour today: promote into today, set hour.
-        const moved = weekItems.find((a) => a.id === activeId);
+      } else if (inPool) {
+        const moved = pool.find((a) => a.id === aId);
         if (!moved) return;
-        setWeekItems((prev) => prev.filter((a) => a.id !== activeId));
-        setTodayItems((prev) => [
+        setPool((prev) => prev.filter((a) => a.id !== aId));
+        setScheduled((prev) => [
           ...prev,
-          { ...moved, scheduledTime: hour, durationMinutes: 60 },
+          {
+            id: moved.id,
+            title: moved.title,
+            status: moved.status,
+            scheduledTime: hour,
+            priority: moved.priority,
+            projectLabel: moved.projectLabel,
+            durationMinutes: 60,
+            deadline: moved.deadline,
+            progressPercent: moved.progressPercent,
+            quadrant: moved.quadrant,
+          },
         ]);
       }
     }
@@ -337,30 +467,47 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
 
   function handleCreate(draft: QuickAddDraft) {
     const id = `new-${Date.now()}`;
-    setTodayItems((prev) => [
-      ...prev,
-      {
-        id,
-        title: draft.title,
-        status: 'todo',
-        scheduledTime: draft.scheduledTime ? normalizeHour(draft.scheduledTime) : null,
-        priority: draft.priority,
-        projectLabel: draft.projectLabel,
-        durationMinutes: 60,
-      },
-    ]);
+    if (draft.scheduledTime) {
+      setScheduled((prev) => [
+        ...prev,
+        {
+          id,
+          title: draft.title,
+          status: 'todo',
+          scheduledTime: normalizeHour(draft.scheduledTime!),
+          priority: draft.priority,
+          projectLabel: draft.projectLabel,
+          durationMinutes: 60,
+          quadrant: 2,
+        },
+      ]);
+    } else {
+      setPool((prev) => [
+        ...prev,
+        {
+          id,
+          title: draft.title,
+          status: 'todo',
+          scope: 'today',
+          quadrant: 2,
+          priority: draft.priority,
+          projectLabel: draft.projectLabel,
+        },
+      ]);
+    }
   }
 
   function handleResize(id: string, nextDurationMinutes: number) {
-    setTodayItems((prev) =>
+    setScheduled((prev) =>
       prev.map((a) =>
         a.id === id ? { ...a, durationMinutes: nextDurationMinutes } : a,
       ),
     );
   }
 
-  function setTodayStatus(id: string, next: ActivityStatus) {
-    setTodayItems((prev) => prev.map((a) => (a.id === id ? { ...a, status: next } : a)));
+  function setScheduledStatus(id: string, next: ActivityStatus) {
+    setScheduled((prev) => prev.map((a) => (a.id === id ? { ...a, status: next } : a)));
+    setPool((prev) => prev.map((a) => (a.id === id ? { ...a, status: next } : a)));
   }
 
   function openStatus(activity: { id: string; title: string; status: ActivityStatus }) {
@@ -369,39 +516,39 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
 
   function applyStatus(next: ExtendedActivityStatus, _reason?: StatusReason) {
     if (!statusModal) return;
-    setTodayStatus(statusModal.id, next);
+    setScheduledStatus(statusModal.id, next);
     setStatusModal(null);
   }
 
-  // ----- Derived slices -----
-  const poolItems = useMemo(
-    () => todayItems.filter((a) => a.scheduledTime === null),
-    [todayItems],
-  );
+  // ----- Slices by view -----
+  const poolByScope = useMemo(() => {
+    const today = pool.filter((a) => a.scope === 'today');
+    const week = pool.filter((a) => a.scope === 'week');
+    const backlog = pool.filter((a) => a.scope === 'backlog');
+    return { today, week, backlog };
+  }, [pool]);
+
+  const poolByQuadrant = useMemo(() => {
+    const map: Record<Quadrant, PoolActivity[]> = { 1: [], 2: [], 3: [], 4: [] };
+    for (const a of pool) map[a.quadrant].push(a);
+    return map;
+  }, [pool]);
 
   const slotsByHour = useMemo(() => {
     const map: Record<string, React.ReactNode> = {};
-    // Tasks anchored to each hour
-    for (const a of todayItems) {
-      if (!a.scheduledTime) continue;
+    for (const a of scheduled) {
       const startHour = parseHour(a.scheduledTime);
-      // Max duration = fits entre startHour y (a) calendar end OR (b) la
-      // próxima hora ocupada por OTRA tarea o evento externo. Evita overlap
-      // al resize. Ejemplo: activity a las 09:00 + otra a las 11:00 → max
-      // duration = 2h (no llega a las 11).
       let maxDurationMinutes = 240;
       if (!Number.isNaN(startHour)) {
         let nextOccupiedHour = CALENDAR_END_HOUR;
-        // External events (Google Calendar mock)
         for (const e of EXTERNAL_EVENTS) {
           const eh = parseHour(e.hour);
           if (!Number.isNaN(eh) && eh > startHour && eh < nextOccupiedHour) {
             nextOccupiedHour = eh;
           }
         }
-        // Other anchored activities
-        for (const other of todayItems) {
-          if (other.id === a.id || !other.scheduledTime) continue;
+        for (const other of scheduled) {
+          if (other.id === a.id) continue;
           const oh = parseHour(other.scheduledTime);
           if (!Number.isNaN(oh) && oh > startHour && oh < nextOccupiedHour) {
             nextOccupiedHour = oh;
@@ -434,7 +581,6 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
         </>
       ) : row;
     }
-    // External Google events
     for (const evt of EXTERNAL_EVENTS) {
       const existing = map[evt.hour];
       const block = (
@@ -448,13 +594,63 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
       ) : block;
     }
     return map;
-    // openStatus/setTodayStatus are stable references via the parent's
-    // function declarations; dnd-kit useDraggable manages its own identity.
-  }, [todayItems]);
+  }, [scheduled]);
 
   const isDragging = activeId !== null;
 
-  // ----- Render -----
+  /**
+   * Render a draggable pool row con accent de cuadrante a la izquierda. La
+   * banda warn-of-color es subtle: borderLeft 3px en color del cuadrante,
+   * más un dot accent al lado del título para escaneo rápido.
+   */
+  function renderPoolRow(a: PoolActivity) {
+    const accent = QUADRANT_ACCENT[a.quadrant];
+    return (
+      <SwipeableRow
+        key={a.id}
+        disabled={isDragging}
+        onDone={() => setScheduledStatus(a.id, 'done')}
+        onSkip={() => openStatus(a)}
+        onBlock={() => setScheduledStatus(a.id, 'blocked')}
+      >
+        <div
+          style={{
+            borderLeft: `3px solid ${accent}`,
+            paddingLeft: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span
+            aria-label={`Cuadrante Q${a.quadrant}`}
+            title={`Q${a.quadrant}`}
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              backgroundColor: accent,
+              flexShrink: 0,
+            }}
+          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <DraggableTaskRow
+              id={a.id}
+              title={a.title}
+              status={a.status}
+              priority={a.priority}
+              projectLabel={a.projectLabel}
+              href={`/activity/${a.id}`}
+              onOpenStatus={() => openStatus(a)}
+              deadline={a.deadline}
+              progressPercent={a.progressPercent}
+            />
+          </div>
+        </div>
+      </SwipeableRow>
+    );
+  }
+
   return (
     <>
       <DndContext
@@ -470,62 +666,91 @@ export function TodayActivitiesBoard({ morningSection }: TodayActivitiesBoardPro
           <div className="ag-today-pool">
             {morningSection ?? null}
 
-            <PoolSection
-              id={DROP_POOL_TODAY}
-              label="Hoy sin horario"
-              isDragging={isDragging}
-              empty={poolItems.length === 0}
-              footer={<ActivityQuickAdd onCreate={handleCreate} />}
-            >
-              {poolItems.map((a) => (
-                <SwipeableRow
-                  key={a.id}
-                  disabled={isDragging}
-                  onDone={() => setTodayStatus(a.id, 'done')}
-                  onSkip={() => openStatus(a)}
-                  onBlock={() => setTodayStatus(a.id, 'blocked')}
+            {view === 'fecha' ? (
+              <>
+                <PoolSection
+                  id={DROP_POOL_TODAY}
+                  label="Hoy sin horario"
+                  isDragging={isDragging}
+                  empty={poolByScope.today.length === 0}
+                  count={poolByScope.today.length}
+                  footer={<ActivityQuickAdd onCreate={handleCreate} />}
                 >
-                  <DraggableTaskRow
-                    id={a.id}
-                    title={a.title}
-                    status={a.status}
-                    priority={a.priority}
-                    projectLabel={a.projectLabel}
-                    href={`/activity/${a.id}`}
-                    onOpenStatus={() => openStatus(a)}
-                    deadline={a.deadline}
-                    progressPercent={a.progressPercent}
-                  />
-                </SwipeableRow>
-              ))}
-            </PoolSection>
+                  {poolByScope.today.map(renderPoolRow)}
+                </PoolSection>
 
-            <PoolSection
-              id={DROP_POOL_WEEK}
-              label="Esta semana"
-              isDragging={isDragging}
-              empty={weekItems.length === 0}
-            >
-              {weekItems.map((a) => (
-                <SwipeableRow
-                  key={a.id}
-                  disabled={isDragging}
-                  onDone={() => {/* week-list status mutations are out of scope */}}
-                  onSkip={() => {/* idem */}}
-                  onBlock={() => {/* idem */}}
+                <PoolSection
+                  id={DROP_POOL_WEEK}
+                  label="Esta semana"
+                  isDragging={isDragging}
+                  empty={poolByScope.week.length === 0}
+                  count={poolByScope.week.length}
+                  collapsible
                 >
-                  <DraggableTaskRow
-                    id={a.id}
-                    title={a.title}
-                    status={a.status}
-                    priority={a.priority}
-                    projectLabel={a.projectLabel}
-                    deadline={a.deadline}
-                    progressPercent={a.progressPercent}
-                  />
-                </SwipeableRow>
-              ))}
-            </PoolSection>
+                  {poolByScope.week.map(renderPoolRow)}
+                </PoolSection>
+
+                <PoolSection
+                  id={DROP_POOL_BACKLOG}
+                  label="Pendientes"
+                  isDragging={isDragging}
+                  empty={poolByScope.backlog.length === 0}
+                  count={poolByScope.backlog.length}
+                  collapsible
+                >
+                  {poolByScope.backlog.map(renderPoolRow)}
+                </PoolSection>
+              </>
+            ) : (
+              <>
+                <PoolSection
+                  id={`${DROP_Q_PREFIX}1`}
+                  label={QUADRANT_LABEL[1]}
+                  isDragging={isDragging}
+                  empty={poolByQuadrant[1].length === 0}
+                  count={poolByQuadrant[1].length}
+                  accentColor={QUADRANT_ACCENT[1]}
+                  footer={<ActivityQuickAdd onCreate={handleCreate} />}
+                >
+                  {poolByQuadrant[1].map(renderPoolRow)}
+                </PoolSection>
+
+                <PoolSection
+                  id={`${DROP_Q_PREFIX}2`}
+                  label={QUADRANT_LABEL[2]}
+                  isDragging={isDragging}
+                  empty={poolByQuadrant[2].length === 0}
+                  count={poolByQuadrant[2].length}
+                  accentColor={QUADRANT_ACCENT[2]}
+                >
+                  {poolByQuadrant[2].map(renderPoolRow)}
+                </PoolSection>
+
+                <PoolSection
+                  id={`${DROP_Q_PREFIX}3`}
+                  label={QUADRANT_LABEL[3]}
+                  isDragging={isDragging}
+                  empty={poolByQuadrant[3].length === 0}
+                  count={poolByQuadrant[3].length}
+                  accentColor={QUADRANT_ACCENT[3]}
+                  collapsible
+                >
+                  {poolByQuadrant[3].map(renderPoolRow)}
+                </PoolSection>
+
+                <PoolSection
+                  id={`${DROP_Q_PREFIX}4`}
+                  label={QUADRANT_LABEL[4]}
+                  isDragging={isDragging}
+                  empty={poolByQuadrant[4].length === 0}
+                  count={poolByQuadrant[4].length}
+                  accentColor={QUADRANT_ACCENT[4]}
+                  collapsible
+                >
+                  {poolByQuadrant[4].map(renderPoolRow)}
+                </PoolSection>
+              </>
+            )}
           </div>
 
           {/* ---- Calendar canvas ---- */}
