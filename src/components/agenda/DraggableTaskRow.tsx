@@ -232,72 +232,76 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   const { onOpenStatus, durationMinutes: _d, onResize: _r, maxDurationMinutes: _m, ...rowProps } =
     props;
 
+  // Cuando anchored, el ActivityRow vive DENTRO de un wrapper interno que
+  // reserva 10px arriba y 12px abajo para los resize handles. Esto IMPIDE
+  // físicamente que el Link de ActivityRow se solape con los handles —
+  // el wrapper hace overflow:hidden y los handles existen FUERA del wrapper,
+  // así no hay forma de que el Link intercepte sus pointer events.
+  const TOP_HANDLE_PX = 10;
+  const BOTTOM_HANDLE_PX = 12;
+
+  const activityRowEl = (
+    <ActivityRow
+      {...rowProps}
+      dragHandle={handle}
+      trailingSlot={
+        onOpenStatus ? (
+          <button
+            type="button"
+            aria-label={`Cambiar status de ${props.title}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenStatus();
+            }}
+            style={{
+              appearance: 'none',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--ag-ink-hint)',
+              cursor: 'pointer',
+              padding: 4,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <MoreHorizontal size={16} strokeWidth={1.5} aria-hidden />
+          </button>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={anchored ? 'ag-anchored-row' : undefined}
     >
-      <ActivityRow
-        {...rowProps}
-        dragHandle={handle}
-        trailingSlot={
-          onOpenStatus ? (
-            <button
-              type="button"
-              aria-label={`Cambiar status de ${props.title}`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onOpenStatus();
-              }}
-              style={{
-                appearance: 'none',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--ag-ink-hint)',
-                cursor: 'pointer',
-                padding: 4,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <MoreHorizontal size={16} strokeWidth={1.5} aria-hidden />
-            </button>
-          ) : undefined
-        }
-      />
-
-      {anchored && liveDuration !== null ? (
-        <span
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: 4,
-            right: 8,
-            fontFamily: 'var(--ag-font-display)',
-            fontStyle: 'italic',
-            fontSize: 12,
-            color: 'var(--ag-ink-soft)',
-            backgroundColor: 'color-mix(in oklab, var(--ag-bg), transparent 20%)',
-            paddingInline: 6,
-            borderRadius: 'var(--ag-radius-xs)',
-            pointerEvents: 'none',
-          }}
-        >
-          {formatDuration(Math.round(displayDuration))}
-        </span>
-      ) : null}
-
       {anchored ? (
         <>
-          {/* Top handle — drag desde el borde superior */}
+          {/* Content wrapper — clipea el Link de ActivityRow para que NO llegue
+              al área de los handles. Sin esto el Link cubría el bottom y
+              robaba el cursor + los pointer events. */}
+          <div
+            style={{
+              position: 'absolute',
+              top: TOP_HANDLE_PX,
+              left: 0,
+              right: 0,
+              bottom: BOTTOM_HANDLE_PX,
+              overflow: 'hidden',
+            }}
+          >
+            {activityRowEl}
+          </div>
+
+          {/* Top handle */}
           <div
             role="separator"
             aria-label={`Cambiar duración de ${props.title} (desde arriba)`}
             title="Arrastrá para cambiar duración"
-            className="ag-resize-handle ag-resize-handle--top"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={finishResize}
@@ -307,30 +311,28 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
               left: 0,
               right: 0,
               top: 0,
-              height: 14,
+              height: TOP_HANDLE_PX,
               cursor: 'ns-resize',
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               touchAction: 'none',
               backgroundColor: 'var(--ag-ink-soft)',
               color: 'var(--ag-bg)',
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              zIndex: 9999,
-              pointerEvents: 'auto',
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              userSelect: 'none',
             }}
           >
-            <span aria-hidden>↕</span>
+            <span aria-hidden>· · ·</span>
           </div>
-          {/* Bottom handle — drag desde el borde inferior */}
+
+          {/* Bottom handle */}
           <div
             role="separator"
             aria-label={`Cambiar duración de ${props.title} (desde abajo)`}
             title="Arrastrá para extender el tiempo"
-            className="ag-resize-handle ag-resize-handle--bottom"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={finishResize}
@@ -340,31 +342,48 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              height: 20,
+              height: BOTTOM_HANDLE_PX,
               cursor: 'ns-resize',
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               touchAction: 'none',
               backgroundColor: 'var(--ag-ink-soft)',
               color: 'var(--ag-bg)',
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              zIndex: 9999,
-              pointerEvents: 'auto',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              userSelect: 'none',
             }}
           >
+            <span aria-hidden>· · ·</span>
+          </div>
+
+          {liveDuration !== null ? (
             <span
               aria-hidden
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              style={{
+                position: 'absolute',
+                top: TOP_HANDLE_PX + 4,
+                right: 8,
+                fontFamily: 'var(--ag-font-display)',
+                fontStyle: 'italic',
+                fontSize: 12,
+                color: 'var(--ag-ink-soft)',
+                backgroundColor: 'color-mix(in oklab, var(--ag-bg), transparent 20%)',
+                paddingInline: 6,
+                borderRadius: 'var(--ag-radius-xs)',
+                pointerEvents: 'none',
+                zIndex: 10,
+              }}
             >
-              ↕ Arrastrá para extender
+              {formatDuration(Math.round(displayDuration))}
             </span>
-          </div>
+          ) : null}
         </>
-      ) : null}
+      ) : (
+        activityRowEl
+      )}
     </div>
   );
 }
