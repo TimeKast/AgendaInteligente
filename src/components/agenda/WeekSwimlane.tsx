@@ -52,6 +52,11 @@ import { WeekDayStrip, type WeekDayStripDay } from './WeekDayStrip';
 import type { PoolActivity } from './DraggablePoolActivity';
 import { MultiDayPicker, buildWeekDays } from './MultiDayPicker';
 import { QuickAddDayPopover } from './QuickAddDayPopover';
+import {
+  PlanSnapshotControls,
+  type PlanSnapshot,
+} from './PlanSnapshotControls';
+import { PlanSnapshotViewer } from './PlanSnapshotViewer';
 
 export interface WeekSwimlaneActivity extends PoolActivity {
   /**
@@ -131,6 +136,16 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
   const [pickerActivityId, setPickerActivityId] = useState<string | null>(null);
   const [quickAddIso, setQuickAddIso] = useState<string | null>(null);
   const [quickAddAnchor, setQuickAddAnchor] = useState<HTMLElement | null>(null);
+  const [snapshot, setSnapshot] = useState<PlanSnapshot | null>(null);
+  const [snapshotOpen, setSnapshotOpen] = useState(false);
+
+  function captureSnapshot() {
+    const taskPlacements: Record<string, string[]> = {};
+    for (const a of activities) {
+      taskPlacements[a.id] = [...a.scheduledDates];
+    }
+    setSnapshot({ capturedAt: new Date().toISOString(), taskPlacements });
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -167,18 +182,45 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
     [activities],
   );
 
+  const captionByIso = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const d of days) m[d.iso] = d.caption;
+    return m;
+  }, [days]);
+
   const activitiesByDay = useMemo(() => {
     const map: Record<string, DayRowActivity[]> = {};
     for (const d of days) map[d.iso] = [];
     for (const a of activities) {
+      // Snapshot diff: a task is "moved off" iso X if the snapshot had it
+      // at X but the current scheduledDates no longer include X. We pick a
+      // single "moved from" label per current-day cell — the first planned
+      // ISO that is missing now AND not already covered by the current set.
+      const plannedDates = snapshot?.taskPlacements[a.id] ?? null;
+      let movedFromLabel: string | undefined;
+      if (plannedDates && plannedDates.length > 0) {
+        const currentSet = new Set(a.scheduledDates);
+        const droppedPlannedIso = plannedDates.find((iso) => !currentSet.has(iso));
+        if (droppedPlannedIso) {
+          movedFromLabel = captionByIso[droppedPlannedIso] ?? droppedPlannedIso;
+        }
+      }
       for (const iso of a.scheduledDates) {
         if (map[iso]) {
-          map[iso].push({ ...a, totalAssignedDays: a.scheduledDates.length });
+          const wasPlannedHere = plannedDates?.includes(iso) ?? false;
+          map[iso].push({
+            ...a,
+            totalAssignedDays: a.scheduledDates.length,
+            // Show "Movido desde X" only on the cell that did NOT originally
+            // have this task — i.e. the new location. If this cell was also
+            // in the original plan, skip the indicator here.
+            movedFromLabel: wasPlannedHere ? undefined : movedFromLabel,
+          });
         }
       }
     }
     return map;
-  }, [activities, days]);
+  }, [activities, days, snapshot, captionByIso]);
 
   function resolveDropTarget(overId: string): string | null {
     // Returns ISO date string or null = pool. Unknown drops → return special
@@ -290,8 +332,36 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
     ? activities.find((a) => a.id === pickerActivityId) ?? null
     : null;
 
+  const taskTitles = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const a of activities) m[a.id] = a.title;
+    return m;
+  }, [activities]);
+
+  const weekIsoList = useMemo(() => days.map((d) => d.iso), [days]);
+
+  function formatSnapshotDayLabel(iso: string): string {
+    return captionByIso[iso] ?? iso;
+  }
+
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
+      <div
+        style={{
+          paddingInline: 'var(--ag-space-4)',
+          paddingBlock: 'var(--ag-space-2)',
+          display: 'flex',
+          justifyContent: 'flex-start',
+        }}
+      >
+        <PlanSnapshotControls
+          snapshot={snapshot}
+          onCapture={captureSnapshot}
+          onView={() => setSnapshotOpen(true)}
+          scopeLabel="semana"
+        />
+      </div>
+
       <div className="ag-week-strip-wrap">
         <WeekDayStrip days={stripDays} />
       </div>
@@ -348,6 +418,15 @@ export function WeekSwimlane({ weekStarting, today, seedActivities }: WeekSwimla
           setQuickAddIso(null);
           setQuickAddAnchor(null);
         }}
+      />
+
+      <PlanSnapshotViewer
+        open={snapshotOpen}
+        snapshot={snapshot}
+        taskTitles={taskTitles}
+        visibleIsoDates={weekIsoList}
+        formatDayLabel={formatSnapshotDayLabel}
+        onClose={() => setSnapshotOpen(false)}
       />
 
       <style>{`

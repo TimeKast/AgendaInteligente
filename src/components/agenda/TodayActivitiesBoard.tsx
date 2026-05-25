@@ -701,7 +701,7 @@ export function TodayActivitiesBoard({
                   isDragging={isDragging}
                   empty={poolByScope.today.length === 0}
                   count={poolByScope.today.length}
-                  footer={<ActivityQuickAdd onCreate={handleCreate} />}
+                  header={<ActivityQuickAdd onCreate={handleCreate} />}
                 >
                   {poolByScope.today.map(renderPoolRow)}
                 </PoolSection>
@@ -737,7 +737,7 @@ export function TodayActivitiesBoard({
                   empty={poolByQuadrant[1].length === 0}
                   count={poolByQuadrant[1].length}
                   accentColor={QUADRANT_ACCENT[1]}
-                  footer={<ActivityQuickAdd onCreate={handleCreate} />}
+                  header={<ActivityQuickAdd onCreate={handleCreate} />}
                 >
                   {poolByQuadrant[1].map(renderPoolRow)}
                 </PoolSection>

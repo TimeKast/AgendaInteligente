@@ -18,13 +18,16 @@
  */
 
 import { useDroppable } from '@dnd-kit/core';
-import { Plus, Target } from 'lucide-react';
+import { History, Plus, Target } from 'lucide-react';
 import { memo, useRef, type CSSProperties, type KeyboardEvent } from 'react';
 
 export interface MonthCellActivity {
   id: string;
   title: string;
   status: 'todo' | 'in_progress' | 'done';
+  /** Set when the task drifted off its planned day (snapshot diff). Renders
+   *  a small History icon next to the chip — full label is shown via title. */
+  movedFromLabel?: string;
 }
 
 export interface MonthCellGoalMarker {
@@ -221,8 +224,11 @@ function MonthDayCellInner({
         {visible.map((a) => (
           <span
             key={a.id}
+            title={a.movedFromLabel ? `Movido desde ${a.movedFromLabel}` : undefined}
             style={{
-              display: 'block',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
               fontFamily: 'var(--ag-font-body)',
               fontSize: 10,
               lineHeight: 1.2,
@@ -231,13 +237,31 @@ function MonthDayCellInner({
               textDecoration: a.status === 'done' ? 'line-through' : 'none',
               fontStyle: a.status === 'in_progress' ? 'italic' : 'normal',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
               paddingInlineStart: 4,
-              borderInlineStart: '2px solid var(--ag-rule)',
+              borderInlineStart: `2px solid ${
+                a.movedFromLabel ? 'var(--ag-ink-hint)' : 'var(--ag-rule)'
+              }`,
             }}
           >
-            {a.title}
+            {a.movedFromLabel ? (
+              <History
+                size={9}
+                strokeWidth={1.75}
+                aria-hidden
+                style={{ color: 'var(--ag-ink-hint)', flexShrink: 0 }}
+              />
+            ) : null}
+            <span
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0,
+                flex: 1,
+              }}
+            >
+              {a.title}
+            </span>
           </span>
         ))}
         {overflow > 0 ? (

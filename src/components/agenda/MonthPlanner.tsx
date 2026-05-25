@@ -42,6 +42,11 @@ import {
 import type { PoolActivity } from './DraggablePoolActivity';
 import type { MonthCellActivity, MonthCellGoalMarker } from './MonthDayCell';
 import { QuickAddDayPopover } from './QuickAddDayPopover';
+import {
+  PlanSnapshotControls,
+  type PlanSnapshot,
+} from './PlanSnapshotControls';
+import { PlanSnapshotViewer } from './PlanSnapshotViewer';
 
 export interface MonthPlannerActivity extends PoolActivity {
   /** Empty array = pool. */
@@ -106,6 +111,26 @@ function formatQuickAddLabel(iso: string): string {
   return QUICK_ADD_LABEL_FMT.format(d).replace(/\./g, '');
 }
 
+const MOVED_FROM_FMT = new Intl.DateTimeFormat('es-MX', {
+  day: 'numeric',
+  month: 'short',
+});
+
+function formatMovedFromLabel(iso: string): string {
+  return MOVED_FROM_FMT.format(parseIso(iso)).replace(/\./g, '');
+}
+
+const SNAPSHOT_DAY_FMT = new Intl.DateTimeFormat('es-MX', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+});
+
+function formatSnapshotDayLabel(iso: string): string {
+  const raw = SNAPSHOT_DAY_FMT.format(parseIso(iso)).replace(/\./g, '');
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
 export function MonthPlanner({
   monthStart,
   today,
@@ -119,6 +144,16 @@ export function MonthPlanner({
   const [selectedIso, setSelectedIso] = useState<string | null>(null);
   const [quickAddIso, setQuickAddIso] = useState<string | null>(null);
   const [quickAddAnchor, setQuickAddAnchor] = useState<HTMLElement | null>(null);
+  const [snapshot, setSnapshot] = useState<PlanSnapshot | null>(null);
+  const [snapshotOpen, setSnapshotOpen] = useState(false);
+
+  function captureSnapshot() {
+    const taskPlacements: Record<string, string[]> = {};
+    for (const a of activities) {
+      taskPlacements[a.id] = [...a.scheduledDates];
+    }
+    setSnapshot({ capturedAt: new Date().toISOString(), taskPlacements });
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -132,12 +167,33 @@ export function MonthPlanner({
   const activitiesByDay = useMemo(() => {
     const map: Record<string, MonthCellActivity[]> = {};
     for (const a of activities) {
+      const plannedDates = snapshot?.taskPlacements[a.id] ?? null;
+      const currentSet = new Set(a.scheduledDates);
+      const droppedPlannedIso =
+        plannedDates && plannedDates.length > 0
+          ? plannedDates.find((iso) => !currentSet.has(iso))
+          : undefined;
+      const movedFromLabel = droppedPlannedIso
+        ? formatMovedFromLabel(droppedPlannedIso)
+        : undefined;
       for (const iso of a.scheduledDates) {
         if (!map[iso]) map[iso] = [];
-        map[iso].push({ id: a.id, title: a.title, status: a.status });
+        const wasPlannedHere = plannedDates?.includes(iso) ?? false;
+        map[iso].push({
+          id: a.id,
+          title: a.title,
+          status: a.status,
+          movedFromLabel: wasPlannedHere ? undefined : movedFromLabel,
+        });
       }
     }
     return map;
+  }, [activities, snapshot]);
+
+  const taskTitles = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const a of activities) m[a.id] = a.title;
+    return m;
   }, [activities]);
 
   const goalsByDay = useMemo(() => {
@@ -247,6 +303,22 @@ export function MonthPlanner({
 
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
+      <div
+        style={{
+          paddingInline: 'var(--ag-space-4)',
+          paddingBlock: 'var(--ag-space-2)',
+          display: 'flex',
+          justifyContent: 'flex-start',
+        }}
+      >
+        <PlanSnapshotControls
+          snapshot={snapshot}
+          onCapture={captureSnapshot}
+          onView={() => setSnapshotOpen(true)}
+          scopeLabel="mes"
+        />
+      </div>
+
       <div className="ag-month-shell">
         {/* Pool */}
         <div className="ag-month-shell__pool">
@@ -331,6 +403,14 @@ export function MonthPlanner({
           setQuickAddIso(null);
           setQuickAddAnchor(null);
         }}
+      />
+
+      <PlanSnapshotViewer
+        open={snapshotOpen}
+        snapshot={snapshot}
+        taskTitles={taskTitles}
+        formatDayLabel={formatSnapshotDayLabel}
+        onClose={() => setSnapshotOpen(false)}
       />
 
       <style>{`

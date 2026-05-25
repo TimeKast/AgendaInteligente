@@ -34,6 +34,9 @@ interface PoolSectionProps {
   children: ReactNode;
   /** Optional footer (e.g. inline ActivityQuickAdd). */
   footer?: ReactNode;
+  /** Optional header rendered ABOVE the item list (e.g. inline ActivityQuickAdd
+   *  to make capture the first action in the section). */
+  header?: ReactNode;
   /** Optional count badge next to the caption. */
   count?: number;
   /** Optional accent color (matriz vistas usan accent por cuadrante). */
@@ -51,6 +54,7 @@ export function PoolSection({
   empty,
   children,
   footer,
+  header,
   count,
   accentColor,
   collapsible = false,
@@ -148,6 +152,7 @@ export function PoolSection({
       >
         {showContent ? (
           <>
+            {header ?? null}
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>{children}</ul>
             {empty && isDragging ? (
               <p

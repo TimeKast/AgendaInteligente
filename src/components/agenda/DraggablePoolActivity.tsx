@@ -38,6 +38,12 @@ interface DraggablePoolActivityProps {
    */
   inlineCaption?: string;
   /**
+   * Optional extra caption slot rendered BELOW `inlineCaption`. Free-form
+   * React node — used by /week + /month to inject the "Movido desde [día]"
+   * indicator when a task drifted from its planned position.
+   */
+  extraCaption?: React.ReactNode;
+  /**
    * Override the dnd-kit draggable id. Used by WeekSwimlane to encode the
    * source day via a composite id ("aid::isoDate") so the drag handler can
    * preserve other dates of multi-day items when moving between days. When
@@ -50,6 +56,7 @@ export function DraggablePoolActivity({
   activity,
   trailingSlot,
   inlineCaption,
+  extraCaption,
   dragId,
 }: DraggablePoolActivityProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -169,6 +176,18 @@ export function DraggablePoolActivity({
           }}
         >
           {inlineCaption}
+        </span>
+      ) : null}
+
+      {extraCaption ? (
+        <span
+          style={{
+            display: 'block',
+            paddingInline: 8,
+            paddingBottom: 4,
+          }}
+        >
+          {extraCaption}
         </span>
       ) : null}
 

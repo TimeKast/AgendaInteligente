@@ -25,6 +25,7 @@ import { useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { CalendarPlus, Plus } from 'lucide-react';
 import { DraggablePoolActivity, type PoolActivity } from './DraggablePoolActivity';
+import { MovedFromIndicator } from './PlanSnapshotControls';
 
 export interface DayRowActivity extends PoolActivity {
   /**
@@ -32,6 +33,11 @@ export interface DayRowActivity extends PoolActivity {
    * "+ N días más" caption renders below the row.
    */
   totalAssignedDays: number;
+  /**
+   * If set, the activity was at this label in the plan snapshot but has
+   * since been moved off it. Renders the MovedFromIndicator below the row.
+   */
+  movedFromLabel?: string;
 }
 
 interface DayRowProps {
@@ -183,6 +189,11 @@ export function DayRow({
                 activity={a}
                 dragId={`${a.id}::${isoDate}`}
                 inlineCaption={extra > 0 ? `+ ${extra} ${extra === 1 ? 'día más' : 'días más'}` : undefined}
+                extraCaption={
+                  a.movedFromLabel ? (
+                    <MovedFromIndicator fromLabel={a.movedFromLabel} />
+                  ) : undefined
+                }
                 trailingSlot={
                   <button
                     type="button"
