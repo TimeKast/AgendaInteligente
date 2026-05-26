@@ -81,6 +81,10 @@ const eslintConfig = defineConfig([
       'src/lib/auth/auth.config.ts',
       'src/lib/auth/password-reset.ts',
       'src/lib/auth/super-admin.ts',
+      // ISSUE-004 — token-based flow; operates pre-session (no userId from
+      // auth() yet). Mirrors password-reset.ts pattern.
+      'src/lib/auth/email-verification.ts',
+      'src/app/api/auth/verify/**',
       'src/lib/audit.ts', // audit_logs is admin table, not tenant
       'src/lib/audit/**',
       'src/lib/rate-limit/**',

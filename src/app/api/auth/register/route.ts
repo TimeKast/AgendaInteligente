@@ -30,6 +30,8 @@ import { z } from 'zod';
 import { db } from '@/lib/db/drizzle';
 import { users } from '@/lib/db/schema';
 import { hashPassword } from '@/lib/auth/utils';
+import { isWeakPassword } from '@/lib/auth/weak-passwords';
+import { sendVerificationEmail } from '@/lib/auth/email-verification';
 import { authFeatures } from '@/config/auth-features';
 import { getDefaultRole } from '@/config/roles';
 import { getNextHumanId, HUMAN_ID_PREFIXES } from '@/lib/utils/human-id';
@@ -43,7 +45,12 @@ import { isDatabaseConfigured } from '@/lib/env';
 
 const bodySchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  password: z
+    .string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .refine((p) => !isWeakPassword(p), {
+      message: 'Elige una contraseña más fuerte',
+    }),
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
 });
 
@@ -137,6 +144,28 @@ export async function POST(req: Request) {
         userId: inserted?.id,
         ip,
       });
+
+      // Send verification email best-effort. We never fail the signup just
+      // because the mail provider (or token table writes) hiccupped — the
+      // user can request a resend later. When EMAIL_PROVIDER is unconfigured
+      // the helper short-circuits and logs the verify URL (dev DX).
+      if (inserted?.id) {
+        try {
+          const send = await sendVerificationEmail(inserted.id, email);
+          if (!send.ok) {
+            logger.warn('[/api/auth/register] verification email not sent', {
+              userId: inserted.id,
+              reason: send.reason,
+            });
+          }
+        } catch (verifyErr) {
+          logger.warn('[/api/auth/register] verification dispatch threw', {
+            userId: inserted.id,
+            error: verifyErr,
+          });
+        }
+      }
+
       return NextResponse.json(SUCCESS_RESPONSE);
     } catch (err: unknown) {
       // Drizzle wraps PG errors — check both top-level and cause

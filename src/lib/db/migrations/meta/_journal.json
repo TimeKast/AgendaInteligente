@@ -71,6 +71,13 @@
       "when": 1779820929364,
       "tag": "0009_known_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1779823291010,
+      "tag": "0010_ancient_stone_men",
+      "breakpoints": true
     }
   ]
 }

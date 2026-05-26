@@ -94,7 +94,9 @@ function buildRequest(body: unknown): Request {
 function defaultBody(overrides: Partial<{ email: string; password: string; name: string }> = {}) {
   return {
     email: 'new@test.com',
-    password: 'password123',
+    // ISSUE-004 added a weak-password blocklist; "password123" is now in it,
+    // so the kit fixture upgrades to a passphrase that passes the validator.
+    password: 'Strong-passphrase-2026!',
     name: 'Test User',
     ...overrides,
   };
@@ -288,8 +290,8 @@ describe('POST /api/auth/register — happy path', () => {
     const body = await res.json();
     expect(body).toEqual({ success: true });
 
-    // hashPassword was called with the plain password
-    expect(mockHashPassword).toHaveBeenCalledWith('password123');
+    // hashPassword was called with the plain password (defaultBody fixture)
+    expect(mockHashPassword).toHaveBeenCalledWith('Strong-passphrase-2026!');
 
     // Inserted with normalized email (lowercase), trimmed name, default role, hashed pw, USR humanId
     expect(mockInsertChain.values).toHaveBeenCalledWith(

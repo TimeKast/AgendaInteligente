@@ -167,6 +167,7 @@
 | /api/auth/forgot-password | `src\app\api\auth\forgot-password\route.ts` |
 | /api/auth/register | `src\app\api\auth\register\route.ts` |
 | /api/auth/reset-password | `src\app\api\auth\reset-password\route.ts` |
+| /api/auth/verify | `src\app\api\auth\verify\route.ts` |
 | /api/avatar/[userId] | `src\app\api\avatar\[userId]\route.ts` |
 | /api/email/test | `src\app\api\email\test\route.ts` |
 | /api/health | `src\app\api\health\route.ts` |
@@ -185,9 +186,9 @@
 |--------|-------|
 | Dependencies | 44 |
 | Page Routes | 48 |
-| API Routes | 13 |
+| API Routes | 14 |
 | Components & Utils | 40 |
-| **Total items** | **145** |
+| **Total items** | **146** |
 
 ---
 

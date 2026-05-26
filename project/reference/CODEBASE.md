@@ -11,8 +11,8 @@
 
 | File | Dependents |
 |------|------------|
+| `src\lib\db\schema\users.ts` | 9 |
 | `src\lib\email\templates\layout.ts` | 9 |
-| `src\lib\db\schema\users.ts` | 8 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
@@ -104,6 +104,7 @@
 | `src\app\api\auth\forgot-password\route.ts` | — | — |
 | `src\app\api\auth\register\route.ts` | — | — |
 | `src\app\api\auth\reset-password\route.ts` | — | — |
+| `src\app\api\auth\verify\route.ts` | — | — |
 | `src\app\api\avatar\[userId]\route.ts` | — | — |
 | `src\app\api\email\test\route.ts` | — | — |
 | `src\app\api\health\route.ts` | — | — |
@@ -214,6 +215,7 @@
 | `src\components\agenda\Toggle.tsx` | — | — |
 | `src\components\agenda\UsageMeter.tsx` | — | — |
 | `src\components\agenda\UserMessage.tsx` | — | — |
+| `src\components\agenda\VerifyEmailBanner.tsx` | — | — |
 | `src\components\agenda\VoiceCaptureSheet.tsx` | `src\components\agenda\WaveformAnim.tsx`, `src\components\agenda\VoicePreviewCard.tsx` | `src\components\agenda\FabMic.tsx` |
 | `src\components\agenda\VoicePreviewCard.tsx` | `src\components\agenda\PriorityDots.tsx` | `src\components\agenda\VoiceCaptureSheet.tsx` |
 | `src\components\agenda\WaveformAnim.tsx` | — | `src\components\agenda\VoiceCaptureSheet.tsx` |
@@ -324,12 +326,14 @@
 | `src\lib\audit.ts` | — | — |
 | `src\lib\auth\auth.config.ts` | — | `src\lib\auth\auth.ts` |
 | `src\lib\auth\auth.ts` | `src\lib\auth\utils.ts`, `src\lib\auth\auth.config.ts` | `src\lib\auth\helpers.ts` |
+| `src\lib\auth\email-verification.ts` | — | — |
 | `src\lib\auth\helpers.ts` | `src\lib\auth\auth.ts` | — |
 | `src\lib\auth\index.ts` | — | — |
 | `src\lib\auth\password-reset.ts` | `src\lib\auth\utils.ts` | — |
 | `src\lib\auth\permissions.ts` | — | — |
 | `src\lib\auth\super-admin.ts` | — | — |
 | `src\lib\auth\utils.ts` | — | `src\lib\auth\auth.ts`, `src\lib\auth\password-reset.ts` |
+| `src\lib\auth\weak-passwords.ts` | — | — |
 | `src\lib\cache.ts` | — | — |
 | `src\lib\contexts\BreadcrumbContext.tsx` | — | — |
 | `src\lib\contexts\UnsavedChangesContext.tsx` | — | — |
@@ -342,13 +346,14 @@
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\billing.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seeds\plans.ts` |
 | `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\email-verifications.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\index.ts` | — | `src\lib\db\drizzle.ts`, `src\lib\db\seeds\admin.ts` |
 | `src\lib\db\schema\invites.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\notification-prefs.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\notifications.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts` |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts` |
 | `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
@@ -411,10 +416,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 361 |
-| Total connections | 124 |
+| Total files analyzed | 366 |
+| Total connections | 125 |
 | High-risk files (2+ deps) | 25 |
-| Orphan files (no connections) | 242 |
+| Orphan files (no connections) | 246 |
 
 ---
 
