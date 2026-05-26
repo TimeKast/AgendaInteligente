@@ -77,6 +77,7 @@ const eslintConfig = defineConfig([
       'src/lib/db/schema/**',
       'src/lib/db/migrations/**',
       'src/lib/db/helpers/**', // kit user-admin helpers (can-hard-delete, etc)
+      'src/lib/db/queries/**', // ISSUE-030: DB primitives consumed by actions; explicit userId scoping
       'src/lib/auth/auth.ts',
       'src/lib/auth/auth.config.ts',
       'src/lib/auth/password-reset.ts',

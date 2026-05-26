@@ -48,6 +48,7 @@ export * from './categories';
 export * from './projects';
 export * from './activities';
 export * from './subtasks';
+export * from './day-sheets';
 
 // =============================================================================
 // AgendaInteligente — Email verification tokens (ISSUE-004)

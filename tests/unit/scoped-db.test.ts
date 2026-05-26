@@ -213,6 +213,7 @@ describe('scopedDb — TENANT_TABLES registry', () => {
       [
         'activities',
         'categories',
+        'daySheets',
         'notificationPrefs',
         'projects',
         'subscriptions',

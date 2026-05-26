@@ -5,7 +5,8 @@ epic: EPIC-SHEETS
 milestone: v1.0
 priority: P0
 story_points: 3
-status: ready
+status: completed
+completed_date: 2026-05-26
 dependencies: [ISSUE-002]
 user_stories: [US-030b, US-031b]
 features: [FT-030, FT-031]
@@ -104,3 +105,49 @@ Scenario: Legacy fields no aceptados
 - [ ] Completion timestamps auto-set testeados
 - [ ] BR-7 enforced a nivel DB (UNIQUE constraint)
 - [ ] Zod schema en `src/lib/db/schema/day-sheets.ts` deriva con `$inferSelect`/`$inferInsert` (no campos removidos)
+
+## Implementation Evidence
+
+**Archivos:**
+
+- `src/lib/db/schema/day-sheets.ts` — E-020 consolidado (12 cols, FK users CASCADE). Sin legacy: intention, gratitude, energy\_\*, evening_win, evening_lesson, tomorrow_top, insight. Con: identity_statement, wins_planned[], avoidance, close_summary, notes_dreams, morning_completed_at, evening_completed_at.
+- `src/lib/db/scoped.ts` — `daySheets` registrada (7 tablas en TENANT_TABLES).
+- `src/lib/db/migrations/0012_workable_baron_zemo.sql` — autogen + CHECK `array_length(wins_planned) <= 3 OR NULL`. UNIQUE `(user_id, date)` (BR-7) + index `(user_id, date DESC)` para "últimos N días".
+- `src/lib/db/queries/sheets.ts` NEW — `getOrCreateDaySheet(userId, dateStr)` con `onConflictDoNothing.returning()` + fallback SELECT para concurrencia.
+- `src/lib/domain/day-sheet-completion.ts` NEW — pure: `isMorningCompleted`, `isEveningCompleted` (whitespace-aware).
+- `src/lib/validations/day-sheet.ts` NEW — `updateDaySheetSchema` con `winsPlanned` max 3, todas las fields opcionales. Strip silencioso de legacy via Zod default unknown-keys behaviour.
+- `src/lib/actions/day-sheet.ts` NEW — `updateDaySheet`: merge state → compute completion → solo stamp si no había. No-op cuando sin fields.
+- `eslint.config.mjs` — `src/lib/db/queries/**` allowlisted (DB primitives consumed by actions).
+
+**Decisiones de diseño:**
+
+- **Stamp-once timestamps**: `morning_completed_at` y `evening_completed_at` se setean en la primera vez que las condiciones se cumplen; updates posteriores que mantienen el state no re-stampean. Eso preserva el "primer momento que el user completó el ritual" para analytics + UI ("hiciste tu morning hoy a las 7:34").
+- **Strip silencioso de legacy**: el spec lo pidió explícitamente. Zod default behaviour (sin `.strict()`) descarta unknown keys sin error. Tests verifican que `intention`, `energy_physical`, `evening_win`, `tomorrow_top` se ignoran sin contaminar el payload.
+- **No-op shortcut**: cuando user llama `updateDaySheet({ date })` sin otros fields, retorna el existing row sin emitir UPDATE. Idempotent UI behavior.
+- **Concurrency**: `onConflictDoNothing.returning()` retorna rows insertadas (vacío en conflicto). Si vacío → fallback SELECT. La UNIQUE constraint en DB garantiza 1 sola row; el helper retorna la misma para ambos callers concurrentes.
+
+**Cobertura tests (21):**
+
+Completion (10):
+
+- Morning: happy path, 3 wins cap, empty identity rejection, null wins, empty array wins, all-whitespace wins, null avoidance, empty object.
+- Evening: happy path, null/undefined/empty/whitespace.
+
+Action (11):
+
+- Patch semantics: single field, no-op when only date, strip silentemente legacy.
+- Validation: winsPlanned > 3 rechazado, malformed date rechazado.
+- Auto-completion: morning single-call complete, morning cross-call last-field, no re-stamp morning, evening on first close_summary, no re-stamp evening, both at once.
+
+**Scope deferred:**
+
+- UI wire del morning ritual SCR + close-day modal SCR-060 → ISSUE-031 (DaySheet UI inline edit) cuando wire to actions.
+- Concurrency test real contra Neon (con 2 connections paralelas) → defer hasta integration suite.
+
+**Verificación:**
+
+- `pnpm typecheck` ✅
+- `pnpm lint` ✅ 0 errors
+- `pnpm test day-sheet-completion + day-sheet-actions` ✅ 21/21
+- `pnpm test` full ✅ 718/718 estable
+- `pnpm db:migrate` ✅ aplicado a Neon dev branch

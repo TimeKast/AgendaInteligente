@@ -11,7 +11,7 @@
 
 | File | Dependents |
 |------|------------|
-| `src\lib\db\schema\users.ts` | 9 |
+| `src\lib\db\schema\users.ts` | 10 |
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
@@ -316,6 +316,7 @@
 | `src\lib\actions\avatar.ts` | — | — |
 | `src\lib\actions\category.ts` | — | — |
 | `src\lib\actions\change-password.ts` | — | — |
+| `src\lib\actions\day-sheet.ts` | — | — |
 | `src\lib\actions\helpers.ts` | — | — |
 | `src\lib\actions\notifications.ts` | — | — |
 | `src\lib\actions\onboarding.ts` | — | — |
@@ -344,11 +345,13 @@
 | `src\lib\db\helpers\audit-fields.ts` | — | — |
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
+| `src\lib\db\queries\sheets.ts` | — | — |
 | `src\lib\db\queries\users.ts` | — | — |
 | `src\lib\db\schema\activities.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\projects.ts` | `src\lib\db\schema\subtasks.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\billing.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seeds\plans.ts` |
 | `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\day-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\email-verifications.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\index.ts` | — | `src\lib\db\drizzle.ts`, `src\lib\db\seeds\admin.ts` |
 | `src\lib\db\schema\invites.ts` | `src\lib\db\schema\users.ts` | — |
@@ -357,14 +360,15 @@
 | `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
 | `src\lib\db\schema\subtasks.ts` | `src\lib\db\schema\activities.ts` | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts` |
-| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts` | — |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts` |
+| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
 | `src\lib\db\seeds\plans.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\billing.ts` | — |
 | `src\lib\db\utils\pagination.ts` | — | — |
 | `src\lib\domain\activity-transitions.ts` | — | — |
+| `src\lib\domain\day-sheet-completion.ts` | — | — |
 | `src\lib\domain\recurrence.ts` | — | — |
 | `src\lib\email\index.ts` | `src\lib\email\resend.ts`, `src\lib\email\smtp.ts`, `src\lib\email\types.ts` | — |
 | `src\lib\email\logo-data.ts` | — | `src\lib\email\resend.ts`, `src\lib\email\smtp.ts` |
@@ -411,6 +415,7 @@
 | `src\lib\validations\activity.ts` | — | — |
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\category.ts` | — | — |
+| `src\lib\validations\day-sheet.ts` | — | — |
 | `src\lib\validations\onboarding.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
 | `src\lib\validations\project.ts` | — | — |
@@ -423,10 +428,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 372 |
-| Total connections | 126 |
+| Total files analyzed | 377 |
+| Total connections | 128 |
 | High-risk files (2+ deps) | 26 |
-| Orphan files (no connections) | 251 |
+| Orphan files (no connections) | 255 |
 
 ---
 
