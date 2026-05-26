@@ -65,6 +65,44 @@ export const users = pgTable('users', {
   deletedBy: uuid('deleted_by'),
 
   // ========================
+  // AgendaInteligente fields (E-001 per 06_DATA_MODEL.md)
+  // ========================
+
+  /** Google OAuth `sub` claim. UNIQUE partial WHERE NOT NULL (migration-level). */
+  googleOauthId: text('google_oauth_id'),
+
+  /** User-preferred language code. Constrained to 'es' | 'en' at DB level. */
+  preferredLanguage: text('preferred_language').notNull().default('es'),
+
+  /** IANA timezone. Used by check-in scheduler. */
+  timezone: text('timezone').notNull().default('America/Mexico_City'),
+
+  /**
+   * Agent intensity mode.
+   * Constrained to 'sharp' | 'standard' | 'gentle' | 'listening' at DB level.
+   * Default 'gentle' for new users; OPS-4 auto-reverts 'listening' after intensity_expires_at.
+   */
+  intensityMode: text('intensity_mode').notNull().default('gentle'),
+
+  /** When 'listening' mode auto-reverts to 'gentle' (OPS-4). */
+  intensityExpiresAt: timestamp('intensity_expires_at', { mode: 'date', withTimezone: true }),
+
+  /** When the post-signup gentle default expires (14d after signup, then mode becomes user-controlled). */
+  intensityDefaultUntil: timestamp('intensity_default_until', { mode: 'date', withTimezone: true }),
+
+  /** Free-text frustration captured at signup ("what brought you here"). */
+  onboardingContext: text('onboarding_context'),
+
+  /** NULL = user still in onboarding flow. */
+  onboardingCompletedAt: timestamp('onboarding_completed_at', { mode: 'date', withTimezone: true }),
+
+  /** Last meaningful user action — used for silence detection (OPS-3). */
+  lastActiveAt: timestamp('last_active_at', { mode: 'date', withTimezone: true }),
+
+  /** When the silence re-entry notification was last sent. Reset on user action. */
+  silenceReEntrySentAt: timestamp('silence_re_entry_sent_at', { mode: 'date', withTimezone: true }),
+
+  // ========================
   // Audit Fields
   // ========================
 

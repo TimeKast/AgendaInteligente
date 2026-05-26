@@ -31,7 +31,11 @@ export * from './notifications';
 export * from './rate-limit';
 
 // =============================================================================
-// Add additional schemas below as needed
+// AgendaInteligente — Notification schedule (E-002, not the kit's notif-prefs)
 // =============================================================================
-// export * from './posts';
-// export * from './comments';
+export * from './notification-prefs';
+
+// =============================================================================
+// AgendaInteligente — Billing scaffold (E-070, E-071, E-072)
+// =============================================================================
+export * from './billing';

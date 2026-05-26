@@ -28,7 +28,7 @@ dotenv.config({ path: '.env.local' });
  * All seeds are idempotent — safe to run multiple times.
  */
 
-import { seedAdmin } from './seeds';
+import { seedAdmin, seedPlans } from './seeds';
 import { db } from './drizzle';
 import { sql } from 'drizzle-orm';
 
@@ -45,8 +45,8 @@ async function seed() {
   );
   console.log('✅ user_human_id_seq synced');
 
-  // 3. Add more seeds here as needed:
-  // await seedDemoData();
+  // 3. AgendaInteligente — billing scaffold
+  await seedPlans();
 
   console.log('\n✅ All seeds complete');
 }
