@@ -5,7 +5,8 @@ epic: EPIC-ORG
 milestone: v1.0
 priority: P0
 story_points: 5
-status: ready
+status: completed
+completed_date: 2026-05-26
 dependencies: [ISSUE-012]
 user_stories: [US-015, US-016]
 features: [FT-012, FT-135, FT-136, FT-137]
@@ -113,3 +114,58 @@ Scenario: Project deletion guarded
 - [ ] GIN index en `scheduled_dates` validado con `EXPLAIN ANALYZE` en query `scheduled_dates @> ARRAY['2026-05-19'::date]`
 - [ ] BR-15, BR-16, BR-17 reference docs apuntan a este issue
 - [ ] Tags array funciona con GIN index queries
+
+## Implementation Evidence
+
+**Archivos:**
+
+- `src/lib/db/schema/activities.ts` — E-005 (23 columns; 3 FKs: users CASCADE, projects RESTRICT, self-FK CASCADE para recurrence). Exports `ACTIVITY_STATUSES` + `ACTIVITY_REASON_CATEGORIES` const tipados, single source of truth con DB CHECKs.
+- `src/lib/db/scoped.ts` — `activities` registrada (6 tablas en TENANT_TABLES).
+- `src/lib/db/migrations/0009_known_misty_knight.sql` — autogen + 9 statements manuales:
+  - 7 CHECK constraints (status enum, priority 1-5, quadrant 1-4|NULL, progress 0-100|NULL, duration>0|NULL, duration requires scheduled_time per BR-16, reason_category enum|NULL)
+  - 2 GIN indexes (scheduled_dates, tags) — array containment queries
+  - 1 partial index (user, quadrant) WHERE quadrant IS NOT NULL — matrix view
+- `src/lib/validations/activity.ts` — Zod schemas con:
+  - BR-15 transform: `scheduledDates` → dedupe + asc sort
+  - BR-16 refine: durationMinutes requires scheduledTime
+  - Recurrence DSL regex (daily | weekly:DAYS | monthly:1-28 | monthly:last)
+  - tags normalize: lowercase + dedupe + sort
+  - Update-mode schemas distintos para arrays (sin `.default([])` que disparaba en no-op patches)
+- `src/lib/actions/activity.ts` — 3 actions con BR-17 enforcement:
+  - createActivity: default a Inbox project si projectId omitido (error claro si Inbox no existe — Inbox auto-create llega en ISSUE-006)
+  - updateActivity: BR-17 sobre merged state; completed_at auto-managed
+  - deleteActivity: soft-delete idempotente
+- `tests/unit/activity-actions.test.ts` — 24 unit tests con `vi.hoisted` pattern desde el inicio.
+
+**Cobertura de los 9 AC scenarios:**
+
+- ✅ scheduled_dates dedupe + sort (BR-15)
+- ✅ sin scheduled_dates → '{}' default
+- ✅ duration_minutes sin scheduled_time → 400 con BR-16 message
+- ✅ Quadrant validation (Zod 1-4)
+- ✅ progress_percent fuera de rango (Zod 0-100)
+- ✅ status=done forces progress=100 (BR-17) — tanto en create como en update transition
+- ✅ Default to Inbox project — con error claro si aún no existe
+- ✅ Title vacío → validation error con field hint
+- ✅ Project deletion guarded — FK ON DELETE RESTRICT activo (verificable pg_constraint)
+
+**Decisiones de scope:**
+
+- **Status transitions con `reason_not_done` validation**: lógica strict (e.g. status='skipped' requiere reason) deferred a **ISSUE-017**. Acá las transitions son permisivas; updateActivity acepta cualquier status sin validar reason.
+- **Recurrence materializer**: solo store + validate DSL acá. El cron que expande la rule a instancias materializadas llega en **ISSUE-024**.
+- **Subtasks**: entidad separada, **ISSUE-015**.
+- **UI wiring**: el prototype mantiene useState con hardcoded data; wiring a server actions en **ISSUE-006** con el auth flow real.
+- **Cascade delete a subtasks**: ISSUE-011 (cuando subtasks existan).
+
+**Bonus — `vi.hoisted` desde el inicio**: aplicando la lección de ISSUE-012, el test file usa `vi.hoisted()` para el scopedState desde el primer commit. Sin flakes en parallel runs.
+
+**Verificación:**
+
+- `pnpm typecheck` ✅
+- `pnpm lint` ✅ 0 errors (ESLint BR-1 NO disparó — el código usa scopedDb)
+- `pnpm test` full ✅ **559/559** en 2 runs consecutivos
+- `pnpm test activity-actions + scoped-db` ✅ 35/35
+- `pnpm db:migrate` ✅
+- `pg_constraint`: 7 CHECKs activos
+- `pg_indexes`: 2 GIN + 3 btree composites + 1 partial idx confirmados
+- `EXPLAIN scheduled_dates @> ARRAY['date']` muestra Seq Scan en tabla vacía (PG default; usará GIN con data)

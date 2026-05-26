@@ -12,7 +12,7 @@
 | File | Dependents |
 |------|------------|
 | `src\lib\email\templates\layout.ts` | 9 |
-| `src\lib\db\schema\users.ts` | 7 |
+| `src\lib\db\schema\users.ts` | 8 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
@@ -32,6 +32,7 @@
 | `src\components\agenda\StatusBadge.tsx` | 2 |
 | `src\lib\auth\utils.ts` | 2 |
 | `src\lib\db\schema\index.ts` | 2 |
+| `src\lib\db\schema\projects.ts` | 2 |
 | `src\lib\db\schema\categories.ts` | 2 |
 | `src\lib\db\schema\billing.ts` | 2 |
 | `src\lib\email\logo-data.ts` | 2 |
@@ -306,6 +307,7 @@
 | `src\config\notifications.ts` | — | — |
 | `src\config\roles.ts` | — | — |
 | `src\config\status.ts` | — | — |
+| `src\lib\actions\activity.ts` | — | — |
 | `src\lib\actions\admin\user-admin.ts` | — | — |
 | `src\lib\actions\audit.ts` | — | — |
 | `src\lib\actions\avatar.ts` | — | — |
@@ -335,6 +337,7 @@
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
 | `src\lib\db\queries\users.ts` | — | — |
+| `src\lib\db\schema\activities.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\projects.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\billing.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seeds\plans.ts` |
 | `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
@@ -342,10 +345,10 @@
 | `src\lib\db\schema\invites.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\notification-prefs.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\notifications.ts` | `src\lib\db\schema\users.ts` | — |
-| `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts` |
-| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts` | — |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts` |
+| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
@@ -393,6 +396,7 @@
 | `src\lib\utils\cn.ts` | — | — |
 | `src\lib\utils\human-id.ts` | — | — |
 | `src\lib\utils\platform.ts` | — | — |
+| `src\lib\validations\activity.ts` | — | — |
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\category.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
@@ -405,10 +409,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 356 |
-| Total connections | 121 |
-| High-risk files (2+ deps) | 24 |
-| Orphan files (no connections) | 238 |
+| Total files analyzed | 359 |
+| Total connections | 124 |
+| High-risk files (2+ deps) | 25 |
+| Orphan files (no connections) | 240 |
 
 ---
 

@@ -66,6 +66,7 @@ import { notificationPrefs } from './schema/notification-prefs';
 import { subscriptions, usageMeters } from './schema/billing';
 import { categories } from './schema/categories';
 import { projects } from './schema/projects';
+import { activities } from './schema/activities';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Tenant table registry
@@ -85,6 +86,7 @@ export const TENANT_TABLES = {
   usageMeters,
   categories,
   projects,
+  activities,
 } as const;
 
 export type TenantTableKey = keyof typeof TENANT_TABLES;

@@ -41,7 +41,9 @@ export * from './notification-prefs';
 export * from './billing';
 
 // =============================================================================
-// AgendaInteligente — Organization hierarchy (E-003 Category, E-004 Project)
+// AgendaInteligente — Organization hierarchy (E-003 Category, E-004 Project,
+// E-005 Activity)
 // =============================================================================
 export * from './categories';
 export * from './projects';
+export * from './activities';

@@ -210,7 +210,14 @@ describe('scopedDb — TENANT_TABLES registry', () => {
     const { TENANT_TABLES } = await import('@/lib/db/scoped');
     // Sort both sides so the assertion is stable regardless of registration order.
     expect(Object.keys(TENANT_TABLES).sort()).toEqual(
-      ['categories', 'notificationPrefs', 'projects', 'subscriptions', 'usageMeters'].sort()
+      [
+        'activities',
+        'categories',
+        'notificationPrefs',
+        'projects',
+        'subscriptions',
+        'usageMeters',
+      ].sort()
     );
   });
 });
