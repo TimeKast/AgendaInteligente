@@ -18,9 +18,9 @@
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
 | `src\components\agenda\ActivityQuickAdd.tsx` | 4 |
 | `src\lib\db\drizzle.ts` | 4 |
+| `src\lib\inngest\client.ts` | 4 |
 | `src\components\agenda\PriorityDots.tsx` | 3 |
 | `src\lib\email\types.ts` | 3 |
-| `src\lib\inngest\client.ts` | 3 |
 | `src\components\agenda\RecurrencePicker.tsx` | 2 |
 | `src\components\agenda\DeadlineBadge.tsx` | 2 |
 | `src\components\agenda\ColorPicker.tsx` | 2 |
@@ -400,11 +400,12 @@
 | `src\lib\hooks\useServerTableState.ts` | `src\lib\hooks\useTableState.ts` | — |
 | `src\lib\hooks\useTableState.ts` | — | `src\lib\hooks\useServerTableState.ts` |
 | `src\lib\hooks\useUnsavedChangesGuard.ts` | — | — |
-| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
 | `src\lib\inngest\events.ts` | — | `src\lib\inngest\publish.ts` |
-| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts` | — |
+| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts` | — |
 | `src\lib\inngest\functions\recurrence-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\user-signed-up.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\functions\weeksheet-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\publish.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | — |
 | `src\lib\invites\index.ts` | `src\lib\invites\token.ts` | — |
 | `src\lib\invites\token.ts` | — | `src\lib\invites\index.ts` |
@@ -438,8 +439,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 386 |
-| Total connections | 136 |
+| Total files analyzed | 387 |
+| Total connections | 138 |
 | High-risk files (2+ deps) | 27 |
 | Orphan files (no connections) | 257 |
 

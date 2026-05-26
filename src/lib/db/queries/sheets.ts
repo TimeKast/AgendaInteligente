@@ -85,3 +85,26 @@ export async function getOrCreateWeekSheet(
   }
   return existing[0];
 }
+
+/**
+ * Pre-create an empty WeekSheet for (userId, weekStartingStr) if one
+ * doesn't already exist. Returns `{ created: true }` on insert, `false`
+ * on conflict (already existed). Used by the Friday cron (ISSUE-034) for
+ * cheap idempotent materialization without the cost of reading the row
+ * back when there's nothing to do with it.
+ *
+ * Race-safe via the same INSERT ... ON CONFLICT DO NOTHING contract as
+ * `getOrCreateWeekSheet`.
+ */
+export async function tryCreateWeekSheet(
+  userId: string,
+  weekStartingStr: string
+): Promise<{ created: boolean }> {
+  const inserted = await db
+    .insert(weekSheets)
+    .values({ userId, weekStarting: weekStartingStr })
+    .onConflictDoNothing({ target: [weekSheets.userId, weekSheets.weekStarting] })
+    .returning({ id: weekSheets.id });
+
+  return { created: inserted.length > 0 };
+}

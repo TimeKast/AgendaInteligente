@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { weekStartingFor, weekEndingFor } from '@/lib/domain/week-calc';
+import { weekStartingFor, weekEndingFor, getNextWeekStarting } from '@/lib/domain/week-calc';
 
 // Helper — build a UTC date for test inputs.
 function utc(y: number, m: number, d: number, h = 12, min = 0): Date {
@@ -112,5 +112,44 @@ describe('weekEndingFor', () => {
   it('handles leap-year February correctly', () => {
     // Sunday Feb 27 2028 → Saturday Mar 4 2028 (Feb has 29 days in 2028).
     expect(weekEndingFor('2028-02-27')).toBe('2028-03-04');
+  });
+});
+
+describe('getNextWeekStarting — ISSUE-034 Friday cron', () => {
+  // Reference week in MX: 2026-05-17 Sun … 2026-05-23 Sat
+  // Next week MX:         2026-05-24 Sun … 2026-05-30 Sat
+  const TZ = 'America/Mexico_City';
+
+  it('Friday → next Sunday', () => {
+    // Friday 2026-05-22 in MX (job target day) → next Sunday 2026-05-24.
+    expect(getNextWeekStarting(utc(2026, 5, 22, 18), TZ)).toBe('2026-05-24');
+  });
+
+  it('Sunday → following Sunday (not same day)', () => {
+    // The cron may run on Sunday in some edge timezones — make sure we
+    // always advance to NEXT week, never return the current week's start.
+    expect(getNextWeekStarting(utc(2026, 5, 17, 12), TZ)).toBe('2026-05-24');
+  });
+
+  it('Saturday → next Sunday (next day)', () => {
+    expect(getNextWeekStarting(utc(2026, 5, 23, 12), TZ)).toBe('2026-05-24');
+  });
+
+  it('cross-month boundary', () => {
+    // Friday 2026-05-29 MX → next Sunday 2026-05-31 MX.
+    expect(getNextWeekStarting(utc(2026, 5, 29, 18), TZ)).toBe('2026-05-31');
+  });
+
+  it('cross-year boundary', () => {
+    // Friday 2026-12-25 MX → next Sunday 2026-12-27 (still 2026).
+    expect(getNextWeekStarting(utc(2026, 12, 25, 18), TZ)).toBe('2026-12-27');
+    // Friday 2026-12-31 18:00 MX (= 2027-01-01 00:00 UTC) → next Sunday 2027-01-03.
+    expect(getNextWeekStarting(utc(2027, 1, 1, 0), TZ)).toBe('2027-01-03');
+  });
+
+  it('DST-safe across Pacific spring-forward (Mar 8 2026)', () => {
+    // Friday Mar 6 2026 (before DST) → next Sunday Mar 8 2026 (DST day).
+    // Despite the missing hour, the math must still land on Sun Mar 8.
+    expect(getNextWeekStarting(utc(2026, 3, 6, 18), 'America/Los_Angeles')).toBe('2026-03-08');
   });
 });

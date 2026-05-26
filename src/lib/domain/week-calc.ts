@@ -87,6 +87,24 @@ export function weekStartingFor(date: Date, tz: string): string {
 }
 
 /**
+ * Returns the `YYYY-MM-DD` of the Sunday that opens the week AFTER the
+ * one containing `now` in `tz`. Used by the Friday cron (ISSUE-034) to
+ * pre-create next week's WeekSheet so Sunday kickoff finds an empty row.
+ *
+ * Walks 7 days forward at the UTC level (so we land somewhere inside the
+ * next user-local week regardless of TZ), then resolves the Sunday that
+ * opens that week. DST-safe via the same `setUTCDate` + Intl path.
+ *
+ * Examples (TZ America/Mexico_City):
+ *   Fri 2026-05-22 (current week 2026-05-17 Sun)  →  2026-05-24 Sun (next)
+ *   Sun 2026-05-17 (current week itself)          →  2026-05-24 Sun (next)
+ */
+export function getNextWeekStarting(now: Date, tz: string): string {
+  const oneWeekAhead = addDays(now, 7);
+  return weekStartingFor(oneWeekAhead, tz);
+}
+
+/**
  * Returns the next Saturday after `weekStartingStr` (used for review
  * scheduling). Pure date math — no TZ awareness needed because we're
  * adding 6 days to a calendar date.

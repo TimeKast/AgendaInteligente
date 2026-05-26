@@ -11,5 +11,10 @@
 
 import { userSignedUp } from './user-signed-up';
 import { recurrenceMaterialize } from './recurrence-materialize';
+import { weeksheetMaterialize } from './weeksheet-materialize';
 
-export const inngestFunctions = [userSignedUp, recurrenceMaterialize] as const;
+export const inngestFunctions = [
+  userSignedUp,
+  recurrenceMaterialize,
+  weeksheetMaterialize,
+] as const;
