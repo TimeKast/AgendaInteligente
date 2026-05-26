@@ -2,7 +2,7 @@
 
 > **Auto-generated** — Run `pnpm generate:inventory` to update
 > **Regla:** SIEMPRE consultar antes de crear algo nuevo.
-> **Last updated:** 2026-05-20
+> **Last updated:** 2026-05-26
 
 ---
 
@@ -10,7 +10,11 @@
 
 | Package | Version |
 |---------|--------|
+| @anthropic-ai/sdk | 0.98.0 |
 | @auth/drizzle-adapter | 1.11.1 |
+| @dnd-kit/core | 6.3.1 |
+| @dnd-kit/sortable | 10.0.0 |
+| @dnd-kit/utilities | 3.2.2 |
 | @hookform/resolvers | 5.2.2 |
 | @neondatabase/serverless | 1.0.2 |
 | @radix-ui/react-alert-dialog | 1.1.15 |
@@ -32,11 +36,14 @@
 | clsx | 2.1.1 |
 | drizzle-orm | 0.45.2 |
 | framer-motion | 12.36.0 |
+| googleapis | 172.0.0 |
+| inngest | 4.4.0 |
 | lucide-react | 0.562.0 |
 | next | 16.2.4 |
 | next-auth | 5.0.0-beta.30 |
 | next-themes | 0.4.6 |
 | nodemailer | 7.0.13 |
+| openai | 6.39.0 |
 | react | 19.2.3 |
 | react-dom | 19.2.3 |
 | react-hook-form | 7.71.2 |
@@ -103,22 +110,52 @@
 |-------|------|
 | / | `src\app\page.tsx` |
 | /accept-invite | `src\app\(auth)\accept-invite\page.tsx` |
+| /activity/[id] | `src\app\(agendaInteligente)\activity\[id]\page.tsx` |
+| /categories | `src\app\(agendaInteligente)\categories\page.tsx` |
+| /categories/[id] | `src\app\(agendaInteligente)\categories\[id]\page.tsx` |
+| /chat | `src\app\(agendaInteligente)\chat\page.tsx` |
+| /chat/crisis-demo | `src\app\(agendaInteligente)\chat\crisis-demo\page.tsx` |
 | /dashboard | `src\app\(protected)\dashboard\page.tsx` |
 | /error | `src\app\(auth)\error\page.tsx` |
 | /forgot-password | `src\app\(auth)\forgot-password\page.tsx` |
+| /goals | `src\app\(agendaInteligente)\goals\page.tsx` |
+| /goals/[id] | `src\app\(agendaInteligente)\goals\[id]\page.tsx` |
 | /login | `src\app\(auth)\login\page.tsx` |
+| /month | `src\app\(agendaInteligente)\month\page.tsx` |
 | /notifications | `src\app\(protected)\notifications\page.tsx` |
 | /offline | `src\app\offline\page.tsx` |
+| /onboarding/calendar | `src\app\(agendaInteligente)\onboarding\calendar\page.tsx` |
+| /onboarding/context | `src\app\(agendaInteligente)\onboarding\context\page.tsx` |
+| /onboarding/done | `src\app\(agendaInteligente)\onboarding\done\page.tsx` |
+| /onboarding/language | `src\app\(agendaInteligente)\onboarding\language\page.tsx` |
+| /onboarding/mic | `src\app\(agendaInteligente)\onboarding\mic\page.tsx` |
+| /onboarding/push | `src\app\(agendaInteligente)\onboarding\push\page.tsx` |
+| /onboarding/schedule | `src\app\(agendaInteligente)\onboarding\schedule\page.tsx` |
+| /onboarding/timezone | `src\app\(agendaInteligente)\onboarding\timezone\page.tsx` |
 | /privacy | `src\app\(legal)\privacy\page.tsx` |
 | /profile | `src\app\(protected)\profile\page.tsx` |
+| /projects | `src\app\(agendaInteligente)\projects\page.tsx` |
+| /projects/[id] | `src\app\(agendaInteligente)\projects\[id]\page.tsx` |
 | /register | `src\app\(auth)\register\page.tsx` |
 | /reset-password | `src\app\(auth)\reset-password\page.tsx` |
+| /settings | `src\app\(agendaInteligente)\settings\page.tsx` |
+| /settings/account | `src\app\(agendaInteligente)\settings\account\page.tsx` |
+| /settings/appearance | `src\app\(agendaInteligente)\settings\appearance\page.tsx` |
+| /settings/billing | `src\app\(agendaInteligente)\settings\billing\page.tsx` |
 | /settings/general | `src\app\(protected)\settings\general\page.tsx` |
+| /settings/integrations | `src\app\(agendaInteligente)\settings\integrations\page.tsx` |
+| /settings/intensity | `src\app\(agendaInteligente)\settings\intensity\page.tsx` |
+| /settings/language | `src\app\(agendaInteligente)\settings\language\page.tsx` |
+| /settings/notifications | `src\app\(agendaInteligente)\settings\notifications\page.tsx` |
+| /settings/privacy | `src\app\(agendaInteligente)\settings\privacy\page.tsx` |
 | /settings/users | `src\app\(protected)\settings\users\page.tsx` |
 | /settings/users/[id] | `src\app\(protected)\settings\users\[id]\page.tsx` |
 | /settings/users/nuevo | `src\app\(protected)\settings\users\nuevo\page.tsx` |
+| /stats | `src\app\(agendaInteligente)\stats\page.tsx` |
+| /tasks | `src\app\(agendaInteligente)\tasks\page.tsx` |
 | /terms | `src\app\(legal)\terms\page.tsx` |
 | /today | `src\app\(agendaInteligente)\today\page.tsx` |
+| /week | `src\app\(agendaInteligente)\week\page.tsx` |
 
 ---
 
@@ -146,11 +183,11 @@
 
 | Metric | Value |
 |--------|-------|
-| Dependencies | 37 |
-| Page Routes | 18 |
+| Dependencies | 44 |
+| Page Routes | 48 |
 | API Routes | 13 |
 | Components & Utils | 40 |
-| **Total items** | **108** |
+| **Total items** | **145** |
 
 ---
 

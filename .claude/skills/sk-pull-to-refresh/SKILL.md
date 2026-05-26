@@ -1,6 +1,6 @@
 ---
 name: sk-pull-to-refresh
-description: Kit-shipped pull-to-refresh primitives for the TimeKast Starter Kit. Two components — `<PullToRefreshShell>` (shell-wide, mounted once in `DashboardShell`, gated by `isMobile()`, hardcoded `router.refresh()`) is the default and covers all protected pages with no per-screen wiring. `<PullToRefresh>` (per-screen wrapper) is the advanced API for screens with custom scroll containers (modals with internal overflow, sticky header above an internal scrolling table, pages whose data lives in client state). Hook `usePullToRefresh` lives at `src/lib/pwa/usePullToRefresh.ts`. Shell-wide is the equivalent of native iOS UIRefreshControl when the app document-scrolls.
+description: Kit-shipped pull-to-refresh primitives for the TimeKast Starter Kit. Two components — `<PullToRefreshShell>` (shell-wide, mounted once in `DashboardShell`, gated by `isMobile()`, hardcoded `router.refresh()`) is the default and covers all protected pages with no per-screen wiring. `<PullToRefresh>` (per-screen wrapper) is the advanced API for screens with custom scroll containers (modals with internal overflow, sticky header above an internal scrolling table, pages whose data lives in client state). Hook `usePullToRefresh()` lives at `src/lib/pwa/usePullToRefresh.ts`. Shell-wide is the equivalent of native iOS UIRefreshControl when the app document-scrolls.
 last-verified: 2026-04-29
 ---
 
@@ -14,7 +14,7 @@ last-verified: 2026-04-29
 
 ---
 
-## 1. `usePullToRefresh` hook — `src/lib/pwa/usePullToRefresh.ts`
+## 1. `usePullToRefresh()` hook — `src/lib/pwa/usePullToRefresh.ts`
 
 Low-level driver. Listens to `touch{start,move,end}` on the configured target (defaults to `window`, since the kit shell scrolls on the document — `<main>` is not a scroll container). Computes a damped pull distance with linear resistance and invokes `onRefresh()` once the user releases past `threshold`.
 
@@ -82,7 +82,7 @@ In both cases, use the per-screen wrapper (§3) and pair it with `useDisableShel
 
 ## 3. `<PullToRefresh>` — per-screen wrapper — `src/components/pwa/PullToRefresh.tsx`
 
-Use when the shell-wide default does not apply. The wrapper composes `usePullToRefresh` with a default `isMobile()` gate and an indicator local to the wrapped subtree.
+Use when the shell-wide default does not apply. The wrapper composes `usePullToRefresh()` with a default `isMobile()` gate and an indicator local to the wrapped subtree.
 
 ### Minimal usage
 
@@ -245,7 +245,7 @@ Justifica la decisión arquitectónica (shell-wide como default):
 
 ## 9. Cross-references
 
-- [`sk-pwa`](../sk-pwa/SKILL.md) — Service Worker, install prompts, managed update flow. PTR ya no depende del gate `usePwaInstall` por default; queda como composición opcional (PWA-only opt-in via `enabled={isInstalled}` en el wrapper).
+- [`sk-pwa`](../sk-pwa/SKILL.md) — Service Worker, install prompts, managed update flow. PTR ya no depende del gate `usePwaInstall()` por default; queda como composición opcional (PWA-only opt-in via `enabled={isInstalled}` en el wrapper).
 - [`sk-notifications`](../sk-notifications/SKILL.md) — `useNotifications` expone `refetchNotifications`, ejemplo natural de callback "hook con polling". `notifications-client.tsx` es también el ejemplo canónico de wrapper + `useDisableShellPTR()`.
 - [`sk-features-index`](../sk-features-index/SKILL.md) — entrada catalogada como "shell-wide default; per-screen wrapper for custom scroll containers".
 - [`kb-pwa`](../kb-pwa/SKILL.md) — portable PWA patterns. PTR todavía no tiene contraparte `kb-` (split cuando aparezca un segundo proyecto que lo necesite).

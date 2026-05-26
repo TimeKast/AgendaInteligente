@@ -850,7 +850,7 @@ Pre-wired to theme context. Dark/light/midnight.
 | `usePermissions`         | `@/lib/hooks/usePermissions`         | `{ can(resource, action), hasRole(role), isSuperAdmin }`                                                   |
 | `useDebounce`            | `@/lib/hooks/useDebounce`            | `T` — debounced value (default 300ms)                                                                      |
 | `useMounted`             | `@/lib/hooks/useMounted`             | `boolean` — SSR hydration safety                                                                           |
-| `usePwaInstall`          | `@/lib/pwa/usePwaInstall`            | PWA install prompt state                                                                                   |
+| `usePwaInstall()`        | `@/lib/pwa/usePwaInstall`            | PWA install prompt state                                                                                   |
 | `useNotifications`       | `@/lib/hooks/useNotifications`       | `{ notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, isConnected, isPending }`    |
 | `usePushSubscription`    | `@/lib/hooks/usePushSubscription`    | `{ isSubscribed, isSupported, subscribe, unsubscribe, isLoading, error }`                                  |
 | `useUnsavedChangesGuard` | `@/lib/hooks/useUnsavedChangesGuard` | `{ hasUnsavedChanges, confirmNavigation, allowNavigation }`                                                |

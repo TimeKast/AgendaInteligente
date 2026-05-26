@@ -1,7 +1,7 @@
 # 🗺️ CODEBASE — Dependency Map
 
 > **Auto-generated** — Run `pnpm generate:codebase` to update
-> **Last updated:** 2026-05-20
+> **Last updated:** 2026-05-26
 
 ---
 
@@ -12,8 +12,23 @@
 | File | Dependents |
 |------|------------|
 | `src\lib\email\templates\layout.ts` | 9 |
+| `src\components\agenda\ActivityRow.tsx` | 6 |
+| `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
+| `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
+| `src\components\agenda\ActivityQuickAdd.tsx` | 4 |
+| `src\components\agenda\PriorityDots.tsx` | 3 |
 | `src\lib\db\schema\users.ts` | 3 |
 | `src\lib\email\types.ts` | 3 |
+| `src\components\agenda\RecurrencePicker.tsx` | 2 |
+| `src\components\agenda\DeadlineBadge.tsx` | 2 |
+| `src\components\agenda\ColorPicker.tsx` | 2 |
+| `src\components\agenda\IconPicker.tsx` | 2 |
+| `src\components\agenda\CalendarGrid.tsx` | 2 |
+| `src\components\agenda\MonthDayCell.tsx` | 2 |
+| `src\components\agenda\WeekPoolSection.tsx` | 2 |
+| `src\components\agenda\QuickAddDayPopover.tsx` | 2 |
+| `src\components\agenda\PlanSnapshotViewer.tsx` | 2 |
+| `src\components\agenda\StatusBadge.tsx` | 2 |
 | `src\lib\auth\utils.ts` | 2 |
 | `src\lib\db\schema\index.ts` | 2 |
 | `src\lib\db\drizzle.ts` | 2 |
@@ -25,8 +40,38 @@
 
 | File | Depends On | Used By |
 |------|------------|--------|
+| `src\app\(agendaInteligente)\activity\[id]\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\categories\[id]\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\categories\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\chat\crisis-demo\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\chat\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\goals\[id]\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\goals\page.tsx` | — | — |
 | `src\app\(agendaInteligente)\layout.tsx` | — | — |
+| `src\app\(agendaInteligente)\month\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\onboarding\calendar\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\onboarding\context\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\onboarding\done\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\onboarding\language\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\onboarding\mic\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\onboarding\push\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\onboarding\schedule\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\onboarding\timezone\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\projects\[id]\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\projects\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\account\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\appearance\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\billing\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\integrations\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\intensity\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\language\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\notifications\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\settings\privacy\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\stats\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\tasks\page.tsx` | — | — |
 | `src\app\(agendaInteligente)\today\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\week\page.tsx` | — | — |
 | `src\app\(auth)\accept-invite\page.tsx` | — | — |
 | `src\app\(auth)\error\page.tsx` | — | — |
 | `src\app\(auth)\forgot-password\page.tsx` | — | — |
@@ -80,16 +125,102 @@
 | `src\components\admin\UserDetailContent.tsx` | — | — |
 | `src\components\admin\UserNavigator.tsx` | — | — |
 | `src\components\admin\UserTable.tsx` | `src\components\admin\InviteUserDialog.tsx` | — |
-| `src\components\agenda\ActivityRow.tsx` | `src\components\agenda\PriorityDots.tsx`, `src\components\agenda\ProjectChip.tsx` | — |
+| `src\components\agenda\AccountDeletionModal.tsx` | — | — |
+| `src\components\agenda\ActivityQuickAdd.tsx` | `src\components\agenda\PriorityDots.tsx`, `src\components\agenda\RecurrencePicker.tsx` | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\ActivityRow.tsx` | `src\components\agenda\DeadlineBadge.tsx`, `src\components\agenda\RecurrencePicker.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\LinkedActivitiesList.tsx`, `src\components\agenda\ProjectActivityRow.tsx`, `src\components\agenda\SortableActivityRow.tsx`, `src\components\agenda\SortableActivityRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\ActivitySection.tsx` | — | — |
-| `src\components\agenda\AgendaBottomNav.tsx` | — | — |
+| `src\components\agenda\ActivityStatusModal.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\AgendaBottomNav.tsx` | — | `src\components\agenda\AgendaShell.tsx` |
 | `src\components\agenda\AgendaHeader.tsx` | — | — |
-| `src\components\agenda\DaySheetMorningSection.tsx` | `src\components\agenda\EnergyIndicators.tsx`, `src\components\agenda\SheetField.tsx` | — |
-| `src\components\agenda\EnergyIndicators.tsx` | — | `src\components\agenda\DaySheetMorningSection.tsx` |
-| `src\components\agenda\FabMic.tsx` | — | — |
-| `src\components\agenda\PriorityDots.tsx` | — | `src\components\agenda\ActivityRow.tsx` |
-| `src\components\agenda\ProjectChip.tsx` | — | `src\components\agenda\ActivityRow.tsx` |
-| `src\components\agenda\SheetField.tsx` | — | `src\components\agenda\DaySheetMorningSection.tsx` |
+| `src\components\agenda\AgendaShell.tsx` | `src\components\agenda\AgendaBottomNav.tsx`, `src\components\agenda\FabMic.tsx` | — |
+| `src\components\agenda\AgentMessage.tsx` | — | — |
+| `src\components\agenda\AppearanceController.tsx` | — | — |
+| `src\components\agenda\BarChart.tsx` | — | — |
+| `src\components\agenda\CalendarConnectionsList.tsx` | — | — |
+| `src\components\agenda\CalendarGrid.tsx` | `src\components\agenda\HourSlot.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\CategoryRow.tsx` | `src\components\agenda\ColorPicker.tsx`, `src\components\agenda\IconPicker.tsx` | — |
+| `src\components\agenda\ChallengeIndicator.tsx` | — | — |
+| `src\components\agenda\ChatInput.tsx` | — | — |
+| `src\components\agenda\CloseDayModal.tsx` | — | — |
+| `src\components\agenda\ColorPicker.tsx` | — | `src\components\agenda\CategoryRow.tsx`, `src\components\agenda\NewCategoryModal.tsx` |
+| `src\components\agenda\ConfirmDeleteModal.tsx` | — | `src\components\agenda\PlanSnapshotControls.tsx` |
+| `src\components\agenda\Conversation.tsx` | — | — |
+| `src\components\agenda\CrisisExitPanel.tsx` | — | — |
+| `src\components\agenda\DateDivider.tsx` | — | — |
+| `src\components\agenda\DayActivitiesSheet.tsx` | — | `src\components\agenda\MonthPlanner.tsx` |
+| `src\components\agenda\DayCard.tsx` | — | — |
+| `src\components\agenda\DayOffChip.tsx` | — | `src\components\agenda\DaysOffPicker.tsx` |
+| `src\components\agenda\DayRow.tsx` | `src\components\agenda\DraggablePoolActivity.tsx`, `src\components\agenda\PlanSnapshotControls.tsx` | `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\DaySheetMorningSection.tsx` | — | — |
+| `src\components\agenda\DaysOffPicker.tsx` | `src\components\agenda\DayOffChip.tsx` | — |
+| `src\components\agenda\DeadlineBadge.tsx` | — | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\DraggablePoolActivity.tsx` |
+| `src\components\agenda\DiscordIntegrationCard.tsx` | — | — |
+| `src\components\agenda\DraggablePoolActivity.tsx` | `src\components\agenda\DeadlineBadge.tsx` | `src\components\agenda\DayRow.tsx`, `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\DraggableTaskRow.tsx` | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\CalendarGrid.tsx` | `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\ExternalEventRow.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\FabMic.tsx` | `src\components\agenda\VoiceCaptureSheet.tsx` | `src\components\agenda\AgendaShell.tsx` |
+| `src\components\agenda\FilterChips.tsx` | — | — |
+| `src\components\agenda\GoalCard.tsx` | `src\components\agenda\ScopeChip.tsx` | — |
+| `src\components\agenda\GoalReviewModal.tsx` | — | — |
+| `src\components\agenda\GoalsTabs.tsx` | — | — |
+| `src\components\agenda\HourSlot.tsx` | — | `src\components\agenda\CalendarGrid.tsx` |
+| `src\components\agenda\IconPicker.tsx` | — | `src\components\agenda\CategoryRow.tsx`, `src\components\agenda\NewCategoryModal.tsx` |
+| `src\components\agenda\IntegrationCard.tsx` | — | — |
+| `src\components\agenda\IntensityCard.tsx` | — | — |
+| `src\components\agenda\LinkedActivitiesList.tsx` | `src\components\agenda\ActivityRow.tsx` | — |
+| `src\components\agenda\LinkedProjectsList.tsx` | — | — |
+| `src\components\agenda\MonthDayCell.tsx` | — | `src\components\agenda\MonthGrid.tsx`, `src\components\agenda\MonthPlanner.tsx` |
+| `src\components\agenda\MonthGrid.tsx` | `src\components\agenda\MonthDayCell.tsx` | `src\components\agenda\MonthPlanner.tsx` |
+| `src\components\agenda\MonthNavigation.tsx` | — | — |
+| `src\components\agenda\MonthPlanner.tsx` | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\MonthGrid.tsx`, `src\components\agenda\DayActivitiesSheet.tsx`, `src\components\agenda\DraggablePoolActivity.tsx`, `src\components\agenda\MonthDayCell.tsx`, `src\components\agenda\QuickAddDayPopover.tsx`, `src\components\agenda\PlanSnapshotControls.tsx`, `src\components\agenda\PlanSnapshotViewer.tsx` | — |
+| `src\components\agenda\MultiDayPicker.tsx` | — | `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\MutePickerModal.tsx` | — | — |
+| `src\components\agenda\NewCategoryModal.tsx` | `src\components\agenda\ColorPicker.tsx`, `src\components\agenda\IconPicker.tsx` | — |
+| `src\components\agenda\NewProjectModal.tsx` | `src\components\agenda\StatusBadge.tsx` | — |
+| `src\components\agenda\OnboardingLayout.tsx` | `src\components\agenda\OnboardingProgress.tsx` | — |
+| `src\components\agenda\OnboardingProgress.tsx` | — | `src\components\agenda\OnboardingLayout.tsx` |
+| `src\components\agenda\OnboardingRadioCard.tsx` | — | — |
+| `src\components\agenda\PatternsList.tsx` | — | — |
+| `src\components\agenda\PlanCard.tsx` | — | — |
+| `src\components\agenda\PlanSnapshotControls.tsx` | `src\components\agenda\ConfirmDeleteModal.tsx` | `src\components\agenda\DayRow.tsx`, `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\PlanSnapshotViewer.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\PlanSnapshotViewer.tsx` | `src\components\agenda\PlanSnapshotControls.tsx` | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\PoolSection.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\PriorityDots.tsx` | — | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\ProjectActivityRow.tsx`, `src\components\agenda\VoicePreviewCard.tsx` |
+| `src\components\agenda\ProfileHeader.tsx` | — | — |
+| `src\components\agenda\ProgressBar.tsx` | — | — |
+| `src\components\agenda\ProjectActivityRow.tsx` | `src\components\agenda\PriorityDots.tsx`, `src\components\agenda\ActivityRow.tsx` | — |
+| `src\components\agenda\ProjectChip.tsx` | — | — |
+| `src\components\agenda\ProjectRow.tsx` | `src\components\agenda\StatusBadge.tsx` | — |
+| `src\components\agenda\ProjectsRanking.tsx` | — | — |
+| `src\components\agenda\PushPermissionBanner.tsx` | — | — |
+| `src\components\agenda\QuickAddDayPopover.tsx` | — | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\RecurrencePicker.tsx` | — | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\ActivityRow.tsx` |
+| `src\components\agenda\ScopeChip.tsx` | — | `src\components\agenda\GoalCard.tsx` |
+| `src\components\agenda\SettingRow.tsx` | — | — |
+| `src\components\agenda\SettingsSection.tsx` | — | — |
+| `src\components\agenda\SheetField.tsx` | — | `src\components\agenda\WeekSheetKickoffSection.tsx` |
+| `src\components\agenda\SortDropdown.tsx` | — | — |
+| `src\components\agenda\SortableActivityRow.tsx` | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\ActivityRow.tsx` | — |
+| `src\components\agenda\StatCard.tsx` | — | — |
+| `src\components\agenda\StatusBadge.tsx` | — | `src\components\agenda\NewProjectModal.tsx`, `src\components\agenda\ProjectRow.tsx` |
+| `src\components\agenda\SubtaskRow.tsx` | — | — |
+| `src\components\agenda\SwipeableRow.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\TagChip.tsx` | — | — |
+| `src\components\agenda\TodayActivitiesBoard.tsx` | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\SwipeableRow.tsx`, `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\PoolSection.tsx`, `src\components\agenda\CalendarGrid.tsx`, `src\components\agenda\ExternalEventRow.tsx`, `src\components\agenda\ActivityStatusModal.tsx`, `src\components\agenda\TodayViewToggle.tsx` | — |
+| `src\components\agenda\TodayViewToggle.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\Toggle.tsx` | — | — |
+| `src\components\agenda\UsageMeter.tsx` | — | — |
+| `src\components\agenda\UserMessage.tsx` | — | — |
+| `src\components\agenda\VoiceCaptureSheet.tsx` | `src\components\agenda\WaveformAnim.tsx`, `src\components\agenda\VoicePreviewCard.tsx` | `src\components\agenda\FabMic.tsx` |
+| `src\components\agenda\VoicePreviewCard.tsx` | `src\components\agenda\PriorityDots.tsx` | `src\components\agenda\VoiceCaptureSheet.tsx` |
+| `src\components\agenda\WaveformAnim.tsx` | — | `src\components\agenda\VoiceCaptureSheet.tsx` |
+| `src\components\agenda\WeekDayDots.tsx` | — | — |
+| `src\components\agenda\WeekDayStrip.tsx` | — | `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\WeekMonthTabs.tsx` | — | — |
+| `src\components\agenda\WeekNavigation.tsx` | — | — |
+| `src\components\agenda\WeekPoolSection.tsx` | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\DraggablePoolActivity.tsx` | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\WeekSheetKickoffSection.tsx` | `src\components\agenda\SheetField.tsx` | — |
+| `src\components\agenda\WeekSwimlane.tsx` | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\DayRow.tsx`, `src\components\agenda\WeekDayStrip.tsx`, `src\components\agenda\DraggablePoolActivity.tsx`, `src\components\agenda\MultiDayPicker.tsx`, `src\components\agenda\QuickAddDayPopover.tsx`, `src\components\agenda\PlanSnapshotControls.tsx`, `src\components\agenda\PlanSnapshotViewer.tsx` | — |
 | `src\components\auth\AcceptInviteForm.tsx` | — | — |
 | `src\components\auth\ForgotPasswordForm.tsx` | — | — |
 | `src\components\auth\LoginForm.tsx` | — | — |
@@ -260,10 +391,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 228 |
-| Total connections | 49 |
-| High-risk files (2+ deps) | 7 |
-| Orphan files (no connections) | 163 |
+| Total files analyzed | 344 |
+| Total connections | 108 |
+| High-risk files (2+ deps) | 22 |
+| Orphan files (no connections) | 233 |
 
 ---
 

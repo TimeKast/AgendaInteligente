@@ -115,19 +115,19 @@ export const orders = pgTable('orders', {
 
 The kit ships four helpers in `@/lib/utils/human-id`:
 
-| Helper              | Role                                                                            |
-| ------------------- | ------------------------------------------------------------------------------- |
-| `generateHumanId`   | Format helper — turns a positive integer + prefix into `ORD-2026-0042`. Pure.   |
-| `getNextHumanId`    | Atomic next via a Postgres `SEQUENCE` (`nextval`). Lock-free under concurrency. |
-| `getNextHumanIdSeq` | Application-level `MAX(trailing-int) + 1`. **Gap-resilient** (delete-safe).     |
-| `withHumanIdRetry`  | Retry-on-`23505` wrapper for races. Orthogonal to the two resolvers.            |
+| Helper               | Role                                                                            |
+| -------------------- | ------------------------------------------------------------------------------- |
+| `generateHumanId`    | Format helper — turns a positive integer + prefix into `ORD-2026-0042`. Pure.   |
+| `getNextHumanId`     | Atomic next via a Postgres `SEQUENCE` (`nextval`). Lock-free under concurrency. |
+| `getNextHumanIdSeq`  | Application-level `MAX(trailing-int) + 1`. **Gap-resilient** (delete-safe).     |
+| `withHumanIdRetry()` | Retry-on-`23505` wrapper for races. Orthogonal to the two resolvers.            |
 
 ### 4.1 Mandatory rules
 
 ```
 ✅ OBLIGATORIO: Toda generación de humanId pasa por `getNextHumanId` (PG SEQUENCE)
                 o `getNextHumanIdSeq` (MAX + 1) — nunca `count(*) + 1`.
-✅ OBLIGATORIO: Toda generación pasa además por `withHumanIdRetry`. Las dos
+✅ OBLIGATORIO: Toda generación pasa además por `withHumanIdRetry()`. Las dos
                 protecciones son ortogonales: SEQUENCE/MAX cubren gaps, el
                 retry cubre races.
 ✅ OBLIGATORIO: Si el código corre dentro de un `tx` recibido del caller →
@@ -135,9 +135,9 @@ The kit ships four helpers in `@/lib/utils/human-id`:
                 (SAVEPOINT) ANTES del retry. Sin esto, un 23505 aborta el tx
                 padre y el retry falla con "current transaction is aborted".
 ❌ PROHIBIDO: `generateHumanId(count + 1, …)` — colisiona en cuanto se borra
-              una fila intermedia. `withHumanIdRetry` no rescata este caso.
-❌ PROHIBIDO: Omitir `withHumanIdRetry` en mutaciones que generan humanId.
-❌ PROHIBIDO: Usar `withHumanIdRetry` dentro de un parent `tx` SIN savepoint.
+              una fila intermedia. `withHumanIdRetry()` no rescata este caso.
+❌ PROHIBIDO: Omitir `withHumanIdRetry()` en mutaciones que generan humanId.
+❌ PROHIBIDO: Usar `withHumanIdRetry()` dentro de un parent `tx` SIN savepoint.
 ❌ PROHIBIDO: Usar `\d`, `\w`, `\s` o cualquier escape con backslash en regex
               literales dentro de `sql\`...\`` — Drizzle lee el COOKED del
               template literal y JS colapsa `\d` → `d`. Usar siempre POSIX
@@ -207,7 +207,7 @@ const seq = await getNextHumanIdSeq(tx, movements, movements.humanId, eq(movemen
 
 ### 4.4 Pattern C — Inside a parent `tx` (mandatory savepoint)
 
-If the helper **receives** a `tx` from the caller (instead of opening its own), it cannot wrap the whole tx in `withHumanIdRetry` — a `23505` aborts the parent tx and every retry fails with "current transaction is aborted". Open a SAVEPOINT via nested `tx.transaction(...)`:
+If the helper **receives** a `tx` from the caller (instead of opening its own), it cannot wrap the whole tx in `withHumanIdRetry()` — a `23505` aborts the parent tx and every retry fails with "current transaction is aborted". Open a SAVEPOINT via nested `tx.transaction(...)`:
 
 ```ts
 async function appendMovementWithinTx(
@@ -361,24 +361,24 @@ pnpm db:query --json "SELECT …"  # JSON output (for pipes)
 
 ## 8. Kit-specific anti-patterns
 
-| ❌                                               | ✅                                                              |
-| ------------------------------------------------ | --------------------------------------------------------------- |
-| Manual `createdAt/By` + `modifiedAt/By` columns  | `...auditFields` helper                                         |
-| Skipping `auditFields` on a business table       | Always spread `...auditFields` (mandatory per §2)               |
-| `updatedAt` (legacy naming)                      | `modifiedAt` (pairs with `modifiedBy`)                          |
-| Hard delete on referenced tables                 | `softDeleteFields` + `notDeleted()`                             |
-| `generateHumanId(count+1, …)` (gap + race bugs)  | `getNextHumanId` (SEQUENCE) o `getNextHumanIdSeq` (MAX) (§4)    |
-| `humanId` mutation without `withHumanIdRetry`    | Always wrap in `withHumanIdRetry` (§4.1)                        |
-| `withHumanIdRetry` directly inside a parent `tx` | Open a SAVEPOINT first via nested `tx.transaction(...)` (§4.4)  |
-| `\d` / `\w` / `\s` inside `sql\`...\``           | POSIX char classes (`[0-9]`, `[A-Za-z]`) — Drizzle reads cooked |
-| `db:push` without consent                        | `db:generate` → review SQL → `db:migrate`                       |
-| Ad-hoc `tsx` + dotenv to inspect DB              | `pnpm db:query "…"` / `--tables` / `--describe`                 |
-| Hand-rolled `page * limit` math                  | `parsePaginationParams` + `buildPaginationSQL`                  |
-| Cached count left stale after a write            | `revalidateTag(...)` in the Server Action after mutation        |
-| Inventing a new `hasMovements` per table         | `canHardDeleteUser` (or analogous typed helper)                 |
-| Tables of distinct domains in one schema file    | One file per domain (SK.md §1.2)                                |
-| Forgetting to re-export new schema file          | Add to `src/lib/db/schema/index.ts`                             |
-| Hand-deriving Zod without the inferred types     | Reference `$inferSelect` / `$inferInsert` types                 |
+| ❌                                                 | ✅                                                              |
+| -------------------------------------------------- | --------------------------------------------------------------- |
+| Manual `createdAt/By` + `modifiedAt/By` columns    | `...auditFields` helper                                         |
+| Skipping `auditFields` on a business table         | Always spread `...auditFields` (mandatory per §2)               |
+| `updatedAt` (legacy naming)                        | `modifiedAt` (pairs with `modifiedBy`)                          |
+| Hard delete on referenced tables                   | `softDeleteFields` + `notDeleted()`                             |
+| `generateHumanId(count+1, …)` (gap + race bugs)    | `getNextHumanId` (SEQUENCE) o `getNextHumanIdSeq` (MAX) (§4)    |
+| `humanId` mutation without `withHumanIdRetry()`    | Always wrap in `withHumanIdRetry()` (§4.1)                      |
+| `withHumanIdRetry()` directly inside a parent `tx` | Open a SAVEPOINT first via nested `tx.transaction(...)` (§4.4)  |
+| `\d` / `\w` / `\s` inside `sql\`...\``             | POSIX char classes (`[0-9]`, `[A-Za-z]`) — Drizzle reads cooked |
+| `db:push` without consent                          | `db:generate` → review SQL → `db:migrate`                       |
+| Ad-hoc `tsx` + dotenv to inspect DB                | `pnpm db:query "…"` / `--tables` / `--describe`                 |
+| Hand-rolled `page * limit` math                    | `parsePaginationParams` + `buildPaginationSQL`                  |
+| Cached count left stale after a write              | `revalidateTag(...)` in the Server Action after mutation        |
+| Inventing a new `hasMovements` per table           | `canHardDeleteUser` (or analogous typed helper)                 |
+| Tables of distinct domains in one schema file      | One file per domain (SK.md §1.2)                                |
+| Forgetting to re-export new schema file            | Add to `src/lib/db/schema/index.ts`                             |
+| Hand-deriving Zod without the inferred types       | Reference `$inferSelect` / `$inferInsert` types                 |
 
 > This repo does NOT ship `drizzle-zod`. Derive Zod schemas by hand in `@/lib/validations/…` referencing the inferred types — `createInsertSchema` / `createSelectSchema` are not available.
 
