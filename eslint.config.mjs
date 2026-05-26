@@ -118,6 +118,11 @@ const eslintConfig = defineConfig([
       // Every read/write is scoped via `eq(activities.userId, userId)`.
       'src/lib/cron/recurrence.ts',
       'src/lib/cron/**',
+      // ISSUE-080: Inngest fan-out cron lists all active users (`users`
+      // table — admin-shaped, no userId scope possible). Per-user data
+      // access still flows through scoped helpers (`materializeUserRecurrences`).
+      'src/lib/inngest/**',
+      'src/app/api/inngest/**',
       'src/app/api/auth/**',
       'src/app/api/avatar/**',
       'src/app/api/health/**',

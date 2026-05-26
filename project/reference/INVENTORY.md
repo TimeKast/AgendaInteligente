@@ -171,6 +171,7 @@
 | /api/avatar/[userId] | `src\app\api\avatar\[userId]\route.ts` |
 | /api/email/test | `src\app\api\email\test\route.ts` |
 | /api/health | `src\app\api\health\route.ts` |
+| /api/inngest | `src\app\api\inngest\route.ts` |
 | /api/invites/accept | `src\app\api\invites\accept\route.ts` |
 | /api/invites/send | `src\app\api\invites\send\route.ts` |
 | /api/invites/validate | `src\app\api\invites\validate\route.ts` |
@@ -186,9 +187,9 @@
 |--------|-------|
 | Dependencies | 44 |
 | Page Routes | 48 |
-| API Routes | 14 |
+| API Routes | 15 |
 | Components & Utils | 40 |
-| **Total items** | **146** |
+| **Total items** | **147** |
 
 ---
 

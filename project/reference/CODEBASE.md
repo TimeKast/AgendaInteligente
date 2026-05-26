@@ -20,6 +20,7 @@
 | `src\lib\db\drizzle.ts` | 4 |
 | `src\components\agenda\PriorityDots.tsx` | 3 |
 | `src\lib\email\types.ts` | 3 |
+| `src\lib\inngest\client.ts` | 3 |
 | `src\components\agenda\RecurrencePicker.tsx` | 2 |
 | `src\components\agenda\DeadlineBadge.tsx` | 2 |
 | `src\components\agenda\ColorPicker.tsx` | 2 |
@@ -109,6 +110,7 @@
 | `src\app\api\avatar\[userId]\route.ts` | — | — |
 | `src\app\api\email\test\route.ts` | — | — |
 | `src\app\api\health\route.ts` | — | — |
+| `src\app\api\inngest\route.ts` | — | — |
 | `src\app\api\invites\accept\route.ts` | — | — |
 | `src\app\api\invites\send\route.ts` | — | — |
 | `src\app\api\invites\validate\route.ts` | — | — |
@@ -398,6 +400,12 @@
 | `src\lib\hooks\useServerTableState.ts` | `src\lib\hooks\useTableState.ts` | — |
 | `src\lib\hooks\useTableState.ts` | — | `src\lib\hooks\useServerTableState.ts` |
 | `src\lib\hooks\useUnsavedChangesGuard.ts` | — | — |
+| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\events.ts` | — | `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts` | — |
+| `src\lib\inngest\functions\recurrence-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\functions\user-signed-up.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\publish.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | — |
 | `src\lib\invites\index.ts` | `src\lib\invites\token.ts` | — |
 | `src\lib\invites\token.ts` | — | `src\lib\invites\index.ts` |
 | `src\lib\logger.ts` | — | — |
@@ -430,10 +438,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 379 |
-| Total connections | 130 |
-| High-risk files (2+ deps) | 26 |
-| Orphan files (no connections) | 256 |
+| Total files analyzed | 386 |
+| Total connections | 136 |
+| High-risk files (2+ deps) | 27 |
+| Orphan files (no connections) | 257 |
 
 ---
 

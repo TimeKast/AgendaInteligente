@@ -26,8 +26,9 @@
  * multi-table writes can't be modeled through the scopedDb factory and atomicity
  * is essential — a partial onboarding row would corrupt the user's account.
  *
- * Inngest `user.signed_up` event is emitted as a `logger.info` stub today;
- * ISSUE-080 wires the real `inngest.send(...)`.
+ * Inngest `user.signed_up` event is published post-commit via the typed
+ * `publish()` wrapper (ISSUE-080). If Inngest is unconfigured (no event
+ * key) the wrapper logs and returns — onboarding doesn't fail.
  *
  * Linked: FT-004, US-005, BR-2, BR-3.
  */
@@ -41,7 +42,7 @@ import { notificationPrefs } from '@/lib/db/schema/notification-prefs';
 import { plans, subscriptions } from '@/lib/db/schema/billing';
 import { withSelf } from '@/lib/actions/helpers';
 import { ActionError, type ActionResult } from '@/lib/actions/types';
-import { logger } from '@/lib/logger';
+import { publish } from '@/lib/inngest/publish';
 import {
   setLanguageSchema,
   setTimezoneSchema,
@@ -256,8 +257,11 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResult> 
           .where(eq(users.id, userId));
       });
 
-      // Inngest event stub — ISSUE-080 wires the real publisher.
-      logger.info(`[onboarding] user.signed_up event (stub) for userId=${userId}`);
+      // Publish `user.signed_up` AFTER the transaction commits — if the
+      // publish fails (e.g. transient Inngest outage), the user is still
+      // onboarded; the wrapper logs and the schedule can be reissued by
+      // hand. Inside the tx would risk DB rollback on a publish blip.
+      await publish('user.signed_up', { userId });
     }
   );
 }

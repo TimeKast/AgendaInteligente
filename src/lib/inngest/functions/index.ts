@@ -1,0 +1,15 @@
+/**
+ * Functions barrel — ISSUE-080 (Slice A).
+ *
+ * Collects every Inngest function so the `/api/inngest` route registers
+ * them all in one place. Order doesn't matter; the SDK introspects each
+ * function's triggers at sync time.
+ *
+ * Add new handlers here AND the parent issue should land a single test
+ * proving the function shows up in `functions.map(f => f.id())`.
+ */
+
+import { userSignedUp } from './user-signed-up';
+import { recurrenceMaterialize } from './recurrence-materialize';
+
+export const inngestFunctions = [userSignedUp, recurrenceMaterialize] as const;
