@@ -18,6 +18,7 @@
 
 import { z } from 'zod';
 import { ACTIVITY_STATUSES, ACTIVITY_REASON_CATEGORIES } from '@/lib/db/schema/activities';
+import { parseRecurrenceRule } from '@/lib/domain/recurrence';
 
 const idSchema = z.string().uuid('ID inválido');
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida (YYYY-MM-DD)');
@@ -25,23 +26,25 @@ const hhmm = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Hora inválida (HH:mm)'
 const isoDateTime = z.string().datetime({ offset: true }).or(z.date());
 
 /**
- * Recurrence DSL — sub-set of iCal RRULE. See ISSUE-024 for materializer.
- *   daily
- *   weekly:MO,WE,FR        (2-letter day codes joined by ',')
- *   monthly:1              (day-of-month 1..28)
- *   monthly:last           (last day of month)
+ * Recurrence DSL — validates against the parser in
+ * `src/lib/domain/recurrence.ts` (single source of truth, BR-11).
+ * Legacy iCal-style strings (`FREQ=…`) get a friendlier error message
+ * because older clients may still attempt them.
  */
-const RECURRENCE_DSL =
-  /^(daily|weekly:(MO|TU|WE|TH|FR|SA|SU)(,(MO|TU|WE|TH|FR|SA|SU))*|monthly:(last|([1-9]|1[0-9]|2[0-8])))$/;
-
 const recurrenceSchema = z
   .string()
-  .regex(
-    RECURRENCE_DSL,
-    'DSL de recurrencia inválido (ej: daily | weekly:MO,WE | monthly:1 | monthly:last)'
-  )
   .nullable()
-  .optional();
+  .optional()
+  .superRefine((val, ctx) => {
+    if (val === null || val === undefined) return;
+    if (parseRecurrenceRule(val) !== null) return;
+    ctx.addIssue({
+      code: 'custom',
+      message: /^FREQ=/i.test(val)
+        ? 'Usa el DSL simplificado (daily | weekly:DAYS | monthly:N | monthly:last) — no iCal RRULE'
+        : 'DSL de recurrencia inválido (ej: daily | weekly:MO,WE | monthly:1 | monthly:last)',
+    });
+  });
 
 const titleSchema = z
   .string()

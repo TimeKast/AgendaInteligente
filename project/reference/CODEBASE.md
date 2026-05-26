@@ -339,6 +339,7 @@
 | `src\lib\cache.ts` | — | — |
 | `src\lib\contexts\BreadcrumbContext.tsx` | — | — |
 | `src\lib\contexts\UnsavedChangesContext.tsx` | — | — |
+| `src\lib\cron\recurrence.ts` | — | — |
 | `src\lib\db\drizzle.ts` | `src\lib\db\schema\index.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seed.ts`, `src\lib\db\seeds\admin.ts`, `src\lib\db\seeds\plans.ts` |
 | `src\lib\db\helpers\audit-fields.ts` | — | — |
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
@@ -364,6 +365,7 @@
 | `src\lib\db\seeds\plans.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\billing.ts` | — |
 | `src\lib\db\utils\pagination.ts` | — | — |
 | `src\lib\domain\activity-transitions.ts` | — | — |
+| `src\lib\domain\recurrence.ts` | — | — |
 | `src\lib\email\index.ts` | `src\lib\email\resend.ts`, `src\lib\email\smtp.ts`, `src\lib\email\types.ts` | — |
 | `src\lib\email\logo-data.ts` | — | `src\lib\email\resend.ts`, `src\lib\email\smtp.ts` |
 | `src\lib\email\resend.ts` | `src\lib\email\types.ts`, `src\lib\email\logo-data.ts` | `src\lib\email\index.ts` |
@@ -421,10 +423,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 370 |
+| Total files analyzed | 372 |
 | Total connections | 126 |
 | High-risk files (2+ deps) | 26 |
-| Orphan files (no connections) | 249 |
+| Orphan files (no connections) | 251 |
 
 ---
 

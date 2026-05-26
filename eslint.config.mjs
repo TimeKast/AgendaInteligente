@@ -112,6 +112,11 @@ const eslintConfig = defineConfig([
       // scopedDb('activities'); subtask CRUD goes through `db` directly
       // with explicit activity_id scoping.
       'src/lib/actions/subtask.ts',
+      // ISSUE-024: recurrence materializer runs as a system task with an
+      // explicit userId arg — no session context, so scopedDb can't bind.
+      // Every read/write is scoped via `eq(activities.userId, userId)`.
+      'src/lib/cron/recurrence.ts',
+      'src/lib/cron/**',
       'src/app/api/auth/**',
       'src/app/api/avatar/**',
       'src/app/api/health/**',
