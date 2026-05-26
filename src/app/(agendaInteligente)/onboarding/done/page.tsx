@@ -1,15 +1,31 @@
 /**
- * Onboarding 8/8 — Done. Editorial close with a quiet line.
+ * Onboarding 8/8 — Done. Triggers the atomic finalize transaction on
+ * "Empezar" click.
+ *
+ * After finalize succeeds the redirect to /today is handled by the
+ * middleware (onboarding_completed_at is now set on the next request).
+ * The action emits the Inngest `user.signed_up` event stub.
  */
 
+import { redirect } from 'next/navigation';
 import { OnboardingLayout } from '@/components/agenda/OnboardingLayout';
+import { finalizeOnboarding } from '@/lib/actions/onboarding';
+
+async function submit() {
+  'use server';
+  const result = await finalizeOnboarding({});
+  if (result.error) {
+    redirect(`/onboarding/done?error=${encodeURIComponent(result.error)}`);
+  }
+  redirect('/today');
+}
 
 export default function OnboardingDonePage() {
   return (
     <OnboardingLayout
       step={8}
       title="Listo."
-      continueHref="/today"
+      formAction={submit}
       continueLabel="Empezar"
       showSkip={false}
     >

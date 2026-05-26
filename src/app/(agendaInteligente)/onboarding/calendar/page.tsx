@@ -10,7 +10,7 @@ export default function OnboardingCalendarPage() {
     <OnboardingLayout
       step={7}
       title="¿Conectar calendario?"
-      subtitle="Para detectar choques (ej: 'tenés una llamada a las 10')."
+      subtitle="Para detectar choques (ej: 'tienes una llamada a las 10')."
       continueHref="/onboarding/done"
     >
       <OnboardingRadioCard
@@ -24,7 +24,7 @@ export default function OnboardingCalendarPage() {
         name="calendar"
         value="later"
         title="Después"
-        description="Lo hacés desde Settings → Calendar sync."
+        description="Lo haces desde Settings → Calendar sync."
       />
     </OnboardingLayout>
   );

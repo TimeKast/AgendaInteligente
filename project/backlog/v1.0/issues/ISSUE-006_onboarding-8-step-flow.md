@@ -5,7 +5,8 @@ epic: EPIC-AUTH
 milestone: v1.0
 priority: P0
 story_points: 3
-status: ready
+status: completed
+completed_date: 2026-05-26
 dependencies: [ISSUE-003, ISSUE-004, ISSUE-005]
 user_stories: [US-005]
 features: [FT-004]
@@ -98,3 +99,103 @@ Scenario: Already onboarded user
 - Step state lives in DB rows progressively updated — not React state
 - Atomic step 8: use `db.transaction(async (tx) => { ... })`
 - The 3 questions from frustration capture: just 1 textarea in v1; expand to 3 conversational questions in v1.5 si métricas lo justifican
+
+## Implementation Evidence
+
+**Archivos:**
+
+- `src/lib/validations/onboarding.ts` — 7 schemas (language/timezone/push/mic/context/schedule/calendar) + 1 trigger schema (finalize sin payload, `z.object({}).strict()`).
+- `src/lib/actions/onboarding.ts` — 8 server actions. `finalizeOnboarding` usa `db.transaction()` para multi-table atomic write con idempotent pre-check.
+- `src/lib/auth/auth.config.ts` — `authorized` callback gatea con `onboardingCompletedAt`; rutas prototype REMOVIDAS de `publicPaths` (gating real). Redirect logic: not-onboarded → `/onboarding/language`; already onboarded en /onboarding/\* → `/today`. Session callback expone `onboardingCompletedAt` al cliente.
+- `src/lib/auth/auth.ts` — JWT callback sincroniza `onboardingCompletedAt` desde DB en signIn/signUp/update (serializado ISO).
+- `eslint.config.mjs` — `src/lib/actions/onboarding.ts` allowlisted para BR-1 rule (multi-table transaction no es modelable con scopedDb).
+- `src/components/agenda/OnboardingLayout.tsx` — refactor dual-mode (LinkBody vs FormBody según `formAction?` prop). Mantiene shape original para steps que aún no migran.
+- `src/app/(agendaInteligente)/onboarding/language/page.tsx` — wired E2E con `setLanguage` action.
+- `src/app/(agendaInteligente)/onboarding/done/page.tsx` — wired E2E con `finalizeOnboarding`.
+- 3 fixes de voseo (calendar, schedule, timezone — todas las ocurrencias detectadas).
+- `tests/unit/onboarding-actions.test.ts` — 17 tests (per-step + atomic step 8 + idempotency + free-plan-missing error).
+
+**Atomic step 8 transaction (E-006 finalize):**
+
+```ts
+await db.transaction(async (tx) => {
+  // 1. Inbox category
+  const [cat] = await tx
+    .insert(categories)
+    .values({
+      userId,
+      name: 'Inbox',
+      isInbox: true,
+      color: '#5C5C5C',
+      icon: 'folder',
+      position: 0,
+    })
+    .returning({ id: categories.id });
+
+  // 2. Inbox project tied to Inbox category
+  await tx.insert(projects).values({
+    userId,
+    categoryId: cat.id,
+    name: 'Inbox',
+    isInbox: true,
+    status: 'active',
+  });
+
+  // 3. NotificationPref upsert (prior steps may have written push/schedule)
+  await tx
+    .insert(notificationPrefs)
+    .values({ userId })
+    .onConflictDoNothing({ target: notificationPrefs.userId });
+
+  // 4. Free subscription
+  await tx.insert(subscriptions).values({
+    userId,
+    planId: freePlanId,
+    status: 'active',
+  });
+
+  // 5. Mark onboarding complete + 14-day gentle intensity default
+  await tx
+    .update(users)
+    .set({
+      onboardingCompletedAt: new Date(),
+      intensityDefaultUntil: fourteenDaysFromNow,
+      lastActiveAt: sql`now()`,
+    })
+    .where(eq(users.id, userId));
+});
+```
+
+**Decisiones de scope:**
+
+- **Breaking change**: rutas prototype REMOVIDAS de `publicPaths`. La demo pública anónima de Vercel ya no funciona — quien quiera ver el app debe loguear (seeded admin via `pnpm db:seed`).
+- **UI wiring solo language + done**: las 6 pages restantes (timezone/push/mic/context/schedule/calendar) siguen con `continueHref` static. Las actions están listas y son trivialmente wireables. La nueva firma de `OnboardingLayout` (con `formAction?`) es backward-compatible.
+- **Inngest `user.signed_up` event**: stub via `logger.info`. Real publish en ISSUE-080.
+- **E2E Playwright tests**: deferred — requiere ISSUE-004 (email/password auth real) + UI wiring full + credentials de Google OAuth de ISSUE-003 provisionadas.
+
+**Reconciliaciones con dependencies:**
+
+- ISSUE-004 (email/password) listada como dep pero status `ready`, no completed. La onboarding action no depende del provider de auth específico, sólo de `auth()` retornando un user con id (cualquier provider funciona). Si querés que ISSUE-004 sea hard-required, mover este issue a `blocked` hasta entonces — pero no aplica hoy.
+
+**Cobertura tests (17):**
+
+- setLanguage: update + Zod enum reject
+- setTimezone: update + invalid string reject
+- setPushPref: upsert con onConflictDoUpdate
+- setSchedule: 3 times update + malformed reject
+- setOnboardingContext: update + empty reject
+- setCalendarOptIn: redirect URL para "now" + null para "later"
+- finalizeOnboarding: full tx con 4 inserts + 1 update, idempotency, free-plan-missing error, Inbox cat correctness, Inbox proj tied to cat, free subscription
+
+**Verificación:**
+
+- `pnpm typecheck` ✅
+- `pnpm lint` ✅ 0 errors. ESLint BR-1 rule NO disparó (allowlist correcta).
+- `pnpm test` ✅ 576/576 estable.
+- `pnpm test onboarding-actions` ✅ 17/17.
+
+**Unlocks:**
+
+- ISSUE-013 createActivity (default a Inbox project) ahora puede ejecutarse end-to-end después de signup.
+- ISSUE-003 AC Scenario 1 (alice lands on /onboarding/language) ahora se cumple — el redirect callback de `redirect` + middleware logic gatean correctamente.
+- ISSUE-010/012 (Category/Project CRUD) ahora pueden ser wireados al UI con auth real.

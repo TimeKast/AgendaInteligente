@@ -94,6 +94,11 @@ const eslintConfig = defineConfig([
       'src/lib/actions/notifications.ts',
       'src/lib/actions/profile.ts',
       'src/lib/actions/send-reset-email.ts',
+      // Onboarding finalize needs `db.transaction` over 5 tables (Inbox cat,
+      // Inbox project, notif_prefs, subscription, users.onboarding_completed_at).
+      // scopedDb can't model atomicity across tables, so the action uses `db`
+      // directly with explicit `where(eq(table.userId, userId))` scoping.
+      'src/lib/actions/onboarding.ts',
       'src/app/api/auth/**',
       'src/app/api/avatar/**',
       'src/app/api/health/**',

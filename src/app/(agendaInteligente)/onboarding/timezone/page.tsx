@@ -9,7 +9,7 @@ export default function OnboardingTimezonePage() {
     <OnboardingLayout
       step={2}
       title="Tu zona horaria"
-      subtitle="La detectamos automáticamente. Si está mal, elegí otra."
+      subtitle="La detectamos automáticamente. Si está mal, elige otra."
       continueHref="/onboarding/push"
     >
       <label

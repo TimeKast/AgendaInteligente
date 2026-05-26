@@ -74,7 +74,7 @@ export const authConfig = {
       token: JWT;
       user?: User | AdapterUser;
       trigger?: 'signIn' | 'signUp' | 'update';
-      session?: { role?: string };
+      session?: { role?: string; onboardingCompletedAt?: string | null };
     }) {
       if (user) {
         token.id = user.id;
@@ -82,7 +82,11 @@ export const authConfig = {
         token.picture = user.image;
       }
       if (trigger === 'update' && session) {
-        token.role = session.role;
+        if (session.role !== undefined) token.role = session.role;
+        // Used by /onboarding/done to flip the bit without a full re-login.
+        if (session.onboardingCompletedAt !== undefined) {
+          token.onboardingCompletedAt = session.onboardingCompletedAt;
+        }
       }
       return token;
     },
@@ -96,6 +100,10 @@ export const authConfig = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.image = token.picture as string | undefined;
+        // Onboarding-aware gating in middleware reads this; null means
+        // "not yet onboarded".
+        (session.user as { onboardingCompletedAt?: string | null }).onboardingCompletedAt =
+          (token.onboardingCompletedAt as string | null | undefined) ?? null;
       }
       return session;
     },
@@ -104,12 +112,12 @@ export const authConfig = {
       auth,
       request: { nextUrl },
     }: {
-      auth: { user?: User } | null;
+      auth: { user?: User & { onboardingCompletedAt?: string | null } } | null;
       request: { nextUrl: URL };
     }) {
       const isLoggedIn = !!auth?.user;
 
-      // Public routes that don't require authentication
+      // Routes that NEVER require authentication.
       const publicPaths = [
         '/login',
         '/register',
@@ -121,30 +129,28 @@ export const authConfig = {
         '/privacy',
         '/terms',
         '/offline',
-        // AgendaInteligente prototype — visual-only, no backend.
-        '/today',
-        '/week',
-        '/month',
-        '/goals',
-        '/chat',
-        '/settings',
-        '/activity',
-        '/onboarding',
-        '/categories',
-        '/projects',
-        '/stats',
-        '/tasks',
       ];
-
       const isPublicRoute =
         nextUrl.pathname === '/' || // Landing page
         publicPaths.some((p) => nextUrl.pathname.startsWith(p));
-
-      // Allow public routes and static assets
       if (isPublicRoute) return true;
 
-      // Everything else requires authentication
+      // Everything past here requires a session.
       if (!isLoggedIn) return false;
+
+      // Onboarding-aware gating (ISSUE-006):
+      //   - User without onboarding_completed_at MUST stay in /onboarding/*
+      //     and bounces from /today, /week, /categories, etc.
+      //   - User already onboarded bounces out of /onboarding/* back to /today.
+      const isInOnboarding = nextUrl.pathname.startsWith('/onboarding');
+      const onboardingDone = !!auth?.user?.onboardingCompletedAt;
+
+      if (!onboardingDone && !isInOnboarding) {
+        return Response.redirect(new URL('/onboarding/language', nextUrl));
+      }
+      if (onboardingDone && isInOnboarding) {
+        return Response.redirect(new URL('/today', nextUrl));
+      }
 
       // Route-level ACL: check if user's role can access this route
       const role = auth?.user?.role;

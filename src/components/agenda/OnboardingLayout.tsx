@@ -21,8 +21,18 @@ interface OnboardingLayoutProps {
   title: string;
   /** Optional sub-line shown below the title (italic serif). */
   subtitle?: string;
-  /** Where the primary CTA navigates to (next step / done). */
-  continueHref: string;
+  /**
+   * Where the primary CTA navigates to (next step / done) when the layout
+   * is in Link mode. Ignored when `formAction` is set.
+   */
+  continueHref?: string;
+  /**
+   * When set, the layout renders a <form action={formAction}> wrapping the
+   * step body so the CTA submits server-side. Children become the form
+   * controls; `formAction` should be a server-action import. The action is
+   * expected to redirect (or revalidate) — the layout does not navigate.
+   */
+  formAction?: (formData: FormData) => Promise<void>;
   /** CTA label override (default "Continuar →"). */
   continueLabel?: string;
   /** Show "Saltar" top-right? Hidden on step 1 per spec. */
@@ -38,11 +48,17 @@ export function OnboardingLayout({
   title,
   subtitle,
   continueHref,
+  formAction,
   continueLabel = 'Continuar →',
   showSkip = true,
   skipHref,
   children,
 }: OnboardingLayoutProps) {
+  const isFormMode = typeof formAction === 'function';
+  if (!isFormMode && !continueHref) {
+    throw new Error('OnboardingLayout requires either continueHref or formAction.');
+  }
+  const skipDestination = skipHref ?? continueHref ?? '/today';
   return (
     <div
       style={{
@@ -66,7 +82,7 @@ export function OnboardingLayout({
         <div style={{ textAlign: 'right' }}>
           {showSkip ? (
             <Link
-              href={skipHref ?? continueHref}
+              href={skipDestination}
               style={{
                 fontFamily: 'var(--ag-font-body)',
                 fontSize: 13,
@@ -81,6 +97,92 @@ export function OnboardingLayout({
         </div>
       </header>
 
+      {isFormMode ? (
+        <FormBody
+          title={title}
+          subtitle={subtitle}
+          step={step}
+          continueLabel={continueLabel}
+          formAction={formAction!}
+        >
+          {children}
+        </FormBody>
+      ) : (
+        <LinkBody
+          title={title}
+          subtitle={subtitle}
+          step={step}
+          continueLabel={continueLabel}
+          continueHref={continueHref!}
+        >
+          {children}
+        </LinkBody>
+      )}
+    </div>
+  );
+}
+
+interface BodyProps {
+  step: number;
+  title: string;
+  subtitle?: string;
+  continueLabel: string;
+  children: ReactNode;
+}
+
+function StepHeader({ step, title, subtitle }: Pick<BodyProps, 'step' | 'title' | 'subtitle'>) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-2)' }}>
+      <span
+        style={{
+          fontFamily: 'var(--ag-font-mono)',
+          fontSize: 12,
+          color: 'var(--ag-ink-hint)',
+          letterSpacing: '0.04em',
+        }}
+      >
+        Paso {step} de 8
+      </span>
+      <h1
+        style={{
+          margin: 0,
+          fontFamily: 'var(--ag-font-display)',
+          fontSize: 26,
+          fontWeight: 500,
+          lineHeight: 1.25,
+          color: 'var(--ag-ink-primary)',
+        }}
+      >
+        {title}
+      </h1>
+      {subtitle ? (
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'var(--ag-font-display)',
+            fontStyle: 'italic',
+            fontSize: 16,
+            lineHeight: 1.55,
+            color: 'var(--ag-ink-soft)',
+          }}
+        >
+          {subtitle}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function LinkBody({
+  step,
+  title,
+  subtitle,
+  continueLabel,
+  continueHref,
+  children,
+}: BodyProps & { continueHref: string }) {
+  return (
+    <>
       <main
         style={{
           flex: 1,
@@ -94,49 +196,9 @@ export function OnboardingLayout({
           gap: 'var(--ag-space-5)',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-2)' }}>
-          <span
-            style={{
-              fontFamily: 'var(--ag-font-mono)',
-              fontSize: 12,
-              color: 'var(--ag-ink-hint)',
-              letterSpacing: '0.04em',
-            }}
-          >
-            Paso {step} de 8
-          </span>
-          <h1
-            style={{
-              margin: 0,
-              fontFamily: 'var(--ag-font-display)',
-              fontSize: 26,
-              fontWeight: 500,
-              lineHeight: 1.25,
-              color: 'var(--ag-ink-primary)',
-            }}
-          >
-            {title}
-          </h1>
-          {subtitle ? (
-            <p
-              style={{
-                margin: 0,
-                fontFamily: 'var(--ag-font-display)',
-                fontStyle: 'italic',
-                fontSize: 16,
-                lineHeight: 1.55,
-                color: 'var(--ag-ink-soft)',
-              }}
-            >
-              {subtitle}
-            </p>
-          ) : null}
-        </div>
-
+        <StepHeader step={step} title={title} subtitle={subtitle} />
         <div style={{ flex: 1 }}>{children}</div>
       </main>
-
-      {/* Footer CTA */}
       <footer
         style={{
           paddingInline: 'var(--ag-space-4)',
@@ -168,6 +230,69 @@ export function OnboardingLayout({
           {continueLabel}
         </Link>
       </footer>
-    </div>
+    </>
+  );
+}
+
+function FormBody({
+  step,
+  title,
+  subtitle,
+  continueLabel,
+  formAction,
+  children,
+}: BodyProps & { formAction: (formData: FormData) => Promise<void> }) {
+  return (
+    <form action={formAction} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <main
+        style={{
+          flex: 1,
+          maxWidth: 480,
+          width: '100%',
+          marginInline: 'auto',
+          paddingInline: 'var(--ag-space-4)',
+          paddingTop: 'var(--ag-space-6)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--ag-space-5)',
+        }}
+      >
+        <StepHeader step={step} title={title} subtitle={subtitle} />
+        <div style={{ flex: 1 }}>{children}</div>
+      </main>
+      <footer
+        style={{
+          paddingInline: 'var(--ag-space-4)',
+          paddingTop: 'var(--ag-space-3)',
+          paddingBottom: 'calc(var(--ag-space-5) + env(safe-area-inset-bottom, 0px))',
+          backgroundColor: 'var(--ag-bg)',
+          maxWidth: 480,
+          width: '100%',
+          marginInline: 'auto',
+        }}
+      >
+        <button
+          type="submit"
+          style={{
+            appearance: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
+            backgroundColor: 'var(--ag-accent-primary)',
+            color: 'var(--ag-accent-on)',
+            padding: '14px 20px',
+            borderRadius: 'var(--ag-radius-base)',
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 15,
+            fontWeight: 500,
+          }}
+        >
+          {continueLabel}
+        </button>
+      </footer>
+    </form>
   );
 }

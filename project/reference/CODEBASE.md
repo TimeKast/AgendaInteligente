@@ -315,6 +315,7 @@
 | `src\lib\actions\change-password.ts` | — | — |
 | `src\lib\actions\helpers.ts` | — | — |
 | `src\lib\actions\notifications.ts` | — | — |
+| `src\lib\actions\onboarding.ts` | — | — |
 | `src\lib\actions\profile.ts` | — | — |
 | `src\lib\actions\project.ts` | — | — |
 | `src\lib\actions\send-reset-email.ts` | — | — |
@@ -399,6 +400,7 @@
 | `src\lib\validations\activity.ts` | — | — |
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\category.ts` | — | — |
+| `src\lib\validations\onboarding.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
 | `src\lib\validations\project.ts` | — | — |
 | `src\middleware.ts` | — | — |
@@ -409,10 +411,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 359 |
+| Total files analyzed | 361 |
 | Total connections | 124 |
 | High-risk files (2+ deps) | 25 |
-| Orphan files (no connections) | 240 |
+| Orphan files (no connections) | 242 |
 
 ---
 

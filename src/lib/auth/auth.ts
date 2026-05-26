@@ -341,7 +341,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Run base Edge-safe callback first (token.id, token.role, token.picture)
       const token = authConfig.callbacks.jwt(params);
 
-      // DB-dependent: sync image on signIn/signUp/update (not every request)
+      // DB-dependent: sync image + onboarding state on signIn/signUp/update.
       if (
         (params.trigger === 'signIn' ||
           params.trigger === 'signUp' ||
@@ -351,10 +351,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       ) {
         const dbUser = await db.query.users.findFirst({
           where: eq(users.id, token.id as string),
-          columns: { image: true },
+          columns: { image: true, onboardingCompletedAt: true },
         });
         if (dbUser) {
           token.picture = dbUser.image || token.picture;
+          // Middleware reads this to gate /today vs /onboarding (ISSUE-006).
+          // Serialize as ISO so the JWT payload stays JSON-safe.
+          token.onboardingCompletedAt = dbUser.onboardingCompletedAt
+            ? dbUser.onboardingCompletedAt.toISOString()
+            : null;
         }
       }
 

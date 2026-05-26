@@ -47,8 +47,8 @@ export default function OnboardingSchedulePage() {
   return (
     <OnboardingLayout
       step={6}
-      title="Cuándo querés que te escriba"
-      subtitle="Tres momentos del día. Podés cambiarlos cuando quieras."
+      title="Cuándo quieres que te escriba"
+      subtitle="Tres momentos del día. Puedes cambiarlos cuando quieras."
       continueHref="/onboarding/calendar"
     >
       <div
