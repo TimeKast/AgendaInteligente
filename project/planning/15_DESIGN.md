@@ -79,15 +79,20 @@
 | SCR-016 | **Onboarding · Google Calendar opt-in** | Connect now or later                           | US-005, US-090 |
 | SCR-017 | **Onboarding · Done**                   | Cierre con "Mañana a las 8 abro tu primer día" | US-005         |
 
-### Protected — Core navigation (bottom nav 5 items)
+### Protected — Core navigation (bottom nav 7 items, SIEMPRE horizontal)
 
-| ID      | Name                | Purpose                                               | Linked US                                          |
-| ------- | ------------------- | ----------------------------------------------------- | -------------------------------------------------- |
-| SCR-020 | **Today**           | Hoy: DaySheet + activities del día + mic FAB          | US-015..018, US-020..027, US-030..032, US-070..073 |
-| SCR-021 | **Week**            | Semana: WeekSheet + grilla 7 días + plan vs ejecutado | US-033, US-034, US-035                             |
-| SCR-022 | **Goals**           | Lista de goals activos por scope con tabs             | US-040..043                                        |
-| SCR-023 | **Chat**            | Conversación con agente, threaded por día             | US-050..053, US-060..062                           |
-| SCR-024 | **Settings (root)** | Hub de configuración                                  | US-122                                             |
+> ⚠️ Iteración prototipo: nav cambió de 5 items a 7, y es SIEMPRE horizontal abajo en todos los breakpoints (no hay desktop sidebar). Ver US-134, FT-134.
+
+| ID       | Name                | Purpose                                                                 | Linked US                                                               |
+| -------- | ------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| SCR-020  | **Today**           | Hoy: DaySheet + activities + matriz Eisenhower + grid horario + mic FAB | US-015..018, US-020..027, US-030b, US-031b, US-070..073, US-135, US-138 |
+| SCR-021  | **Plan (Week)**     | WeekSheet + grilla 7 días + plan snapshot                               | US-033, US-034, US-035, US-140..142                                     |
+| SCR-021b | **Plan (Month)**    | MonthSheet + grid mensual + drag cross-day + plan snapshot              | US-131, US-140..142                                                     |
+| SCR-022  | **Goals**           | Lista de goals activos por scope con tabs                               | US-040..043                                                             |
+| SCR-023  | **Chat**            | Conversación con agente, threaded por día                               | US-050..053, US-060..062                                                |
+| SCR-024  | **Settings (root)** | Hub de configuración                                                    | US-122                                                                  |
+| SCR-025  | **Tasks**           | Vista plana cross-project: filtros + sort + búsqueda + capture inline   | US-130                                                                  |
+| SCR-026  | **Categorías**      | Lista de categorías; tap → SCR-042b detalle                             | US-010..012                                                             |
 
 ### Protected — Settings sub-screens
 
@@ -104,27 +109,32 @@
 
 ### Protected — Detail / management screens
 
-| ID      | Name                           | Purpose                                                                                | Linked US              |
-| ------- | ------------------------------ | -------------------------------------------------------------------------------------- | ---------------------- |
-| SCR-040 | **Activity detail**            | Full view of activity: title, description, subtasks, linkage to goals, status, history | US-016, US-017, US-018 |
-| SCR-041 | **Project detail**             | Project info + list of activities + status controls                                    | US-013, US-014         |
-| SCR-042 | **Category list / management** | CRUD de categorías con drag-reorder                                                    | US-010, US-011, US-012 |
-| SCR-043 | **Goal detail**                | Goal info + linked activities/projects + review CTA cuando aplica                      | US-040, US-041, US-042 |
+| ID       | Name                                     | Purpose                                                                                                     | Linked US                              |
+| -------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| SCR-040  | **Activity detail**                      | Full view of activity: title, description, subtasks, linkage to goals, status, history, quadrant, multi-day | US-016, US-017, US-018, US-135, US-136 |
+| SCR-041  | **Project detail**                       | Project info + list of activities + status controls                                                         | US-013, US-014                         |
+| SCR-042  | **Category list / management**           | CRUD de categorías con drag-reorder                                                                         | US-010, US-011, US-012                 |
+| SCR-042b | **Category detail (`/categories/[id]`)** | Lista de projects de la categoría + "+ Nuevo proyecto" pre-rellenado                                        | US-132                                 |
+| SCR-043  | **Goal detail**                          | Goal info + linked activities/projects + review CTA cuando aplica                                           | US-040, US-041, US-042                 |
+| SCR-044  | **Stats dashboard (`/stats`)**           | KPIs visuales: consistencia, completion rate, top projects, bar chart                                       | US-133                                 |
 
 ### Modal / sheet overlays (no full screen but distinct UX)
 
-| ID      | Name                              | Purpose                                                                              | Linked US              |
-| ------- | --------------------------------- | ------------------------------------------------------------------------------------ | ---------------------- |
-| SCR-050 | **Voice capture sheet**           | Modal bottom-sheet (mobile) / centered (desktop) con waveform + transcript + preview | US-070..073            |
-| SCR-051 | **Activity quick-add**            | Inline form para crear activity rápida sin abrir detail                              | US-015                 |
-| SCR-052 | **Activity status modal**         | Modal con opciones (in_progress / skipped / blocked) + reason si aplica              | US-026, US-027         |
-| SCR-053 | **Goal review modal**             | Calificación 1-10 + notes + status auto-suggested                                    | US-042                 |
-| SCR-054 | **Confirm delete modal**          | Para Category/Project/Account con warning de cascade                                 | US-012, US-014, US-123 |
-| SCR-055 | **Push permission re-request**    | Banner persistente si user negó push pero abre app frecuente                         | US-080, US-005         |
-| SCR-056 | **Install PWA prompt**            | Banner native install (Android) / instructional sheet (iOS)                          | US-120                 |
-| SCR-057 | **Mute notifications modal**      | Picker: 1h, 4h, hoy, 3 días, indefinido                                              | US-087                 |
-| SCR-058 | **Crisis exit screen**            | UI especial cuando AI-8 fires: crisis line prominente, sin chat UI normal            | US-053                 |
-| SCR-059 | **Account deletion grace banner** | Banner en Today si `deleted_at` set, con CTA "cancelar borrado"                      | US-123, BR-14          |
+| ID      | Name                              | Purpose                                                                               | Linked US              |
+| ------- | --------------------------------- | ------------------------------------------------------------------------------------- | ---------------------- |
+| SCR-050 | **Voice capture sheet**           | Modal bottom-sheet (mobile) / centered (desktop) con waveform + transcript + preview  | US-070..073            |
+| SCR-051 | **Activity quick-add**            | Inline form para crear activity rápida sin abrir detail                               | US-015                 |
+| SCR-052 | **Activity status modal**         | Modal con opciones (in_progress / skipped / blocked) + reason si aplica               | US-026, US-027         |
+| SCR-053 | **Goal review modal**             | Calificación 1-10 + notes + status auto-suggested                                     | US-042                 |
+| SCR-054 | **Confirm delete modal**          | Para Category/Project/Account con warning de cascade                                  | US-012, US-014, US-123 |
+| SCR-055 | **Push permission re-request**    | Banner persistente si user negó push pero abre app frecuente                          | US-080, US-005         |
+| SCR-056 | **Install PWA prompt**            | Banner native install (Android) / instructional sheet (iOS)                           | US-120                 |
+| SCR-057 | **Mute notifications modal**      | Picker: 1h, 4h, hoy, 3 días, indefinido                                               | US-087                 |
+| SCR-058 | **Crisis exit screen**            | UI especial cuando AI-8 fires: crisis line prominente, sin chat UI normal             | US-053                 |
+| SCR-059 | **Account deletion grace banner** | Banner en Today si `deleted_at` set, con CTA "cancelar borrado"                       | US-123, BR-14          |
+| SCR-060 | **Close day modal**               | Modal con outcome per-activity (Hecha/Avanzada+slider/No la toqué) + one-line summary | US-031b                |
+| SCR-061 | **Multi-day picker**              | Multi-fecha calendar picker para programar activity en N días específicos             | US-136                 |
+| SCR-062 | **Plan snapshot viewer**          | Split plan congelado vs ejecución (used desde `/week`, `/month` cuando hay snapshot)  | US-140, US-142         |
 
 ### V1.5 — placeholders
 
@@ -135,7 +145,7 @@
 | SCR-072 | 5-Year sheet  | Placeholder v2   |
 | SCR-073 | Life sheet    | Placeholder v2   |
 
-**Total v1 screens:** 41 (5 public + 8 onboarding + 5 core + 8 settings + 4 detail + 11 modals)
+**Total v1 screens:** 47 (5 public + 8 onboarding + 8 core + 8 settings + 5 detail + 11 modals + 2 modals nuevos prototipo) — incluye los 6 screens introducidos por iteración prototipo: SCR-021b Plan/Month, SCR-025 Tasks, SCR-026 Categorías, SCR-042b Category detail, SCR-044 Stats, y modales SCR-060/061 (close-day + multi-day picker).
 **Coverage:** 100% de US MVP mapeadas a al menos 1 screen.
 
 ---
@@ -269,7 +279,9 @@ SCR-020 Today (now with DaySheet morning visible)
 
 ### FLW-005 — Evening ritual
 
-**Linked US:** US-082, US-031
+> ⚠️ **Deprecated por iteración prototipo** — reemplazado por **FLW-005b** (close-day modal). El flujo conversacional largo no se sostuvo en testing: el stakeholder prefirió un modal directo con outcome per-activity. Se conserva solo como referencia histórica.
+
+**Linked US:** US-082 (deprecated), US-031 → US-031b
 **Trigger:** Push at `evening_time`
 
 ```
@@ -289,6 +301,30 @@ SCR-023 Chat (context=evening_close)
 
 ---
 
+### FLW-005b — Close-day modal (reemplaza FLW-005)
+
+**Linked US:** US-031b
+**Trigger:** Push at `evening_time` → tap notification → SCR-060 Close-day modal abre encima de SCR-020 Today
+
+```
+SCR-060 Close-day modal
+  ├ Title: "Cerrar [día] — [N] actividades"
+  ├ Per-activity row (cada Activity con scheduled_dates del día):
+  │   ├ [✓] Hecha    → status = 'done', cerrada-checkbox opcional
+  │   ├ [~] Avanzada → status = 'in_progress', slider 0-100 → progress_percent
+  │   └ [ ] No la toqué → status sin cambio o 'skipped' (user elige razón opcional)
+  ├ One-line input: "Una frase del día" → DaySheet.close_summary
+  └ [Cerrar el día]
+[ DaySheet.close_summary populated, close_completed_at = now ]
+[ Each Activity status/progress_percent updated ]
+  ↓ Optional: AI generates resumen agregado vía FT-104 (no edita actividades — solo nota privada)
+  ↓ Volver a SCR-020 con banner "Día cerrado · [hora]"
+```
+
+**Por qué cambió:** el flujo conversacional pedía 4-5 turnos para cerrar el día. Con close-day modal, el user cierra todas sus activities + escribe una frase en ~20s. Wins ya se llenaron en morning (FLW-004), no se repiten.
+
+---
+
 ### FLW-006 — Weekly kickoff (Sunday)
 
 **Linked US:** US-083, US-033
@@ -300,7 +336,7 @@ SCR-023 Chat (context=weekly_kickoff)
   ↓ user one_thing
   ├ Agent: "Tus 3 wins de la semana."
   ↓ user (numbered or batched)
-  ├ Agent: "¿Cuándo hacés cada una?" + opcional muestra calendar busy slots si Google Calendar conectado
+  ├ Agent: "¿Cuándo haces cada una?" + opcional muestra calendar busy slots si Google Calendar conectado
   ↓ user assigns time blocks
   ├ Agent: "¿Alguien con quien conectar esta semana?"
   ↓ user list
@@ -524,7 +560,7 @@ SCR-058 Crisis exit screen takes over chat panel
   ├ Large prominent: "No soy la herramienta para esto ahora."
   ├ "Por favor contactá [línea de crisis local]"
   ├ Big tappable phone number for country detected
-  ├ "Si estás en peligro inmediato, llamá al [emergency]"
+  ├ "Si estás en peligro inmediato, llama al [emergency]"
   └ Small link "Volver al chat" (lower priority CTA)
 [ Telemetry: log crisis.exit.fired (anonymized country + timestamp) ]
 [ Conversation flagged in DB with crisis_exit_at = now ]
@@ -534,80 +570,58 @@ SCR-058 Crisis exit screen takes over chat panel
 
 ## §3 — Navigation Architecture
 
-### Mobile (< 768px) — Primary shell
+> ⚠️ Iteración prototipo: nav es **SIEMPRE horizontal abajo** en todos los breakpoints (mobile / tablet / desktop). El desktop sidebar original fue eliminado. 7 items totales. Ver `src/components/agenda/AgendaBottomNav.tsx`.
+
+### All breakpoints — Bottom nav horizontal SIEMPRE
 
 ```
 ┌─────────────────────────────────┐
 │         App Header              │  ← 56px height; transparent on Today, bg-elevated otherwise
-│  ← (back) | Title (serif h2)    │  ← back arrow only en sub-screens; on root screens, profile avatar right
+│  ← (back) | Title (serif h2)    │  ← back arrow en sub-screens; root screens muestran avatar right
 ├─────────────────────────────────┤
 │                                 │
 │                                 │
 │      Main content area          │  ← scroll, full bleed
-│      max-width 480px            │  ← container max
-│                                 │
+│      max-width 480px (mobile)   │
+│      max-width 840px (desktop)  │
 │                                 │
 │                                 │
 ├─────────────────────────────────┤
-│  [📅 Today] [🗓 Week] [🎯 Goals] │  ← Bottom nav 64px height
-│  [💬 Chat] [⚙️ Settings]         │
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️             │  ← Bottom nav 64px height, 7 items
+│ Today Plan Tasks Goals Chat     │     Categorías Settings
 └─────────────────────────────────┘
             🎙️                     ← FAB mic, 56px, bottom-right (above bottom nav)
 ```
 
-**Bottom nav items:** 5 total. Each: icon (24px Lucide) + label (caption, 11px). Active state: ink-primary; inactive: ink-hint. NO color accents in nav itself.
+**Bottom nav items (orden):**
+
+1. **Today** (📅) — SCR-020
+2. **Plan** (🗓) — SCR-021 (default Week tab; submenú Week/Month — ver `WeekMonthTabs`)
+3. **Tasks** (☰) — SCR-025
+4. **Goals** (🎯) — SCR-022
+5. **Chat** (💬) — SCR-023
+6. **Categorías** (📁) — SCR-026
+7. **Settings** (⚙️) — SCR-024
+
+Each: icon (20-24px Lucide) + label (caption, 11px). Active state: ink-primary; inactive: ink-hint. NO color accents in nav itself.
+
+**Overflow rule:** si el viewport es < 360px y los 7 items no caben, los últimos 2 (Categorías + Settings) colapsan en un menú "Más" (icono ⋯). En tablet/desktop, los 7 items siempre caben.
 
 **FAB mic:**
 
-- Visible on Today, Week, Goals (not on Chat — chat has its own input bar)
+- Visible en Today, Plan, Tasks, Goals, Categorías (NO en Chat — chat tiene su propio mic en input bar)
 - Position: bottom-right, `bottom: calc(--bottom-nav-height + 16px); right: 16px`
 - Z-index above content, below modals
 - Tap → SCR-050 Voice capture sheet
 
 **Safe areas:** bottom nav respects `safe-area-inset-bottom`. FAB stays clear of home indicator.
 
-### Tablet (768-1023px)
+### Tablet (768-1023px) y Desktop (≥ 1024px)
 
-Similar to mobile but content centered max-width 768px with side padding. Bottom nav remains. No sidebar.
+Misma estructura que mobile: bottom nav horizontal abajo. Contenido centrado max-width 840px con side padding. **NO existe sidebar.** Esta decisión simplifica responsive y es coherente con producto mobile-first multi-tenant single-user-data.
 
-### Desktop (≥ 1024px) — Split shell
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                            Top Bar  (48px)                       │  ← minimal, just product name + avatar
-├────────────┬─────────────────────────────────────────────────────┤
-│            │                                                     │
-│  Sidebar   │            Main canvas (max 840px content)          │
-│   240px    │                                                     │
-│            │                                                     │
-│  📅 Today  │                                                     │
-│  🗓 Week   │                                                     │
-│  🎯 Goals  │                                                     │
-│  💬 Chat   │                                                     │
-│  ⚙️ Settings│                                                     │
-│            │                                                     │
-│  ───────   │                                                     │
-│            │                                                     │
-│  Categorías│                                                     │
-│  · Personal│                                                     │
-│  · Empresa │                                                     │
-│  · ...     │                                                     │
-│  + Nueva   │                                                     │
-│            │                                                     │
-└────────────┴─────────────────────────────────────────────────────┘
-                                                                  🎙️
-```
-
-**Sidebar sections:**
-
-- Top: 5 main nav items (same as mobile bottom nav)
-- Divider warm ecru
-- Categorías list with project counts (expandable)
-- "+ Nueva categoría" at bottom
-
-**Active state:** background `--bg-sunken` + ink-primary text + 2px left border `--accent-primary`
-
-**FAB mic:** desktop position bottom-right of viewport, `bottom: 24px; right: 24px`
+> ⚠️ DD-001 (anterior bottom nav 5 items) **deprecated por iteración prototipo** — reemplazado por DD-001b (bottom nav 7 items, SIEMPRE horizontal).
+> ⚠️ DD-029 (desktop side nav con categorías) **deprecated por iteración prototipo** — no hay sidebar.
 
 ### Onboarding shell
 
@@ -624,41 +638,46 @@ Similar to mobile but content centered max-width 768px with side padding. Bottom
 
 ### Routing map (Next.js App Router)
 
-| URL                              | Screen                                                  | Notes                         |
-| -------------------------------- | ------------------------------------------------------- | ----------------------------- |
-| `/`                              | SCR-001 Landing (unauthed) → redirect `/today` (authed) |                               |
-| `/login`                         | SCR-003                                                 |                               |
-| `/signup`                        | SCR-002                                                 |                               |
-| `/reset-password`                | SCR-004                                                 |                               |
-| `/reset-password/confirm?token=` | SCR-005                                                 |                               |
-| `/onboarding/language`           | SCR-010                                                 | Onboarding group layout       |
-| `/onboarding/timezone`           | SCR-011                                                 |                               |
-| `/onboarding/push`               | SCR-012                                                 |                               |
-| `/onboarding/mic`                | SCR-013                                                 |                               |
-| `/onboarding/context`            | SCR-014                                                 |                               |
-| `/onboarding/schedule`           | SCR-015                                                 |                               |
-| `/onboarding/calendar`           | SCR-016                                                 |                               |
-| `/onboarding/done`               | SCR-017                                                 |                               |
-| `/today`                         | SCR-020                                                 | Default after auth            |
-| `/week`                          | SCR-021                                                 |                               |
-| `/week/[week_starting]`          | SCR-021                                                 | Specific week (history)       |
-| `/goals`                         | SCR-022                                                 | Default tab=quarter           |
-| `/goals?scope=year`              | SCR-022                                                 |                               |
-| `/chat`                          | SCR-023                                                 | Latest conversation           |
-| `/chat/[conversation_id]`        | SCR-023                                                 | Specific conversation history |
-| `/settings`                      | SCR-024                                                 |                               |
-| `/settings/notifications`        | SCR-030                                                 |                               |
-| `/settings/intensity`            | SCR-031                                                 |                               |
-| `/settings/language`             | SCR-032                                                 |                               |
-| `/settings/integrations`         | SCR-033                                                 |                               |
-| `/settings/appearance`           | SCR-034                                                 |                               |
-| `/settings/account`              | SCR-035                                                 |                               |
-| `/settings/billing`              | SCR-036                                                 |                               |
-| `/settings/privacy`              | SCR-037                                                 |                               |
-| `/activities/[id]`               | SCR-040                                                 |                               |
-| `/projects/[id]`                 | SCR-041                                                 |                               |
-| `/categories`                    | SCR-042                                                 |                               |
-| `/goals/[id]`                    | SCR-043                                                 |                               |
+| URL                              | Screen                                                  | Notes                                               |
+| -------------------------------- | ------------------------------------------------------- | --------------------------------------------------- |
+| `/`                              | SCR-001 Landing (unauthed) → redirect `/today` (authed) |                                                     |
+| `/login`                         | SCR-003                                                 |                                                     |
+| `/signup`                        | SCR-002                                                 |                                                     |
+| `/reset-password`                | SCR-004                                                 |                                                     |
+| `/reset-password/confirm?token=` | SCR-005                                                 |                                                     |
+| `/onboarding/language`           | SCR-010                                                 | Onboarding group layout                             |
+| `/onboarding/timezone`           | SCR-011                                                 |                                                     |
+| `/onboarding/push`               | SCR-012                                                 |                                                     |
+| `/onboarding/mic`                | SCR-013                                                 |                                                     |
+| `/onboarding/context`            | SCR-014                                                 |                                                     |
+| `/onboarding/schedule`           | SCR-015                                                 |                                                     |
+| `/onboarding/calendar`           | SCR-016                                                 |                                                     |
+| `/onboarding/done`               | SCR-017                                                 |                                                     |
+| `/today`                         | SCR-020                                                 | Default after auth; vistas Lista / Matriz / Grid    |
+| `/week`                          | SCR-021                                                 | Plan semanal                                        |
+| `/week/[week_starting]`          | SCR-021                                                 | Specific week (history)                             |
+| `/month`                         | SCR-021b                                                | Plan mensual + MonthSheet                           |
+| `/month/[year-month]`            | SCR-021b                                                | Mes específico                                      |
+| `/tasks`                         | SCR-025                                                 | Vista plana cross-project                           |
+| `/stats`                         | SCR-044                                                 | Dashboard métricas                                  |
+| `/goals`                         | SCR-022                                                 | Default tab=quarter                                 |
+| `/goals?scope=year`              | SCR-022                                                 |                                                     |
+| `/chat`                          | SCR-023                                                 | Latest conversation                                 |
+| `/chat/[conversation_id]`        | SCR-023                                                 | Specific conversation history                       |
+| `/settings`                      | SCR-024                                                 |                                                     |
+| `/settings/notifications`        | SCR-030                                                 |                                                     |
+| `/settings/intensity`            | SCR-031                                                 |                                                     |
+| `/settings/language`             | SCR-032                                                 |                                                     |
+| `/settings/integrations`         | SCR-033                                                 |                                                     |
+| `/settings/appearance`           | SCR-034                                                 |                                                     |
+| `/settings/account`              | SCR-035                                                 |                                                     |
+| `/settings/billing`              | SCR-036                                                 |                                                     |
+| `/settings/privacy`              | SCR-037                                                 |                                                     |
+| `/activities/[id]`               | SCR-040                                                 |                                                     |
+| `/projects/[id]`                 | SCR-041                                                 |                                                     |
+| `/categories`                    | SCR-026 / SCR-042                                       | Lista de categorías                                 |
+| `/categories/[id]`               | SCR-042b                                                | Detalle de categoría: projects + "+ Nuevo proyecto" |
+| `/goals/[id]`                    | SCR-043                                                 |                                                     |
 
 ### Deep links from push notifications
 
@@ -687,8 +706,8 @@ Similar to mobile but content centered max-width 768px with side padding. Bottom
 | ------- | ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | CMP-001 | `<AppShell>`       | `children`, `variant: 'mobile' \| 'desktop' \| 'onboarding'` | Outer layout. Mobile=bottom nav + FAB. Desktop=sidebar split.            |
 | CMP-002 | `<Header>`         | `title`, `backHref?`, `actions?`                             | Sticky top bar. 56px mobile / 48px desktop.                              |
-| CMP-003 | `<BottomNav>`      | `items[]`, `activeKey`                                       | Mobile only. 5 items. Safe-area-inset-bottom.                            |
-| CMP-004 | `<SidebarDesktop>` | `categories[]`, `activeRoute`                                | Desktop only. 240px width. Categorías expandible.                        |
+| CMP-003 | `<BottomNav>`      | `items[]`, `activeKey`                                       | ⚠️ Deprecated por iteración prototipo · ver CMP-130 `<AgendaBottomNav>`. |
+| CMP-004 | `<SidebarDesktop>` | `categories[]`, `activeRoute`                                | ⚠️ Deprecated por iteración prototipo · nav SIEMPRE horizontal (DD-031). |
 | CMP-005 | `<FabMic>`         | `onTap`, `disabled?`                                         | 56×56px. Positioned absolutely. Above bottom nav.                        |
 | CMP-006 | `<PageContainer>`  | `children`, `width: 'narrow' \| 'normal' \| 'reading'`       | Max-width controlled. Padding standard.                                  |
 | CMP-007 | `<Section>`        | `title?`, `children`, `dense?`                               | Vertical group con label uppercase opcional + rule divider opcional.     |
@@ -805,7 +824,32 @@ Similar to mobile but content centered max-width 768px with side padding. Bottom
 | CMP-115 | `<KeyboardShortcut>` | `keys[]`               | "⌘N" inline indicator (desktop only).      |
 | CMP-116 | `<HelpTip>`          | `content`, `placement` | Tooltip discreto.                          |
 
-**Total CMP:** ~70 componentes catalogados. ~50 son MVP P0/P1; resto son nice-to-have y se priorizan en backlog.
+### Prototipo iteración — components nuevos
+
+| ID      | Component                   | Props                                                             | Notas                                                                    |
+| ------- | --------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| CMP-130 | `<AgendaBottomNav>`         | `items[]`, `activeKey`                                            | Bottom nav SIEMPRE horizontal, 7 items. Reemplaza CMP-003/004.           |
+| CMP-131 | `<TodayViewToggle>`         | `value: 'list' \| 'matrix' \| 'grid'`, `onChange`                 | Toggle entre vistas de Today (Lista / Matriz / Grid).                    |
+| CMP-132 | `<TodayActivitiesBoard>`    | `activities[]`, `view`                                            | Container que renderiza activities según vista activa.                   |
+| CMP-133 | `<CloseDayModal>`           | `activities[]`, `onSubmit({outcomes[], summary})`                 | Modal SCR-060. Outcome per-activity + slider progress_percent + summary. |
+| CMP-134 | `<HourSlot>`                | `hour`, `activities[]`, `externalEvents[]`                        | Una fila horaria en vista Grid. Maneja resize handles + busy slots.      |
+| CMP-135 | `<DraggableTaskRow>`        | `activity`, `onDrop`                                              | Activity con drag entre cuadrantes (Matriz) o entre días (Month).        |
+| CMP-136 | `<MonthGrid>`               | `month`, `activities[]`, `onCellTap`                              | Grid 7×5 mensual con dot indicators por día.                             |
+| CMP-137 | `<MonthDayCell>`            | `date`, `activityCount`, `projectDots[]`                          | Celda individual del MonthGrid.                                          |
+| CMP-138 | `<DayActivitiesSheet>`      | `date`, `activities[]`                                            | Bottom sheet abierto desde MonthGrid cell tap.                           |
+| CMP-139 | `<MultiDayPicker>`          | `value: Date[]`, `onChange`                                       | Multi-fecha calendar picker (SCR-061). Para `scheduledDates[]`.          |
+| CMP-140 | `<PlanSnapshotControls>`    | `scope: 'week' \| 'month'`, `snapshot?`, `onFreeze`, `onUnfreeze` | Botón congelar/descongelar + banner "Plan congelado · [fecha]".          |
+| CMP-141 | `<PlanSnapshotViewer>`      | `snapshot`, `current`                                             | Split plan congelado vs ejecución (SCR-062).                             |
+| CMP-142 | `<FilterChips>`             | `options[]`, `value`, `onChange`                                  | Filter chips para `/tasks` (open/done/skipped/blocked/all).              |
+| CMP-143 | `<SortDropdown>`            | `options[]`, `value`, `onChange`                                  | Sort selector para `/tasks` y `/categories/[id]`.                        |
+| CMP-144 | `<CalendarConnectionsList>` | `connections[]`, `onAdd`, `onDisconnect`                          | Multi-calendar UI en Settings → Integrations.                            |
+| CMP-145 | `<DaysOffPicker>`           | `value: Date[]`, `onChange`                                       | Multi-fecha picker para "días sin check-ins" (FT-143).                   |
+| CMP-146 | `<DayOffChip>`              | `date`, `onRemove`                                                | Chip removible para fecha-off.                                           |
+| CMP-147 | `<StatCard>` / `<BarChart>` | `label`, `value`, `delta?` / `data[]`                             | Componentes de SCR-044 Stats dashboard.                                  |
+| CMP-148 | `<ProjectsRanking>`         | `projects[]`                                                      | Top N projects en SCR-044.                                               |
+| CMP-149 | `<MonthPlanner>`            | `month`, `activities[]`                                           | Container de SCR-021b Plan/Month (envuelve MonthGrid + MonthSheet).      |
+
+**Total CMP:** ~90 componentes catalogados (70 originales + ~20 introducidos por iteración prototipo). ~70 son MVP P0/P1; resto son nice-to-have y se priorizan en backlog.
 
 ---
 
@@ -855,7 +899,7 @@ Placeholder es **italic serif evocativo**:
 - intention: _"Una intención, en una frase"_
 - gratitude: _"Algo por lo que estás agradecido"_
 - identity: _"Hoy soy alguien que..."_
-- evening_lesson: _"Lo que aprendí hoy"_
+- evening*lesson: *"Lo que aprendí hoy"\_
 
 #### F-4 — Goal create / edit
 
@@ -892,15 +936,24 @@ SECCIÓN: SEMANA
 
 [ Domingo kickoff      18:00 ↓ ]
 [ Sábado review        20:00 ↓ ]
-[ Incluir fines de semana en checks diarios   [ Toggle off ] ]
+[ No molestar fines de semana    [ Toggle off ] ]    ← weekend_skip (BR/E-002)
 
+──────────────────────────────────
+
+SECCIÓN: DÍAS SIN CHECK-INS                           ← iteración prototipo
+                                                       (vacaciones, días off)
+[ + Agregar fecha ] → datepicker multi-select
+Fechas activas:
+  • 2026-07-15 → 2026-07-22  [ Eliminar ]
+  • 2026-12-24               [ Eliminar ]
+                                                       ← days_off: date[] (E-002)
 ──────────────────────────────────
 
 SECCIÓN: CANALES
 
 [ Push notifications      [ Toggle on ] ]
 [ Email fallback          [ Toggle off ] ]
-
+                                                       ← Discord diferido v2 (FT-313)
 ──────────────────────────────────
 
 [ Mutear notificaciones... ]   → Opens SCR-057 MutePicker
@@ -921,7 +974,7 @@ SECCIÓN: CANALES
 
 [ Crear cuenta → ]
 
-¿Ya tenés cuenta? [ Iniciá sesión ]
+¿Ya tienes cuenta? [ Inicia sesión ]
 ```
 
 **Login:** similar; password + olvidé.
@@ -1076,7 +1129,7 @@ Slot ocupado de Google Calendar mostrado como banda gris semi-transparente sobre
 
 | Screen                        | Empty copy (italic serif)                                                                       |
 | ----------------------------- | ----------------------------------------------------------------------------------------------- |
-| Today (sin activities)        | _"No hay nada para hoy todavía. Si querés, agregá una tarea con ↓ o dictá con 🎙️."_             |
+| Today (sin activities)        | _"No hay nada para hoy todavía. Si quieres, agrega una tarea con ↓ o dicta con 🎙️."_            |
 | Week (sin WeekSheet kickoff)  | _"La semana arranca el domingo a las 18:00. ¿Querés empezar el kickoff ahora?"_ + CTA secondary |
 | Goals (sin goals)             | _"Sin goals todavía. El primero suele ser el más difícil de definir."_ + CTA secondary          |
 | Chat (sin conversations)      | _"Tu conversación con el agente empieza con el primer check-in de mañana."_                     |
@@ -1099,38 +1152,49 @@ Bg `--bg-sunken`, subtle pulse animation 1.5s ease. NO shimmer aggressive.
 
 ## §7 — Design Decisions (DD-XXX)
 
-| ID         | Decision                                                                      | Rationale                                                                                                                                                              | Trade-offs                                                                                                                                             |
-| ---------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **DD-001** | Bottom nav 5 items en mobile (Today / Week / Goals / Chat / Settings)         | 5 es el límite de discriminación visual en touch UI (Nielsen). Cubre las navegaciones primarias del producto.                                                          | Tablet con 768px+ podría ganar con sidebar siempre visible — pero la mayoría de tablet users usan portrait, bottom nav sigue OK.                       |
-| **DD-002** | FAB mic en lugar de mic en chat                                               | Captura debe ser accesible desde Today/Week/Goals sin abrir Chat. FAB es el patrón mobile estándar para acción primaria contextual.                                    | Chat tiene su propio mic en input bar — coexisten.                                                                                                     |
-| **DD-003** | Warm-book aesthetic en lugar de iOS-native glassmorphism                      | Diferenciador real vs competidores. Coherente con tono "asistente reflexivo, no app productivity-coach".                                                               | Algunos users tech-savvy podrían leerlo como "old-fashioned". Mitigación: warm pero contemporáneo (Source Serif 4, no Garamond).                       |
-| **DD-004** | Light mode como canonical (dark optional toggle)                              | Paleta warm-book nace de cream + warm charcoal. Light es el "estado canónico" del libro. Dark mode existe (modo nocturno) pero NO inversión simple — paleta calibrada. | Conflicto con P-1 tech-savvy que prefiere dark default. Mitigación: toggle visible en settings. Telemetría: si >40% usan dark, evaluar default switch. |
-| **DD-005** | Sheets como "páginas" con scope accent bar lateral                            | Refuerza metáfora cuaderno. Color signal subtle sin contaminar primary UI.                                                                                             | Scope accents requieren múltiples paletas calibradas (6 colores). Complejidad de QA accesibilidad.                                                     |
-| **DD-006** | Chat sin bubble convencional, diferencia tipográfica                          | Coherente con aesthetic editorial. Agent en serif italic = sensación de "carta/libro", no chat.                                                                        | UX no estándar puede confundir new users primeros minutos. Mitigación: onboarding explica el patrón implícitamente.                                    |
-| **DD-007** | Voice capture como bottom-sheet, no full screen                               | Preserva contexto visual de Today behind. User ve qué hay antes de capturar.                                                                                           | Sheet height en mobile limitada — preview de tarea debe caber en 80vh.                                                                                 |
-| **DD-008** | Preview parsed task obligatorio (no auto-save)                                | User confirma → confianza en parse. Si parse falla, user edita antes de salvar. Critical para R-P-005.                                                                 | +1 tap vs auto-save directo. Trade-off claramente a favor de confianza.                                                                                |
-| **DD-009** | Inline edit en sheets (vs dedicated edit mode)                                | Calm UX: ver = editar. No mental mode switch.                                                                                                                          | Risk de cambios accidentales — mitigación: optimistic save con undo toast 4s.                                                                          |
-| **DD-010** | Italic serif para reflective prompts                                          | Diferenciador visual claro entre "campo informativo" y "campo reflexivo". Coherente con voice.                                                                         | Italic puede ser harder to read — mitigación: size ≥16px y line-height generoso.                                                                       |
-| **DD-011** | Sin floating labels en inputs                                                 | Anti-pattern editorial; reduce usability cuando label es vital info.                                                                                                   | Más espacio vertical necesario por field.                                                                                                              |
-| **DD-012** | Toast top-center mobile (no bottom)                                           | No conflicta con bottom nav + FAB. Top-center es centro de atención.                                                                                                   | Algunos usuarios esperan bottom toasts (Material).                                                                                                     |
-| **DD-013** | Save confirmations cortas: "Guardado."                                        | Voice principle: brevity over elaboration.                                                                                                                             | Risk: usuario no nota que se guardó. Mitigación: brief tactile/visual feedback (subtle bg flash).                                                      |
-| **DD-014** | Sin gamification visible v1 (streaks, badges)                                 | Decisión X2 del Discovery. Coherente con tono serio.                                                                                                                   | Algunos personas (P-1) responden a gamification — telemetría: medir retention sin vs con (v2).                                                         |
-| **DD-015** | Crisis exit como UI panel takeover (no inline message)                        | Critical: usuario en crisis necesita ver línea de emergencia SIN distracción. Cualquier UI normal puede ser interpretada como banalización.                            | Override total del chat = potencialmente disruptivo para falsos positivos. Mitigación: detección conservadora, link "Volver al chat" disponible.       |
-| **DD-016** | Scope accents NUNCA como primary CTA                                          | Forzaría usar 6 paletas para botones primary, fragmenta acción. Primary CTA siempre warm charcoal.                                                                     | Algunos users podrían querer "botón sage para Quarter" — anti-pattern, lo rechazamos.                                                                  |
-| **DD-017** | No mascota / character / illustration                                         | Coherente con tono serio. Mascotas infantilizan.                                                                                                                       | Empty states pueden sentirse vacíos — mitigación: italic serif copy evocativa hace el trabajo.                                                         |
-| **DD-018** | Onboarding 8 steps todos saltables (excepto language)                         | Respeta user autonomy. P-1 odia onboardings largos.                                                                                                                    | Risk de skip masivo → user sin setup óptimo. Mitigación: post-onboarding settings tour discreto.                                                       |
-| **DD-019** | NotificationPref defaults conservadores (08:00 / 13:00 / 21:00 / weekend off) | Mayoría de targets son knowledge workers L-V. Weekend off por default = respect.                                                                                       | Edge cases users que trabajan fines de semana — settings ajustable.                                                                                    |
-| **DD-020** | Mic permission on-demand, no en onboarding                                    | Pedir muchos permisos en signup = abandono. Mic se pide la primera vez que se usa.                                                                                     | User no descubre voice capture si no taps FAB — mitigación: onboarding done screen menciona "🎙️ podés capturar por voz".                               |
-| **DD-021** | Activity card swipe-able mobile (status change)                               | Patrón móvil estándar (Mail, Things). Eficiente para cierre rápido.                                                                                                    | Swipe accidental → undo toast.                                                                                                                         |
-| **DD-022** | Intensity mode picker como radio cards (no toggle/select)                     | Las 4 opciones tienen vibe distinto que merece visual differentiation.                                                                                                 | Más vertical space que un select. Justifiable.                                                                                                         |
-| **DD-023** | Sheet field placeholders en italic serif (no caption gray)                    | Refuerza diferencia entre "valor real" y "evocación de qué va acá". Coherente con voice.                                                                               | Risk: user no distinga placeholder de valor real — mitigación: opacity 0.6 en placeholders.                                                            |
-| **DD-024** | Per-scope accents desaturadas en dark mode (~20% chroma reduce)               | Dark mode amplifica saturated colors → visual fatigue.                                                                                                                 | Slightly different per-scope perception light vs dark — aceptado.                                                                                      |
-| **DD-025** | Sin sticky elements en scroll (excepto header + bottom nav + FAB)             | Mantiene foco en contenido (sheet, list). No "floating ad" feel.                                                                                                       | Settings con muchas secciones requieren scroll completo — OK, no son screens de uso recurrente.                                                        |
-| **DD-026** | Drag-to-reorder en categories con haptic feedback (mobile)                    | Mejor UX que arrows up/down. Familiar de iOS Mail/Notion.                                                                                                              | Implementation cost — uses react-beautiful-dnd o dnd-kit.                                                                                              |
-| **DD-027** | Goal review como modal centered (no full screen)                              | Review es momento focal pero breve (2-3 min). Centered + backdrop force focus.                                                                                         | Modal en mobile con keyboard puede saturar — testear en QA.                                                                                            |
-| **DD-028** | Languages: ES y EN simultáneos en UI selector                                 | TimeKast kit ya soporta. Sin friction técnica.                                                                                                                         | i18n strings deben mantenerse sincronizados — checklist de PR.                                                                                         |
-| **DD-029** | Inbox category + Inbox project auto-creados                                   | Activity siempre debe pertenecer a algo (BR-2). Sin requerimiento upfront al user.                                                                                     | "Magic" creation — visible al user en CategoryList con flag is_inbox.                                                                                  |
-| **DD-030** | Help text en italic serif body-s                                              | Coherente con voice; reflective tone                                                                                                                                   | Slightly slower to read — OK, help text es secundario.                                                                                                 |
+| ID          | Decision                                                                      | Rationale                                                                                                                                                                                                                             | Trade-offs                                                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **DD-001**  | Bottom nav 5 items en mobile (Today / Week / Goals / Chat / Settings)         | 5 es el límite de discriminación visual en touch UI (Nielsen). Cubre las navegaciones primarias del producto.                                                                                                                         | Tablet con 768px+ podría ganar con sidebar siempre visible — pero la mayoría de tablet users usan portrait, bottom nav sigue OK.                       |
+| **DD-002**  | FAB mic en lugar de mic en chat                                               | Captura debe ser accesible desde Today/Plan/Tasks/Goals/Categorías sin abrir Chat. FAB es el patrón mobile estándar para acción primaria contextual. (Actualizado por iteración prototipo: ahora visible en 5 screens en lugar de 3.) | Chat tiene su propio mic en input bar — coexisten.                                                                                                     |
+| **DD-003**  | Warm-book aesthetic en lugar de iOS-native glassmorphism                      | Diferenciador real vs competidores. Coherente con tono "asistente reflexivo, no app productivity-coach".                                                                                                                              | Algunos users tech-savvy podrían leerlo como "old-fashioned". Mitigación: warm pero contemporáneo (Source Serif 4, no Garamond).                       |
+| **DD-004**  | Light mode como canonical (dark optional toggle)                              | Paleta warm-book nace de cream + warm charcoal. Light es el "estado canónico" del libro. Dark mode existe (modo nocturno) pero NO inversión simple — paleta calibrada.                                                                | Conflicto con P-1 tech-savvy que prefiere dark default. Mitigación: toggle visible en settings. Telemetría: si >40% usan dark, evaluar default switch. |
+| **DD-005**  | Sheets como "páginas" con scope accent bar lateral                            | Refuerza metáfora cuaderno. Color signal subtle sin contaminar primary UI.                                                                                                                                                            | Scope accents requieren múltiples paletas calibradas (6 colores). Complejidad de QA accesibilidad.                                                     |
+| **DD-006**  | Chat sin bubble convencional, diferencia tipográfica                          | Coherente con aesthetic editorial. Agent en serif italic = sensación de "carta/libro", no chat.                                                                                                                                       | UX no estándar puede confundir new users primeros minutos. Mitigación: onboarding explica el patrón implícitamente.                                    |
+| **DD-007**  | Voice capture como bottom-sheet, no full screen                               | Preserva contexto visual de Today behind. User ve qué hay antes de capturar.                                                                                                                                                          | Sheet height en mobile limitada — preview de tarea debe caber en 80vh.                                                                                 |
+| **DD-008**  | Preview parsed task obligatorio (no auto-save)                                | User confirma → confianza en parse. Si parse falla, user edita antes de salvar. Critical para R-P-005.                                                                                                                                | +1 tap vs auto-save directo. Trade-off claramente a favor de confianza.                                                                                |
+| **DD-009**  | Inline edit en sheets (vs dedicated edit mode)                                | Calm UX: ver = editar. No mental mode switch.                                                                                                                                                                                         | Risk de cambios accidentales — mitigación: optimistic save con undo toast 4s.                                                                          |
+| **DD-010**  | Italic serif para reflective prompts                                          | Diferenciador visual claro entre "campo informativo" y "campo reflexivo". Coherente con voice.                                                                                                                                        | Italic puede ser harder to read — mitigación: size ≥16px y line-height generoso.                                                                       |
+| **DD-011**  | Sin floating labels en inputs                                                 | Anti-pattern editorial; reduce usability cuando label es vital info.                                                                                                                                                                  | Más espacio vertical necesario por field.                                                                                                              |
+| **DD-012**  | Toast top-center mobile (no bottom)                                           | No conflicta con bottom nav + FAB. Top-center es centro de atención.                                                                                                                                                                  | Algunos usuarios esperan bottom toasts (Material).                                                                                                     |
+| **DD-013**  | Save confirmations cortas: "Guardado."                                        | Voice principle: brevity over elaboration.                                                                                                                                                                                            | Risk: usuario no nota que se guardó. Mitigación: brief tactile/visual feedback (subtle bg flash).                                                      |
+| **DD-014**  | Sin gamification visible v1 (streaks, badges)                                 | Decisión X2 del Discovery. Coherente con tono serio.                                                                                                                                                                                  | Algunos personas (P-1) responden a gamification — telemetría: medir retention sin vs con (v2).                                                         |
+| **DD-015**  | Crisis exit como UI panel takeover (no inline message)                        | Critical: usuario en crisis necesita ver línea de emergencia SIN distracción. Cualquier UI normal puede ser interpretada como banalización.                                                                                           | Override total del chat = potencialmente disruptivo para falsos positivos. Mitigación: detección conservadora, link "Volver al chat" disponible.       |
+| **DD-016**  | Scope accents NUNCA como primary CTA                                          | Forzaría usar 6 paletas para botones primary, fragmenta acción. Primary CTA siempre warm charcoal.                                                                                                                                    | Algunos users podrían querer "botón sage para Quarter" — anti-pattern, lo rechazamos.                                                                  |
+| **DD-017**  | No mascota / character / illustration                                         | Coherente con tono serio. Mascotas infantilizan.                                                                                                                                                                                      | Empty states pueden sentirse vacíos — mitigación: italic serif copy evocativa hace el trabajo.                                                         |
+| **DD-018**  | Onboarding 8 steps todos saltables (excepto language)                         | Respeta user autonomy. P-1 odia onboardings largos.                                                                                                                                                                                   | Risk de skip masivo → user sin setup óptimo. Mitigación: post-onboarding settings tour discreto.                                                       |
+| **DD-019**  | NotificationPref defaults conservadores (08:00 / 13:00 / 21:00 / weekend off) | Mayoría de targets son knowledge workers L-V. Weekend off por default = respect.                                                                                                                                                      | Edge cases users que trabajan fines de semana — settings ajustable.                                                                                    |
+| **DD-020**  | Mic permission on-demand, no en onboarding                                    | Pedir muchos permisos en signup = abandono. Mic se pide la primera vez que se usa.                                                                                                                                                    | User no descubre voice capture si no taps FAB — mitigación: onboarding done screen menciona "🎙️ podés capturar por voz".                               |
+| **DD-021**  | Activity card swipe-able mobile (status change)                               | Patrón móvil estándar (Mail, Things). Eficiente para cierre rápido.                                                                                                                                                                   | Swipe accidental → undo toast.                                                                                                                         |
+| **DD-022**  | Intensity mode picker como radio cards (no toggle/select)                     | Las 4 opciones tienen vibe distinto que merece visual differentiation.                                                                                                                                                                | Más vertical space que un select. Justifiable.                                                                                                         |
+| **DD-023**  | Sheet field placeholders en italic serif (no caption gray)                    | Refuerza diferencia entre "valor real" y "evocación de qué va acá". Coherente con voice.                                                                                                                                              | Risk: user no distinga placeholder de valor real — mitigación: opacity 0.6 en placeholders.                                                            |
+| **DD-024**  | Per-scope accents desaturadas en dark mode (~20% chroma reduce)               | Dark mode amplifica saturated colors → visual fatigue.                                                                                                                                                                                | Slightly different per-scope perception light vs dark — aceptado.                                                                                      |
+| **DD-025**  | Sin sticky elements en scroll (excepto header + bottom nav + FAB)             | Mantiene foco en contenido (sheet, list). No "floating ad" feel.                                                                                                                                                                      | Settings con muchas secciones requieren scroll completo — OK, no son screens de uso recurrente.                                                        |
+| **DD-026**  | Drag-to-reorder en categories con haptic feedback (mobile)                    | Mejor UX que arrows up/down. Familiar de iOS Mail/Notion.                                                                                                                                                                             | Implementation cost — uses react-beautiful-dnd o dnd-kit.                                                                                              |
+| **DD-027**  | Goal review como modal centered (no full screen)                              | Review es momento focal pero breve (2-3 min). Centered + backdrop force focus.                                                                                                                                                        | Modal en mobile con keyboard puede saturar — testear en QA.                                                                                            |
+| **DD-028**  | Languages: ES y EN simultáneos en UI selector                                 | TimeKast kit ya soporta. Sin friction técnica.                                                                                                                                                                                        | i18n strings deben mantenerse sincronizados — checklist de PR.                                                                                         |
+| **DD-029**  | Inbox category + Inbox project auto-creados                                   | Activity siempre debe pertenecer a algo (BR-2). Sin requerimiento upfront al user.                                                                                                                                                    | "Magic" creation — visible al user en CategoryList con flag is_inbox.                                                                                  |
+| **DD-030**  | Help text en italic serif body-s                                              | Coherente con voice; reflective tone                                                                                                                                                                                                  | Slightly slower to read — OK, help text es secundario.                                                                                                 |
+| **DD-031**  | Bottom nav SIEMPRE horizontal, 7 items, todos los breakpoints                 | Iteración prototipo: simplifica responsive, coherente con producto mobile-first multi-tenant. Elimina ambigüedad entre mobile/desktop. Reemplaza DD-001 y DD-029.                                                                     | Desktop tiene espacio para sidebar — pero no es producto desktop-first y los 7 items caben holgados en bottom nav.                                     |
+| **DD-032**  | DaySheet morning con 3 prompts (identity + 3 wins + avoidance)                | Iteración prototipo: prompts cortados a lo esencial. Intention redundante con identity (mismo eje semántico); gratitude y energy fuera del scope MVP — pueden volver v2.                                                              | Pierde data de telemetría sobre energy patterns. Se acepta el trade-off por velocidad de check-in (≤3 min).                                            |
+| **DD-033**  | Close-day modal con outcome per-activity (Hecha/Avanzada+slider/No la toqué)  | Iteración prototipo: reemplaza evening-ritual conversacional. Estructurado = más fácil de medir patrones. Slider `progress_percent` para outcomes parciales.                                                                          | Pierde conversación reflexiva al cierre. Se compensa con one-line summary + weekly review intacto.                                                     |
+| **DD-034**  | Eisenhower quadrant como vista alterna de Today (no obligatorio en form)      | Iteración prototipo: clasificación urgente×importante es opt-in. Drag entre cuadrantes asigna quadrant; activities sin classify quedan "Sin clasificar".                                                                              | Algunos users nunca usan matriz — costo: vista extra a mantener. Aceptado.                                                                             |
+| **DD-035**  | Multi-día (`scheduledDates[]`) separado de RRULE                              | Iteración prototipo: tareas con cadencia irregular (ej: 3 días específicos del mes) no son recurrencia. Modelarlas como array de fechas explícitas es más simple.                                                                     | Imposible combinar multi-día + RRULE — UI bloquea. Trade-off de simplicidad sobre completitud.                                                         |
+| **DD-036**  | Plan snapshot opt-in (pin-click "Congelar plan")                              | Iteración prototipo: user decide cuándo congelar (no auto-snapshot). Después puede comparar plan original vs ejecución para análisis honesto.                                                                                         | Si user nunca congela, no hay baseline para post-mortem. Mitigación: agente puede sugerirlo en weekly kickoff.                                         |
+| **DD-037**  | Tasks page (`/tasks`) como vista plana cross-project                          | Iteración prototipo: complementa /today (hoy) y /week (planeación) con vista "todo lo que tengo" sin proyectos. Útil para grooming/triage.                                                                                            | Adds 1 nav item — aceptado dentro de los 7.                                                                                                            |
+| **DD-038**  | Multi-calendar connections (N cuentas Google por user)                        | Iteración prototipo: profesionales target tienen cuentas separadas trabajo/personal. Un solo calendar es limitante. v1 solo Google; Apple+Outlook v1.5.                                                                               | Más complejidad en sync job y UI de settings. Aceptable por valor real al user.                                                                        |
+| **DD-039**  | Días sin check-ins (multi-fecha) además del weekend toggle                    | Iteración prototipo: vacaciones, licencias, viajes requieren skip preciso de fechas — toggle weekend es coarse.                                                                                                                       | Más estado a manejar en NotificationPref. Mitigación: settings UI con DayOffChip removibles.                                                           |
+| **DD-040**  | Discord diferido explícito a v2                                               | Iteración prototipo: v1 entrega valor con in-app + email + push (PWA). Discord requiere bot infrastructure y no es differentiator del MVP.                                                                                            | Algunos users heavy-Discord pueden esperar integración — mitigación: copy explícito "Próximamente v2" en Settings → Integrations.                      |
+| **DD-001b** | (Replaces DD-001) Bottom nav 7 items en TODOS los breakpoints                 | Ver DD-031.                                                                                                                                                                                                                           | DD-001 (5 items mobile) deprecated por iteración prototipo.                                                                                            |
 
 ---
 
@@ -1200,7 +1264,7 @@ Bg `--bg-sunken`, subtle pulse animation 1.5s ease. NO shimmer aggressive.
 │                                         │
 │              [ Empezar →]               │   ← primary CTA
 │                                         │
-│       ¿Ya tenés cuenta? [ Iniciar ]    │
+│       ¿Ya tienes cuenta? [ Iniciar ]   │
 │                                         │
 │                                         │
 │      (free durante beta)                │
@@ -1233,7 +1297,7 @@ Bg `--bg-sunken`, subtle pulse animation 1.5s ease. NO shimmer aggressive.
 │                                         │
 │   [  Crear cuenta →  ]                  │   ← primary
 │                                         │
-│   ¿Ya tenés cuenta? [Iniciá sesión]    │
+│   ¿Ya tienes cuenta? [Inicia sesión]   │
 └────────────────────────────────────────┘
 ```
 
@@ -1282,32 +1346,42 @@ Variations per step:
 
 ### Core nav
 
-#### SCR-020 — Today (mobile portrait)
+#### SCR-020 — Today (mobile portrait, vista Lista)
+
+> ⚠️ Iteración prototipo: DaySheet morning simplificado (solo identity + 3 wins + avoidance). Vistas Lista / Matriz / Grid via `TodayViewToggle`. Botón "Cerrar día" abre SCR-060.
 
 ```
 ┌────────────────────────────────────────┐
 │                              ●  Avatar │   ← Header 56px
-│  Lunes, 19 de mayo                     │   ← title serif h2 + date
+│  Lunes, 19 de mayo                     │
 ├────────────────────────────────────────┤
 │                                         │
+│   [ Lista | Matriz | Grid ]             │   ← TodayViewToggle
+│                                         │
 │ ┃   ══════════════════════              │
-│ ┃     Intención de hoy                  │   ← DaySheet morning section
-│ ┃   ══════════════════════              │   ← scope accent bar Day
+│ ┃     Hoy soy alguien que...            │   ← identity_statement
+│ ┃   ══════════════════════              │
 │ ┃                                       │
-│ ┃   Terminar el reporte trimestral      │
-│ ┃   antes de las 13                     │   ← inline editable
+│ ┃   ...termina lo que empieza, aunque   │
+│ ┃   sea aburrido.                       │   ← inline editable
 │ ┃                                       │
-│ ┃   ──────────────────────              │   ← rule
+│ ┃   ──────────────────────              │
 │ ┃                                       │
-│ ┃   ENERGY                               │   ← caption uppercase
-│ ┃   Físico  ●●●●○                       │
-│ ┃   Mental  ●●●●●                       │
-│ ┃   Emocional ●●●○○                     │
+│ ┃   3 WINS DE HOY                       │
+│ ┃   1. ☐ Terminar reporte Q2            │
+│ ┃   2. ☐ Llamar a Juan                  │
+│ ┃   3. ☐ 30 min alemán                  │
+│ ┃                                       │
+│ ┃   ──────────────────────              │
+│ ┃                                       │
+│ ┃   EVITAR HOY                          │
+│ ┃   Scroll Twitter post-9pm.            │
 │                                         │
 │   ──────────────────────────────        │
 │                                         │
-│   MAÑANA                                │   ← time block section
-│   ☐ Llamar a Juan        9:00 ●●●  [P] │   ← activity card row
+│   ACTIVIDADES                           │
+│   MAÑANA                                │
+│   ☐ Llamar a Juan        9:00 ●●●  [P] │
 │   ☐ Reporte Q2                  ●●●●● [E]│
 │                                         │
 │   TARDE                                 │
@@ -1315,40 +1389,108 @@ Variations per step:
 │   ☐ Estudio alemán              ●●●○○ [P]│
 │                                         │
 │   NOCHE                                 │
-│   (sin actividades)                     │   ← italic serif empty
+│   (sin actividades)                     │
 │                                         │
+│   ────────────────────                  │
 │                                         │
-│                                         │     ← scrollable area
-│                                  🎙️    │   ← FAB mic
+│   [ 🌙 Cerrar día → ]                   │   ← abre SCR-060 close-day modal
+│                                         │
+│                                  🎙️    │
 ├────────────────────────────────────────┤
-│ 📅Today 🗓Week 🎯Goals 💬Chat ⚙️Settings │   ← bottom nav 64px
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️                     │   ← bottom nav 7 items
 └────────────────────────────────────────┘
 ```
 
+#### SCR-020 — Today (vista Matriz Eisenhower)
+
+```
+┌────────────────────────────────────────┐
+│   [ Lista | Matriz | Grid ]             │
+├────────────────────────────────────────┤
+│                                         │
+│   SIN CLASIFICAR (3)                    │
+│   [drag a un cuadrante]                 │
+│   · Reorganizar inbox                   │
+│   · Doc API                             │
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│  ┌───────────────┬───────────────┐     │
+│  │ Q1            │ Q2            │     │
+│  │ Urgente +     │ No urgente +  │     │
+│  │ Importante    │ Importante    │     │
+│  │               │               │     │
+│  │ · Reporte Q2  │ · Estudio     │     │
+│  │ · Reunión 10  │   alemán      │     │
+│  │               │ · Gym         │     │
+│  ├───────────────┼───────────────┤     │
+│  │ Q3            │ Q4            │     │
+│  │ Urgente +     │ No urg +      │     │
+│  │ NO importante │ NO importante │     │
+│  │               │               │     │
+│  │ · Email cob.  │ · Limpiar     │     │
+│  │               │   bookmarks   │     │
+│  └───────────────┴───────────────┘     │
+│                                         │
+│                                  🎙️    │
+└────────────────────────────────────────┘
+```
+
+#### SCR-020 — Today (vista Grid horario con resize)
+
+```
+┌────────────────────────────────────────┐
+│   [ Lista | Matriz | Grid ]             │
+├────────────────────────────────────────┤
+│                                         │
+│   08 ─────────────────────              │
+│   ┌────────────────────┐                │
+│   │ Reporte Q2          │ ▲ handle top  │   ← resize start_time
+│   │ 8:30 - 10:00 [E]    │                │
+│   │                     │ ▼ handle bot  │   ← resize end_time
+│   └────────────────────┘                │
+│   10 ─────────────────────              │
+│   ▒▒ Reunión clientes ▒▒  ← external    │   ← busy slot (Google, no resizable)
+│   ▒▒ 10:00 - 11:00     ▒▒                │
+│   11 ─────────────────────              │
+│   12 ─────────────────────              │
+│   13 ─────────────────────              │
+│   ┌────────────────────┐                │
+│   │ Gym 1h              │                │
+│   │ 13:30 - 14:30 [P]   │                │
+│   └────────────────────┘                │
+│   ...                                   │
+│                                         │
+│                                  🎙️    │
+└────────────────────────────────────────┘
+```
+
+Resize: handles top (▲) y bottom (▼) son barras de 5-6px en hover/tap-hold. Drag = ajusta `start_time` o `end_time` con snap a 15 min. Validación contra solape: si choca con otra task o external event, resize se cancela visualmente + toast.
+
 #### SCR-020 — Today (desktop ≥1024px)
+
+> ⚠️ Iteración prototipo: desktop usa el mismo layout mobile + bottom nav horizontal. NO hay sidebar. Contenido max-width 840px centrado.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│   AgendaInteligente                                       ● Av   │  ← top bar 48px
-├────────────┬─────────────────────────────────────────────────────┤
-│            │                                                     │
-│  📅 Today  │   Lunes, 19 de mayo                                 │
-│  🗓 Week   │   ══════════════════════════                       │
-│  🎯 Goals  │     Intención de hoy                                │
-│  💬 Chat   │   ══════════════════════════                       │
-│  ⚙️ Settings│                                                     │
-│            │   [ MORNING SECTION ]   |   [ EVENING SECTION ]    │  ← 2 col split desktop
-│  ─────     │   Intention             |   evening_win            │
-│            │   Gratitude             |   evening_lesson         │
-│  CATEGORÍAS│   Identity              |   tomorrow_top           │
-│  · Personal│   Wins (3)              |   insight                │
-│  · Empresa │   Avoidance             |                          │
-│  · Inbox   │   Energy                |                          │
-│            │   ─────────────────────────────────────────         │
-│  + Nueva   │   ACTIVITIES today  (grouped by time block)        │
-│            │   ...                                              │
-│            │                                                🎙️  │
-└────────────┴─────────────────────────────────────────────────────┘
+│   AgendaInteligente                                       ● Av   │  ← top bar
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│           [ Lista | Matriz | Grid ]                              │
+│                                                                  │
+│           ══════════════════════════                            │
+│             Hoy soy alguien que...                              │
+│           ══════════════════════════                            │
+│           ...                                                    │
+│                                                                  │
+│           3 WINS · EVITAR · ACTIVIDADES (mismo flujo mobile)    │
+│                                                                  │
+│           [ 🌙 Cerrar día → ]                                    │
+│                                                                  │
+│                                                              🎙️ │
+├──────────────────────────────────────────────────────────────────┤
+│            📅 🗓 ☰ 🎯 💬 📁 ⚙️                                   │   ← bottom nav SIEMPRE horizontal
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 #### SCR-021 — Week (mobile)
@@ -1392,7 +1534,7 @@ Variations per step:
 │                                         │
 │                                  🎙️    │
 ├────────────────────────────────────────┤
-│ 📅Today 🗓Week 🎯Goals 💬Chat ⚙️Settings │
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️                     │
 └────────────────────────────────────────┘
 ```
 
@@ -1424,7 +1566,7 @@ Variations per step:
 │                                         │
 │                                  🎙️    │
 ├────────────────────────────────────────┤
-│ 📅Today 🗓Week 🎯Goals 💬Chat ⚙️Settings │
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️                     │
 └────────────────────────────────────────┘
 ```
 
@@ -1513,9 +1655,169 @@ Variations per step:
 │   [ Cerrar sesión ]                     │   ← ghost button
 │                                         │
 ├────────────────────────────────────────┤
-│ 📅Today 🗓Week 🎯Goals 💬Chat ⚙️Settings │
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️                     │
 └────────────────────────────────────────┘
 ```
+
+#### SCR-021b — Plan · Month (mobile)
+
+```
+┌────────────────────────────────────────┐
+│  ← Today          [Week | Month]  +    │   ← header con tabs Week/Month
+├────────────────────────────────────────┤
+│                                         │
+│   ══════════════════════                │
+│     Mayo 2026                           │   ← MonthSheet
+│   ══════════════════════                │
+│                                         │
+│   UNA COSA DEL MES                      │
+│   Lanzar AgendaInteligente v0.5         │
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   < Abr  ●●●●●●  Jun >                  │   ← nav meses
+│                                         │
+│   L  M  M  J  V  S  D                   │
+│   ─  ─  ─  1  2  3  4                   │
+│   5  6  7  8  9 10 11                   │
+│  12 13 14 15 16 17 18                   │
+│ [19] 20 21 22 23 24 25                  │   ← día actual highlighted
+│  26 27 28 29 30 31  ─                   │
+│                                         │
+│   Cada celda: count activities + dots   │
+│   por proyecto principal                │
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   📌 Congelar plan del mes              │   ← PlanSnapshotControls
+│                                         │
+│                                  🎙️    │
+├────────────────────────────────────────┤
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️                     │   ← bottom nav 7 items
+└────────────────────────────────────────┘
+```
+
+Tap en día → `DayActivitiesSheet` (lista de activities del día, editables, drag a otro día).
+
+#### SCR-025 — Tasks (vista plana cross-project)
+
+```
+┌────────────────────────────────────────┐
+│  Tasks                                  │
+├────────────────────────────────────────┤
+│                                         │
+│   [ 🔍 Buscar... ]                      │   ← search input
+│                                         │
+│   [+ Nueva tarea (Inbox)        Crear ]│   ← ActivityQuickAdd inline
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   [Open] [Done] [Skipped] [Blocked][All]│   ← FilterChips
+│                                              Sort: [Fecha ↓]      │
+│                                         │
+│   ☐ Llamar a Juan       9:00  ●●● [P]  │   ← rows con título + date + prio + project chip
+│   ☐ Reporte Q2                ●●●●●[E]  │
+│   ☐ Gym 1h                    ●●○○○[P]  │
+│   ☐ Estudio alemán            ●●●○○[P]  │
+│   ☐ Cocinar cena              ●●○○○[P]  │
+│   ...                                   │
+│                                         │
+│                                  🎙️    │
+├────────────────────────────────────────┤
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️                     │
+└────────────────────────────────────────┘
+```
+
+#### SCR-026 — Categorías (root)
+
+```
+┌────────────────────────────────────────┐
+│  Categorías                       +    │
+├────────────────────────────────────────┤
+│                                         │
+│   ●  Personal              5 proj  →   │   ← color dot + name + project count
+│   ●  Empresa Genomma       2 proj  →   │
+│   ●  Side project          1 proj  →   │
+│   ─                                     │
+│   ○  Inbox (default)       0 proj      │   ← no tap nav (sólo default)
+│                                         │
+│   [ + Nueva categoría ]                 │
+│                                         │
+│                                  🎙️    │
+├────────────────────────────────────────┤
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️                     │
+└────────────────────────────────────────┘
+```
+
+Tap en row → SCR-042b detalle.
+
+#### SCR-042b — Category detail (`/categories/[id]`)
+
+```
+┌────────────────────────────────────────┐
+│  ← Categorías                  ⋯       │
+├────────────────────────────────────────┤
+│                                         │
+│   ●  Empresa Genomma                    │   ← header con color + name
+│      2 proyectos · 14 actividades       │
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   PROYECTOS                             │
+│                                         │
+│   Lanzar AgendaInteligente    ACTIVE  →│   ← ProjectRow
+│   8 actividades · deadline 30 jun       │
+│                                         │
+│   Refactor billing            PAUSED  →│
+│   3 actividades · sin deadline          │
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   [ + Nuevo proyecto en Empresa ]       │   ← pre-rellena category_id
+│                                         │
+│                                  🎙️    │
+└────────────────────────────────────────┘
+```
+
+#### SCR-044 — Stats dashboard
+
+```
+┌────────────────────────────────────────┐
+│  Stats                                  │
+├────────────────────────────────────────┤
+│                                         │
+│   ÚLTIMOS 30 DÍAS                       │
+│                                         │
+│   ┌─────────────┐  ┌─────────────┐     │
+│   │ CONSISTENCIA │  │ COMPLETION  │     │   ← StatCards
+│   │              │  │             │     │
+│   │   78%        │  │   64%       │     │
+│   │ check-ins    │  │ activities  │     │
+│   │ completos    │  │ done        │     │
+│   └─────────────┘  └─────────────┘     │
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   ACTIVIDAD POR SEMANA                  │
+│                                         │
+│   ▇▇▇  ▇▇▇▇▇  ▇▇▇  ▇▇▇▇  ▇▇            │   ← BarChart
+│   S17  S18    S19  S20   S21            │
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   TOP PROYECTOS                         │
+│                                         │
+│   1. Lanzar AI v0.5     14 done         │
+│   2. Personal            9 done         │
+│   3. Refactor billing    4 done         │
+│                                         │
+│                                  🎙️    │
+├────────────────────────────────────────┤
+│ 📅 🗓 ☰ 🎯 💬 📁 ⚙️                     │
+└────────────────────────────────────────┘
+```
+
+> KPIs son visual-only en prototipo; cálculos exactos se definen en backlog (`project/backlog/`).
 
 ### Settings sub-screens
 
@@ -1548,6 +1850,14 @@ Variations per step:
 │                                         │
 │   Push notifications        [Toggle ●] │
 │   Email fallback            [Toggle ◯] │
+│   (Discord diferido v2)                 │   ← v1: solo in-app + email + push (PWA)
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   DÍAS SIN CHECK-INS                    │   ← FT-143, US-085b
+│                                         │
+│   [ 15 jun ✕ ]  [ 16 jun ✕ ]            │   ← DayOffChip (multi-fecha)
+│   [ 17 jun ✕ ]  [ + Agregar fecha ]     │
 │                                         │
 │   ────────────────────                  │
 │                                         │
@@ -1598,7 +1908,9 @@ Variations per step:
 
 Pareja simple de selects.
 
-#### SCR-033 — Settings · Integrations
+#### SCR-033 — Settings · Integrations (multi-calendar)
+
+> ⚠️ Iteración prototipo: single Google Calendar → multi-conexión. User puede conectar N cuentas de Google (trabajo + personal). Apple + Outlook diferidos a v1.5. Discord diferido a v2.
 
 ```
 ┌────────────────────────────────────────┐
@@ -1606,23 +1918,42 @@ Pareja simple de selects.
 │  Integraciones                         │
 ├────────────────────────────────────────┤
 │                                         │
+│   CONEXIONES DE CALENDARIO              │
+│                                         │
 │   ┌─────────────────────────────┐      │
-│   │  🗓  Google Calendar         │      │
-│   │  ● Conectado                 │      │
-│   │  primary calendar            │      │
-│   │  Última sync: hace 8 min     │      │
-│   │  [ Sincronizar ahora ]       │      │
-│   │  [ Desconectar ]             │      │
+│   │ ● Trabajo                   │      │   ← color + account_label editable
+│   │   work@empresa.com (Google) │      │
+│   │   Última sync: hace 8 min   │      │
+│   │   [ Editar ] [ Desconectar ]│      │
 │   └─────────────────────────────┘      │
 │                                         │
 │   ┌─────────────────────────────┐      │
-│   │  📱  WhatsApp (v2)           │      │
+│   │ ● Personal                  │      │
+│   │   fede@gmail.com (Google)   │      │
+│   │   Última sync: hace 12 min  │      │
+│   │   [ Editar ] [ Desconectar ]│      │
+│   └─────────────────────────────┘      │
+│                                         │
+│   [ + Conectar Google Calendar ]       │
+│                                         │
+│   ────────────────────                  │
+│                                         │
+│   PRÓXIMAMENTE                          │
+│                                         │
+│   ┌─────────────────────────────┐      │
+│   │  ✉️  Outlook Calendar (v1.5) │      │
 │   │  ░░ Próximamente             │      │
 │   └─────────────────────────────┘      │
 │                                         │
 │   ┌─────────────────────────────┐      │
-│   │  ✉️  Outlook Calendar (v2)   │      │
+│   │  🍎  Apple Calendar (v1.5)   │      │
 │   │  ░░ Próximamente             │      │
+│   └─────────────────────────────┘      │
+│                                         │
+│   ┌─────────────────────────────┐      │
+│   │  💬  Discord (v2)            │      │
+│   │  ░░ Diferido — v1 usa        │      │
+│   │     in-app + email + push    │      │
 │   └─────────────────────────────┘      │
 │                                         │
 └────────────────────────────────────────┘
@@ -2054,6 +2385,104 @@ Android: native install prompt (no custom UI).
 └────────────────────────────────────────┘
 ```
 
+#### SCR-060 — Close day modal (prototipo)
+
+> Reemplaza el evening-ritual conversacional original (US-031 deprecated). Ver US-031b.
+
+```
+┌────────────────────────────────────────┐
+│  ════════════════════                   │
+│    Cerrar el día — Lun 19 may           │
+│  ════════════════════                   │
+│                                         │
+│  Marcá el outcome de cada tarea         │
+│  planeada hoy:                          │
+│                                         │
+│  ─────────────────────────────          │
+│                                         │
+│  Reporte Q2                             │
+│  ● Hecha y cerrada                      │
+│  ◯ Avanzada                             │
+│  ◯ No la toqué                          │
+│                                         │
+│  ─────────────────────────────          │
+│                                         │
+│  Estudio alemán                         │
+│  ◯ Hecha y cerrada                      │
+│  ● Avanzada — 45%                       │
+│  [ 0 ────●──────────── 100 ]            │   ← slider progress_percent
+│  ◯ No la toqué                          │
+│                                         │
+│  ─────────────────────────────          │
+│                                         │
+│  Llamar a Juan                          │
+│  ◯ Hecha y cerrada                      │
+│  ◯ Avanzada                             │
+│  ● No la toqué                          │
+│                                         │
+│  ─────────────────────────────          │
+│                                         │
+│  RESUMEN DEL DÍA (una línea)            │
+│  [ Día denso pero sin la llamada que    │
+│    importaba.                          ]│
+│                                         │
+│  [ Cancelar ]   [ Cerrar día → ]        │
+└────────────────────────────────────────┘
+```
+
+#### SCR-061 — Multi-day picker (prototipo)
+
+```
+┌────────────────────────────────────────┐
+│  Programar en varios días               │
+│                                         │
+│  Junio 2026                             │
+│                                         │
+│  L  M  M  J  V  S  D                    │
+│  ─  ─  ─  ─  ─  ─  ─                    │
+│  ─  ─  ─  ─  ─  ─  1                    │
+│  2  3 [4] 5  6 [7] 8                    │   ← [n] = seleccionado
+│  9 10 11 12 13 14 15                    │
+│ 16 17 [18] 19 20 21 22                  │
+│ 23 24 25 26 27 28 29                    │
+│ 30  ─  ─  ─  ─  ─  ─                    │
+│                                         │
+│  Seleccionadas: 4 jun · 7 jun · 18 jun  │
+│                                         │
+│  ⓘ Programar multi-día deshabilita      │
+│    recurrencia (RRULE).                 │
+│                                         │
+│  [ Cancelar ]   [ Confirmar ]           │
+└────────────────────────────────────────┘
+```
+
+#### SCR-062 — Plan snapshot viewer (prototipo)
+
+```
+┌────────────────────────────────────────┐
+│  ← Week                                 │
+│  Plan congelado · 12 may                │
+│  vs ejecución                           │
+├────────────────────────────────────────┤
+│                                         │
+│  KPI: 8 de 12 tasks ejecutadas en       │
+│  fecha original (67%)                   │
+│                                         │
+│  ─────────────────────────────          │
+│                                         │
+│  ✓ same     Reunión Juan       Lun 12   │
+│  ✓ same     Reporte Q2         Mar 13   │
+│  → moved    Gym                Mié→Vie  │   ← History icon, fecha movida
+│  → moved    Estudio alemán     Jue→Sáb  │
+│  + added    Llamada cliente    Mié      │   ← no estaba en snapshot
+│  ✗ removed  Doc API            (Mié)    │   ← borrada post-snapshot
+│  ...                                    │
+│                                         │
+│  [ Volver a plan actual ]               │
+│                                         │
+└────────────────────────────────────────┘
+```
+
 ### V1.5 / V2 placeholders
 
 #### SCR-070 — Quarter sheet (v1.5)
@@ -2094,13 +2523,13 @@ Similar structure por scope, customizado a campos del Reflexión Appendix A.
 
 | Check                       | Result                                                                                           |
 | --------------------------- | ------------------------------------------------------------------------------------------------ |
-| US covered → SCR            | ✅ 100% (~60 US v1, 41 SCR)                                                                      |
-| FT covered → SCR            | ✅ 100% (74 MVP FT, todos con SCR)                                                               |
+| US covered → SCR            | ✅ 100% (~78 US v1 — incluye iteración prototipo, 47 SCR)                                        |
+| FT covered → SCR            | ✅ 100% (90 MVP FT, todos con SCR)                                                               |
 | Personas representadas      | ✅ P-1 primario en todo. P-2 cubierto por intensity modes (Listening) + 6-scope hierarchy (v1.5) |
-| Screens con wireframe       | ✅ 41/41 v1 + 4 placeholders v1.5/v2                                                             |
-| Components catalogued       | ✅ ~70 CMP                                                                                       |
+| Screens con wireframe       | ✅ 47/47 v1 + 4 placeholders v1.5/v2                                                             |
+| Components catalogued       | ✅ ~90 CMP (70 originales + ~20 prototipo)                                                       |
 | Flows defined               | ✅ 15 FLW críticos                                                                               |
-| Design decisions documented | ✅ 30 DD                                                                                         |
+| Design decisions documented | ✅ 40 DD (30 originales + 10 prototipo, 2 deprecaciones)                                         |
 | Open questions tracked      | ✅ 9 OQ-D + 7 assumptions                                                                        |
 
 ---
@@ -2124,7 +2553,7 @@ Similar structure por scope, customizado a campos del Reflexión Appendix A.
 - ✅ TimeKast kit cubre primitives (shadcn/ui base); ~50 new CMP a buildear
 - ✅ Bottom-sheet pattern para voice capture es estándar (vaul library)
 - ⚠️ Drag-to-reorder en categories requiere dnd-kit (no native HTML5)
-- ⚠️ 2-column sheet view desktop (DD-029) needs decision en `/frontend` phase (OQ-D-9)
+- ✅ OQ-D-9 (2-column sheet desktop) — **resuelto**: nav SIEMPRE horizontal (DD-031), desktop usa el mismo layout que mobile. No hay sidebar que liberar espacio para una segunda columna.
 
 ### 4. UX perspective
 

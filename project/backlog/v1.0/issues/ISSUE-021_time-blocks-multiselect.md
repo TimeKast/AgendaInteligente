@@ -1,56 +1,48 @@
 ---
 id: ISSUE-021
-title: time_blocks multi-select (morning / afternoon / evening)
+title: time_blocks multi-select (morning / afternoon / evening) — DEPRECATED
 epic: EPIC-TIME
 milestone: v1.0
 priority: P1
-story_points: 2
-status: ready
+story_points: 0
+status: deprecated
+deprecation_reason: |
+  La iteración prototipo invalidó el modelo time_blocks aspiracionales. La combinación
+  `scheduled_time` + `duration_minutes` cubre todos los casos de uso del prototipo sin
+  requerir bloques semánticos morning/afternoon/evening. Ver 06_DATA_MODEL.md §E-005
+  ("Removed in prototype iteration") y BR-16. Las pool tasks se agrupan ahora por sección
+  "Backlog / pool" sin sub-bloques.
 dependencies: [ISSUE-020]
 user_stories: [US-022]
-features: [FT-022]
-screens: [SCR-040, SCR-020]
+features: []
+screens: []
 business_rules: []
-agents: [frontend-specialist]
-skills: [/frontend]
+agents: []
+skills: []
 ---
 
-# ISSUE-021 — Time blocks aspiracionales
+# ISSUE-021 — DEPRECATED (prototipo)
 
-## Overview
+## Estado
 
-Multi-select chips (morning / afternoon / evening) per activity. Activity puede ocupar varios bloques (X7 resolved). Today view groups pool tasks by block.
+**DEPRECATED** — no implementar.
 
-## Tasks
+## Razón
 
-- [ ] UI: 3 chip toggles en activity form/detail "🌅 Mañana / ☀️ Tarde / 🌙 Noche"
-- [ ] Multi-select (puede haber ≥1 seleccionado)
-- [ ] DB: text[] field already en schema (E-005)
-- [ ] Today view (SCR-020) grouping logic:
-  - Anchored tasks (scheduled_time NOT NULL) first, sorted by time
-  - Pool tasks grouped por time_block: Morning / Afternoon / Evening / Anytime (sin block)
-  - Within group, sorted by priority desc
+La iteración del prototipo eliminó el concepto de `time_blocks` (morning/afternoon/evening) como atributo de Activity. La combinación `scheduled_time` (NULL o time) + `duration_minutes` cubre el 100% de los casos:
 
-## Acceptance Criteria
+- **Anchored:** `scheduled_time != null` + `duration_minutes != null` → bloque dibujado en grid horario
+- **Pool / sin hora:** `scheduled_time = null` → aparece en sección "Backlog / pool" del día, sin sub-bloques
 
-```gherkin
-Scenario: Activity en múltiples bloques
-  Given activity "Estudiar alemán"
-  When user marks both "Mañana" y "Noche"
-  Then time_blocks = ['morning', 'evening']
-  And en Today appears in both Morning section y Evening section
+Ver `06_DATA_MODEL.md §E-005` (sección "Removed in prototype iteration") y BR-16.
 
-Scenario: Sin time block
-  Given activity sin time_blocks
-  Then aparece en "Anytime" section al final del día
+## Referencias migradas
 
-Scenario: Anchored task no necesita block
-  Given activity con scheduled_time = "10:00"
-  Then appears en time-ordered section, no en block sections
-```
+- US-022 mantiene contrato semántico ("agrupar pool tasks por momento del día") pero la implementación se cubre en ISSUE-025 (Today screen layout) usando el grid horario, sin columna `time_blocks` en DB.
+- FT-022 obsoleto.
 
-## Definition of Done
+## Acción del equipo
 
-- [ ] Multi-select UI tested mobile
-- [ ] Grouping correcto en Today view
-- [ ] Same activity en multiple sections no muestra duplicado al DB (single row, multiple references)
+- NO crear columna `time_blocks text[]` en la migration de Activity (ISSUE-013).
+- NO implementar UI de chips Morning/Afternoon/Evening.
+- Si surge necesidad real de agrupar pool tasks por momento, re-abrir como issue nuevo bajo iteración v1.5.

@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (62)
+## 📅 To Do (74)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -69,6 +69,18 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-102_pwa-install-offline-mode.md)
 - [Sin Título](v1.0\issues\ISSUE-103_settings-billing-usage-meter.md)
 - [Sin Título](v1.0\issues\ISSUE-104_account-deletion-export-grace.md)
+- [Sin Título](v1.0\issues\ISSUE-130_tasks-flat-view.md)
+- [Sin Título](v1.0\issues\ISSUE-131_month-sheet-schema-and-ui.md)
+- [Sin Título](v1.0\issues\ISSUE-132_category-detail-screen.md)
+- [Sin Título](v1.0\issues\ISSUE-133_stats-dashboard.md)
+- [Sin Título](v1.0\issues\ISSUE-134_bottom-nav-unification.md)
+- [Sin Título](v1.0\issues\ISSUE-135_eisenhower-quadrant.md)
+- [Sin Título](v1.0\issues\ISSUE-136_scheduled-dates-multi-day.md)
+- [Sin Título](v1.0\issues\ISSUE-137_progress-percent.md)
+- [Sin Título](v1.0\issues\ISSUE-138_resize-handles-grid.md)
+- [Sin Título](v1.0\issues\ISSUE-139_close-day-modal.md)
+- [Sin Título](v1.0\issues\ISSUE-140_plan-snapshot-week.md)
+- [Sin Título](v1.0\issues\ISSUE-141_plan-snapshot-month.md)
 
 
 ## ✅ Done (0)

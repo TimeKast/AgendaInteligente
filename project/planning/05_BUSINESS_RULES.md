@@ -121,14 +121,16 @@ Cada regla tiene:
 
 - DaySheet único por `(user_id, date)`
 - WeekSheet único por `(user_id, week_starting)` donde `week_starting` siempre = domingo en TZ del user
+- MonthSheet único por `(user_id, month_starting)` donde `month_starting` siempre = día 1 del mes en TZ del user
 - QuarterSheet (v1.5) único por `(user_id, quarter_starting)` donde quarter_starting = primer día del trimestre calendario en TZ del user
 - YearSheet (v1.5) único por `(user_id, year)`
 
 **Enforcement:**
 
-- DB: UNIQUE constraint `(user_id, date)` en `day_sheet`, `(user_id, week_starting)` en `week_sheet`, etc.
-- App code: helper `getOrCreateDaySheet(userId, date)` retorna existente o crea nueva atomically (UPSERT con ON CONFLICT DO NOTHING + RETURNING)
+- DB: UNIQUE constraint `(user_id, date)` en `day_sheet`, `(user_id, week_starting)` en `week_sheet`, `(user_id, month_starting)` en `month_sheet`, etc.
+- App code: helper `getOrCreateDaySheet(userId, date)` (y equivalentes para week/month) retorna existente o crea nueva atomically (UPSERT con ON CONFLICT DO NOTHING + RETURNING)
 - Cron crea WeekSheet anticipadamente el viernes para Sunday kickoff
+- MonthSheet se crea bajo demanda en el primer acceso del mes (no cron anticipado en v1)
 
 **Failure mode:** duplicate sheets corrompen analytics. Detección: DB constraint previene.
 
@@ -204,10 +206,19 @@ Cada regla tiene:
 
 **Statement:** Una Activity con `recurrence_rule` no nulo NO crea infinitas rows en DB. Cron materializa próximas N=14 instancias (2 semanas adelante) y va creando más conforme se aproximan.
 
+**DSL de recurrencia (v1):** NO iCal RRULE completo. Sintaxis simplificada validada en `lib/validations/activity.ts`:
+
+- `daily` — todos los días
+- `weekly:MO,WE,FR` — lista CSV de DOWs (MO, TU, WE, TH, FR, SA, SU)
+- `monthly:1` — día N del mes (1..28; 29/30/31 prohibidos en v1 por edge cases febrero)
+- `monthly:last` — último día del mes
+
+v2 puede ampliar (BYHOUR, custom intervals, BYSETPOS, etc).
+
 **Enforcement:**
 
-- Cron diario: para cada activity con recurrence_rule, expand RRULE próximos 14 días, INSERT instancias faltantes
-- Cada instancia es una Activity row separada con `recurrence_parent_id = original.id`
+- Cron diario: para cada activity con recurrence_rule, expand DSL próximos 14 días, INSERT instancias faltantes
+- Cada instancia es una Activity row separada con `recurrence_parent_id = original.id` y `scheduled_dates = [materialized_date]`
 - Borrar instancia singular no afecta padre ni otras instancias
 - Borrar padre con cascade pregunta: "borrar también próximas N instancias?"
 
@@ -219,7 +230,7 @@ Cada regla tiene:
 
 ### BR-12 — Sensitive tokens encrypted at-rest
 
-**Statement:** Google OAuth `access_token` y `refresh_token` se almacenan encriptados con `pgcrypto` symmetric encryption usando key de env var `ENCRYPTION_KEY`. Decryption solo en server-side a la hora de usar.
+**Statement:** OAuth `access_token` y `refresh_token` de toda `calendar_connection` (provider google en v1; apple/outlook en v1.5) se almacenan encriptados con `pgcrypto` symmetric encryption usando key de env var `ENCRYPTION_KEY`. Decryption solo en server-side a la hora de usar.
 
 **Enforcement:**
 
@@ -262,6 +273,103 @@ Cada regla tiene:
 **Failure mode:** user pierde data sin posibilidad de recuperar. Detección: telemetría + email confirmación 7 días antes del purge.
 
 **Linked:** FT-123, US-123
+
+---
+
+### BR-15 — `Activity.scheduled_dates` normalizado
+
+**Statement:** El array `scheduled_dates` de toda Activity se persiste normalizado: fechas únicas (sin duplicados) y ordenadas ascendentemente.
+
+**Enforcement:**
+
+- Zod `transform` en `activitySchema`: `z.array(z.string().date()).transform((arr) => [...new Set(arr)].sort())`
+- Server action `createActivity`/`updateActivity` aplica el transform antes de persistir
+- DB CHECK opcional: función `is_normalized_date_array(arr)` validando uniqueness + order
+
+**Failure mode:** queries contra `scheduled_dates @> '[date]'` con duplicados retornan más rows de las esperadas; UI muestra una task repetida en el mismo día. Detección: assertion en tests de Activity model + integration test que crea con duplicados y verifica normalización.
+
+**Linked:** E-005, FT-136, US-136
+
+---
+
+### BR-16 — `Activity.duration_minutes` requiere `scheduled_time`
+
+**Statement:** El campo `duration_minutes` solo tiene semántica cuando la Activity está anchored en grid (tiene `scheduled_time`). Sin `scheduled_time`, `duration_minutes` debe ser NULL.
+
+**Enforcement:**
+
+- Zod refine: `if (duration_minutes !== null) require(scheduled_time !== null)`
+- DB CHECK constraint: `duration_minutes IS NULL OR scheduled_time IS NOT NULL`
+- Server action rechaza con 400 si se viola
+
+**Failure mode:** UI calendar grid no sabe dónde dibujar el bloque (no hay hora de inicio). Detección: CHECK constraint dispara error en migration; tests Zod paramétricos.
+
+**Linked:** E-005, FT-138
+
+---
+
+### BR-17 — `Activity.progress_percent` se ignora cuando status = 'done'
+
+**Statement:** Si `status = 'done'`, `progress_percent` se fuerza a 100 al cerrar (o se ignora en queries de progreso). Si `status ∈ ('skipped','cancelled')`, `progress_percent` queda como histórico pero no se considera "avance real".
+
+**Enforcement:**
+
+- Server action de status transition: al pasar a `done`, set `progress_percent = 100`
+- UI de close-day muestra slider solo para outcome "Avanzada" (no para "Hecha" ni "No la toqué")
+- Reportes de stats filtran `progress_percent` solo sobre status = 'in_progress'
+
+**Failure mode:** métrica de "progreso promedio" se distorsiona. Detección: test de stats con fixture mixto.
+
+**Linked:** E-005, FT-137, US-137
+
+---
+
+### BR-18 — `PlanSnapshot` es append-only e inmutable
+
+**Statement:** Una `PlanSnapshot` por `(user_id, scope, reference_id)`. El `payload` jsonb nunca se muta tras `frozen_at`. La comparación contra el estado actual la calcula la UI cruzando snapshot vs Activities vigentes — no se actualiza el snapshot.
+
+**Enforcement:**
+
+- UNIQUE `(user_id, scope, reference_id)` en DB
+- Server action `freezeSnapshot` rechaza si ya existe (no upsert)
+- No existe `updateSnapshot` action — solo `getSnapshot` + `deleteSnapshot` (este último solo para casos de error/borrado de plan)
+- Trigger DB que rechaza UPDATE de `payload` si `frozen_at` no es NULL
+
+**Failure mode:** moved-from indicator se vuelve unreliable (el snapshot ya no refleja "lo planeado originalmente"). Detección: test de mutación + assertion en server action.
+
+**Linked:** E-027, FT-140, US-140
+
+---
+
+### BR-19 — `MonthSheet.month_starting` debe ser día 1
+
+**Statement:** Toda MonthSheet tiene `month_starting` igual al día 1 del mes correspondiente en TZ del user.
+
+**Enforcement:**
+
+- Zod refine: `month_starting.getDate() === 1`
+- DB CHECK opcional: `EXTRACT(DAY FROM month_starting) = 1`
+- Server action `createMonthSheet` normaliza la fecha al día 1 antes de persistir
+
+**Failure mode:** MonthSheet duplicada (e.g. `2026-05-01` y `2026-05-15` ambas para mayo 2026), UNIQUE constraint falla con mensaje confuso. Detección: test de modelo + assertion.
+
+**Linked:** E-026, FT-131
+
+---
+
+### BR-20 — `CalendarConnection` única por cuenta externa
+
+**Statement:** Un user puede tener N conexiones del mismo provider (e.g. 2 Google accounts), pero no puede registrar dos veces la misma `external_account_id` del mismo provider.
+
+**Enforcement:**
+
+- UNIQUE `(user_id, provider, external_account_id)` en DB
+- OAuth callback rechaza con mensaje claro si la cuenta ya está conectada al mismo user
+- Settings UI muestra las conexiones activas con opción de desactivar/eliminar
+
+**Failure mode:** duplicado de busy_slots sync; queries de calendario doble-cuentan eventos. Detección: UNIQUE constraint + test de re-conexión.
+
+**Linked:** E-060, FT-090, US-090
 
 ---
 
@@ -450,7 +558,7 @@ Cada regla tiene:
 
 ### OPS-5 — Recurrencia materializada cron diario
 
-**Statement:** Cron diario expande RRULEs en próximas N=14 instancias. (Ver BR-11.)
+**Statement:** Cron diario expande recurrence rules del DSL simplificado (ver BR-11) en próximas N=14 instancias.
 
 **Linked:** BR-11
 

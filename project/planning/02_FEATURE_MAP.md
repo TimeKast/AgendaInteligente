@@ -54,15 +54,15 @@
 
 ### Capa 4 — Sheets estructurados (Day + Week en MVP)
 
-| ID     | Feature                                      | Priority | Brief ref | Notes                                                                                      |
-| ------ | -------------------------------------------- | -------- | --------- | ------------------------------------------------------------------------------------------ |
-| FT-030 | DaySheet — morning fields                    | P1       | F-4       | intention, gratitude, identity_statement, wins_planned[3], avoidance, energy (3x 1-5)      |
-| FT-031 | DaySheet — evening fields                    | P1       | F-4       | evening_win, evening_lesson, tomorrow_top, insight (opt)                                   |
-| FT-032 | DaySheet — vista read-only del día           | P1       | F-4       | Estilo "página del workbook"                                                               |
-| FT-033 | DaySheet — edición manual de cualquier campo | P2       | F-4       | Por si user quiere ajustar fuera de check-in                                               |
-| FT-034 | WeekSheet — kickoff fields (Sunday)          | P1       | F-5       | one_thing, three_wins, calendar_blocks, people_to_connect, learn_one, avoid_one, self_care |
-| FT-035 | WeekSheet — review fields (Saturday)         | P1       | F-5       | review_wins, review_lessons, review_energy (1-10), review_one_sentence                     |
-| FT-036 | WeekSheet — vista grilla 7 días              | P1       | F-5       | Plan vs ejecutado por día                                                                  |
+| ID     | Feature                                      | Priority | Brief ref | Notes                                                                                                                                                                                                        |
+| ------ | -------------------------------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FT-030 | DaySheet — morning fields                    | P1       | F-4       | identity_statement, wins_planned[3], avoidance. ⚠️ Iteración prototipo: intention/gratitude/energy_level CORTADOS por redundancia con identity y por scope.                                                  |
+| FT-031 | DaySheet — close day flow                    | P1       | F-4       | Outcome per-activity (Hecha+cerrada / Avanzada+progress_percent 0-100 / No-la-toqué) + one-line summary del día. ⚠️ Iteración prototipo: SIN sección wins separada — se infiere del outcome de wins_planned. |
+| FT-032 | DaySheet — vista read-only del día           | P1       | F-4       | Estilo "página del workbook"                                                                                                                                                                                 |
+| FT-033 | DaySheet — edición manual de cualquier campo | P2       | F-4       | Por si user quiere ajustar fuera de check-in                                                                                                                                                                 |
+| FT-034 | WeekSheet — kickoff fields (Sunday)          | P1       | F-5       | one_thing, three_wins, calendar_blocks, people_to_connect, learn_one, avoid_one, self_care                                                                                                                   |
+| FT-035 | WeekSheet — review fields (Saturday)         | P1       | F-5       | review_wins, review_lessons, review_energy (1-10), review_one_sentence                                                                                                                                       |
+| FT-036 | WeekSheet — vista grilla 7 días              | P1       | F-5       | Plan vs ejecutado por día                                                                                                                                                                                    |
 
 ### Capa 5 — Goals (entidad separada)
 
@@ -122,14 +122,17 @@
 | FT-088 | Web Push notifications (Service Worker + FCM/APNs)          | P0       | F-17, §10 | TimeKast PWA base                                                               |
 | FT-089 | Deep links de push a pantalla relevante                     | P1       | §10       | `today?focus=midday`, `chat?context=evening`, etc                               |
 
-### Capa 10 — Google Calendar integration
+### Capa 10 — Multi-calendar integration
 
-| ID     | Feature                                       | Priority | Brief ref | Notes                             |
-| ------ | --------------------------------------------- | -------- | --------- | --------------------------------- |
-| FT-090 | Google Calendar OAuth connection flow         | P1       | F-12      | Scope `calendar.readonly`         |
-| FT-091 | Sync busy slots cada 15 min                   | P1       | F-12      | Background job, almacena en cache |
-| FT-092 | Mostrar busy slots en WeekSheet planning view | P1       | F-12      | Evitar overbooking al planear     |
-| FT-093 | Disconnect Google Calendar                    | P2       | F-12      | Settings → Integrations           |
+> ⚠️ Iteración prototipo: cambio estructural — single Google Calendar → N conexiones de calendario por user (multi-account). Pantalla `/settings/integrations` lista conexiones y permite agregar/quitar. v1 solo Google. Apple + Outlook diferidos a v1.5.
+
+| ID     | Feature                                             | Priority | Brief ref       | Notes                                                                                    |
+| ------ | --------------------------------------------------- | -------- | --------------- | ---------------------------------------------------------------------------------------- |
+| FT-090 | Multi-calendar connection flow (Google)             | P1       | F-12 (extended) | N cuentas Google por user (ej: trabajo + personal). Scope `calendar.readonly` por cada   |
+| FT-091 | Sync busy slots cada 15 min por conexión            | P1       | F-12            | Background job, busy slots agregados de todas las conexiones activas                     |
+| FT-092 | Mostrar busy slots cross-calendar en planning views | P1       | F-12            | WeekSheet kickoff + grid Today + MonthSheet                                              |
+| FT-093 | Disconnect calendar individual                      | P2       | F-12            | Settings → Integrations → por conexión                                                   |
+| FT-094 | Calendar account labels (color/nombre por conexión) | P2       | F-12 (new)      | User etiqueta cada cuenta para distinguir en grid (ej: 'Trabajo' verde, 'Personal' azul) |
 
 ### Capa 11 — AI sugerencias
 
@@ -160,6 +163,49 @@
 | FT-123 | Account deletion (GDPR-like) con export de datos                              | P1       | §4 Sensitive data | Soft delete 30 días, después purge     |
 | FT-124 | Toggle dark mode                                                              | P2       | OQ-3              | Warm-book light default, dark opcional |
 
+### Capa 14 — Pantallas y atributos introducidos por iteración prototipo
+
+> Validados con stakeholder durante prototipo (`src/app/(agendaInteligente)/`). Forman parte del MVP v1.
+
+#### Pantallas nuevas
+
+| ID     | Feature                                            | Priority | Notes                                                                                                                                                                                     |
+| ------ | -------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FT-130 | Pantalla `/tasks` — vista plana cross-project      | P1       | Lista todas las actividades del user sin agrupar por proyecto. Filtros (open/done/skipped/blocked/all) + sort (date/priority/deadline/project) + búsqueda. Capture rápido inline al tope. |
+| FT-131 | Pantalla `/month` — planning mensual + MonthSheet  | P1       | Vista calendario mensual con actividades agendadas. Permite arrastre cross-day, MonthSheet con sección "una cosa del mes" análoga a WeekSheet.                                            |
+| FT-132 | Pantalla `/categories/[id]` — detalle de categoría | P1       | Lista de projects de la categoría + acción "+ Nuevo proyecto" pre-rellenado con `category_id`                                                                                             |
+| FT-133 | Pantalla `/stats` — dashboard de métricas          | P2       | Consistencia de check-ins, completion rate, top projects por actividad. KPIs reales se definen en backlog. Visual-only en prototipo.                                                      |
+
+#### Navegación
+
+| ID     | Feature                                               | Priority | Notes                                                                                                                          |
+| ------ | ----------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| FT-134 | Bottom nav horizontal SIEMPRE (todos los breakpoints) | P0       | 7 items: Today / Plan / Tasks / Goals / Chat / Categorías / Settings. Reemplaza el desktop sidebar. Ver `AgendaBottomNav.tsx`. |
+
+#### Atributos de Activity introducidos en UI
+
+| ID     | Feature                                               | Priority | Notes                                                                                                                                                                     |
+| ------ | ----------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FT-135 | Eisenhower quadrant (Q1-Q4) por activity              | P1       | Vista "Matriz" en `/today` con 4 cuadrantes (urgente×importante). Drag entre cuadrantes asigna `quadrant`.                                                                |
+| FT-136 | Multi-día (`scheduledDates[]`) sin recurrencia        | P1       | Una activity puede aparecer en N fechas específicas sin generar RRULE. Picker dedicado en form.                                                                           |
+| FT-137 | `progress_percent` (0-100) en close-day               | P1       | Slider visible cuando user marca activity como "Avanzada" en close-day. Persiste por activity.                                                                            |
+| FT-138 | Resize de bloque horario en grid (handles top+bottom) | P2       | En `/today` view "Grid", user arrastra borde superior o inferior del bloque para ajustar `start_time`/`end_time`. Validación: no solapar otras tasks ni eventos externos. |
+
+#### Plan Snapshot
+
+| ID     | Feature                                        | Priority | Notes                                                                                                                              |
+| ------ | ---------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| FT-140 | Congelar plan semanal / mensual (PlanSnapshot) | P1       | Pin-click "Congelar plan" → banner "Plan congelado · [fecha]". Snapshot del estado de activities scheduled.                        |
+| FT-141 | "Moved-from" indicator en tasks                | P1       | Cuando una task cambia `scheduled_date` después del snapshot, History icon en la task con tooltip "Movida desde [fecha original]". |
+| FT-142 | Vista de plan snapshot vs ejecución            | P2       | Permite comparar plan original con ejecución real al cierre de semana/mes. Alimenta post-mortem.                                   |
+
+#### Notificaciones — settings ampliados
+
+| ID     | Feature                                       | Priority | Notes                                                                                                                           |
+| ------ | --------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| FT-143 | "Días específicos sin check-ins" (vacaciones) | P1       | Multi-fecha picker en NotificationPref. En esas fechas, scheduler salta morning/midday/evening pushes.                          |
+| FT-144 | Toggle "No molestar fines de semana" granular | P1       | Refinamiento del toggle weekend existente (FT-085). Aplica a check-ins diarios; weekly kickoff/review respetan DOW configurado. |
+
 ---
 
 ## V1.5 — Post-MVP iter (4-6 semanas después de v1)
@@ -186,21 +232,22 @@
 
 ## V2 — Deferred (sin compromiso de fecha)
 
-| ID     | Feature                                              | Priority | Brief ref | Notes                                                  |
-| ------ | ---------------------------------------------------- | -------- | --------- | ------------------------------------------------------ |
-| FT-300 | 5-Year sheet                                         | P3       | F-23      | Vivid vision, capabilities, network, financial freedom |
-| FT-301 | Life sheet                                           | P3       | F-24      | Mission, eulogy, core values, anti-vision, bucket list |
-| FT-310 | WhatsApp bot (Twilio o Meta Business API)            | P2       | F-25      | Multi-channel conversación                             |
-| FT-311 | Telegram bot                                         | P3       | F-26      | Alternativa barata a WhatsApp                          |
-| FT-312 | Voice mode bidireccional real-time (Vapi/ElevenLabs) | P2       | F-27      | Latency <800ms                                         |
-| FT-320 | Stripe billing activo + pricing tiers                | P1       | F-28      | Antes de cualquier monetización pública                |
-| FT-321 | Feature gating por plan                              | P1       | F-28      | Middleware check + UI disabled states                  |
-| FT-330 | Outlook Calendar (Microsoft Graph)                   | P3       | F-29      | OAuth flow paralelo                                    |
-| FT-331 | Apple Calendar (CalDAV)                              | P3       | F-29      | App-specific passwords                                 |
-| FT-340 | Calendar write-back (push tareas como eventos)       | P2       | F-30      | Scope sensitive, requiere OAuth verification           |
-| FT-350 | Gamificación (streaks, % mensual, achievements)      | P3       | F-31      | Diferido por decisión X2                               |
-| FT-360 | iOS Shortcut + Siri capture                          | P3       | F-32      | API key user-specific                                  |
-| FT-370 | React Native + Expo mobile-native                    | P3       | F-33      | Solo si métricas justifican                            |
+| ID     | Feature                                              | Priority | Brief ref | Notes                                                       |
+| ------ | ---------------------------------------------------- | -------- | --------- | ----------------------------------------------------------- |
+| FT-300 | 5-Year sheet                                         | P3       | F-23      | Vivid vision, capabilities, network, financial freedom      |
+| FT-301 | Life sheet                                           | P3       | F-24      | Mission, eulogy, core values, anti-vision, bucket list      |
+| FT-310 | WhatsApp bot (Twilio o Meta Business API)            | P2       | F-25      | Multi-channel conversación                                  |
+| FT-311 | Telegram bot                                         | P3       | F-26      | Alternativa barata a WhatsApp                               |
+| FT-313 | Discord bot (canal de captura + notificación)        | P3       | (new)     | Diferido v2 explícito. v1 solo in-app + email + push (PWA). |
+| FT-312 | Voice mode bidireccional real-time (Vapi/ElevenLabs) | P2       | F-27      | Latency <800ms                                              |
+| FT-320 | Stripe billing activo + pricing tiers                | P1       | F-28      | Antes de cualquier monetización pública                     |
+| FT-321 | Feature gating por plan                              | P1       | F-28      | Middleware check + UI disabled states                       |
+| FT-330 | Outlook Calendar (Microsoft Graph)                   | P3       | F-29      | OAuth flow paralelo                                         |
+| FT-331 | Apple Calendar (CalDAV)                              | P3       | F-29      | App-specific passwords                                      |
+| FT-340 | Calendar write-back (push tareas como eventos)       | P2       | F-30      | Scope sensitive, requiere OAuth verification                |
+| FT-350 | Gamificación (streaks, % mensual, achievements)      | P3       | F-31      | Diferido por decisión X2                                    |
+| FT-360 | iOS Shortcut + Siri capture                          | P3       | F-32      | API key user-specific                                       |
+| FT-370 | React Native + Expo mobile-native                    | P3       | F-33      | Solo si métricas justifican                                 |
 
 ---
 
@@ -221,27 +268,28 @@
 
 ## Coverage summary
 
-| Capa                              | MVP Features | V1.5 Features | V2 Features |
-| --------------------------------- | ------------ | ------------- | ----------- |
-| Auth & Multi-tenant               | 4            | 0             | 0           |
-| Organización jerárquica           | 5            | 0             | 0           |
-| Modelo temporal                   | 9            | 0             | 0           |
-| Sheets (Day+Week MVP)             | 7            | 3             | 2           |
-| Goals                             | 4            | 0             | 0           |
-| AI Agent core                     | 7            | 0             | 0           |
-| Vague-answer challenges           | 4            | 2             | 0           |
-| Captura por voz                   | 6            | 0             | 0           |
-| Check-ins automáticos             | 10           | 0             | 0           |
-| Google Calendar                   | 4            | 0             | 4           |
-| AI sugerencias                    | 5            | 0             | 0           |
-| Billing infrastructure            | 4            | 0             | 2           |
-| PWA + Settings                    | 5            | 0             | 0           |
-| Pattern detection                 | 0            | 5             | 0           |
-| Multi-channel (WA/Telegram/Voice) | 0            | 0             | 3           |
-| Gamification                      | 0            | 0             | 1           |
-| Cross-calendar                    | 0            | 0             | 3           |
-| Mobile-native                     | 0            | 0             | 1           |
-| **Total**                         | **74**       | **10**        | **16**      |
+| Capa                                      | MVP Features | V1.5 Features | V2 Features |
+| ----------------------------------------- | ------------ | ------------- | ----------- |
+| Auth & Multi-tenant                       | 4            | 0             | 0           |
+| Organización jerárquica                   | 5            | 0             | 0           |
+| Modelo temporal                           | 9            | 0             | 0           |
+| Sheets (Day+Week MVP)                     | 7            | 3             | 2           |
+| Goals                                     | 4            | 0             | 0           |
+| AI Agent core                             | 7            | 0             | 0           |
+| Vague-answer challenges                   | 4            | 2             | 0           |
+| Captura por voz                           | 6            | 0             | 0           |
+| Check-ins automáticos                     | 10           | 0             | 0           |
+| Multi-calendar                            | 5            | 0             | 4           |
+| AI sugerencias                            | 5            | 0             | 0           |
+| Billing infrastructure                    | 4            | 0             | 2           |
+| PWA + Settings                            | 5            | 0             | 0           |
+| Prototype iteration (nuevas)              | 15           | 0             | 0           |
+| Pattern detection                         | 0            | 5             | 0           |
+| Multi-channel (WA/Telegram/Discord/Voice) | 0            | 0             | 4           |
+| Gamification                              | 0            | 0             | 1           |
+| Cross-calendar                            | 0            | 0             | 3           |
+| Mobile-native                             | 0            | 0             | 1           |
+| **Total**                                 | **90**       | **10**        | **17**      |
 
 ---
 

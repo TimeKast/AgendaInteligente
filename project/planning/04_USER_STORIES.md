@@ -259,6 +259,8 @@ Stories agrupadas por **capa** (matching Feature Map). Cada story:
 
 ### US-030 — DaySheet morning ritual
 
+> ⚠️ Deprecated por iteración prototipo · ver US-030b (flujo simplificado)
+
 **Como** P-1, **quiero** un ritual matutino guiado de 5-8 minutos **para** abrir el día con intención.
 
 - Linked: FT-030, FT-051
@@ -270,7 +272,23 @@ Stories agrupadas por **capa** (matching Feature Map). Cada story:
   - Al terminar: "Guardado. Te busco al mediodía." y DaySheet morning fields completos
   - Si user abandona midway → resume al volver el mismo día, sin perder respuestas previas
 
+### US-030b — DaySheet morning simplificado (prototipo)
+
+**Como** P-1, **quiero** un ritual matutino corto y concreto **para** abrir el día sin overhead.
+
+- Linked: FT-030, FT-051
+- AC:
+  - Trigger: push notification al `morning_time` o tap manual desde Today
+  - 3 prompts en orden: identity_statement ("Hoy soy alguien que...") → 3 wins planeadas (puede pull de week's 3) → avoidance ("¿Qué evitarías hoy?")
+  - intention, gratitude y energy_level NO se preguntan (cortados por iteración prototipo: intention redundante con identity, gratitude y energy fuera de scope MVP)
+  - Cada respuesta puede triggerear challenge (según intensity_mode)
+  - Al terminar: "Guardado." y DaySheet morning fields completos
+  - Si user abandona midway → resume al volver el mismo día, sin perder respuestas previas
+  - Duración objetivo: ≤3 min
+
 ### US-031 — DaySheet evening ritual
+
+> ⚠️ Deprecated por iteración prototipo · ver US-031b (close-day flow)
 
 **Como** P-1, **quiero** un cierre nocturno corto **para** consolidar el día.
 
@@ -282,6 +300,23 @@ Stories agrupadas por **capa** (matching Feature Map). Cada story:
   - Duración objetivo: 3-5 min
   - DaySheet completo (morning + evening), badge "completado" en lista
   - Si user no completa morning, evening pregunta primero "¿qué fue tu intención hoy?" para tener contexto
+
+### US-031b — Close day flow con outcome per-activity (prototipo)
+
+**Como** P-1, **quiero** cerrar el día marcando outcome de cada actividad planeada **para** medir ejecución real, no auto-reporte vago.
+
+- Linked: FT-031, FT-137
+- AC:
+  - Trigger: push al `evening_time` o tap "Cerrar día" desde Today
+  - Modal `CloseDayModal` muestra todas las activities con `scheduled_date = today`
+  - Para cada activity, user elige uno de 3 outcomes:
+    - **Hecha y cerrada** → status=done, completed_at=now
+    - **Avanzada** → status=in_progress + slider `progress_percent` 0-100 (default 50)
+    - **No la toqué** → status=skipped (sin reason obligatoria; agente puede pedir reason en chat después)
+  - One-line summary del día (textarea max 280 chars) — campo único de "resumen", reemplaza evening_win + evening_lesson + tomorrow_top + insight
+  - Al guardar: DaySheet evening_completed_at = now
+  - SIN sección "wins de hoy" separada (los wins planeados ya tienen outcome individual arriba)
+  - Component test (RTL): user selecciona outcomes diferentes para 3 activities + escribe summary → submit → todas las activities y DaySheet actualizan correctamente
 
 ### US-032 — Editar DaySheet manualmente
 
@@ -553,12 +588,24 @@ Stories agrupadas por **capa** (matching Feature Map). Cada story:
 
 **Como** P-1, **quiero** poder mover horarios y desactivar fines de semana **para** que la app respete mi vida.
 
-- Linked: FT-085
+- Linked: FT-085, FT-144
 - AC:
   - Settings → Notifications: time picker para cada slot (morning/midday/evening)
-  - Toggle "Weekend enabled" (default off para morning/midday/evening, on para weekly)
+  - Toggle "No molestar fines de semana" (default off para morning/midday/evening; weekly kickoff/review respetan DOW configurado independientemente)
   - DOW selector para weekly kickoff y review
   - Cambios se aplican al próximo ciclo (no reschedule el de hoy)
+
+### US-085b — Días específicos sin check-ins (vacaciones)
+
+**Como** P-1, **quiero** marcar fechas específicas como "días sin check-ins" **para** que la app no me persiga en vacaciones o licencia.
+
+- Linked: FT-143
+- AC:
+  - Settings → Notifications → sección "Días sin check-ins" con multi-fecha picker (`DaysOffPicker`)
+  - Fechas seleccionadas se muestran como chips removibles (`DayOffChip`)
+  - El scheduler de Inngest, al evaluar morning/midday/evening, salta el push si la fecha actual está en la lista
+  - Weekly kickoff/review NO se saltan automáticamente (separado en UI con copy "¿También saltar weekly?" toggle)
+  - Component test (RTL): user selecciona 3 fechas, verifica que aparecen como chips y que la persistencia llama al action correcto
 
 ### US-086 — Anti-spam (max 4 push/24h)
 
@@ -582,35 +629,56 @@ Stories agrupadas por **capa** (matching Feature Map). Cada story:
 
 ---
 
-## Capa 10 — Google Calendar
+## Capa 10 — Multi-calendar integration
 
-### US-090 — Conectar Google Calendar
+> ⚠️ Iteración prototipo: single Google Calendar reemplazado por N conexiones (trabajo + personal, ej). v1 solo Google. Apple + Outlook diferidos a v1.5.
 
-**Como** P-1, **quiero** conectar mi Google Calendar **para** que la app sepa cuándo estoy ocupado y no me sobrecargue.
+### US-090 — Conectar N cuentas de Google Calendar
+
+**Como** P-1, **quiero** conectar varias cuentas de Google Calendar (trabajo + personal) **para** que la app vea todos mis compromisos sin importar dónde viven.
 
 - Linked: FT-090, FT-091
 - AC:
-  - Settings → Integrations → "Conectar Google Calendar"
-  - OAuth flow con scope `calendar.readonly`
-  - Después de connect: lista de calendarios disponibles, user toggle cuáles incluir (default: primary)
-  - Almacena access_token + refresh_token encriptados
+  - Settings → Integrations → "+ Conectar Google Calendar"
+  - OAuth flow con scope `calendar.readonly` por cada cuenta
+  - Cada conexión queda como `CalendarConnection` row con `provider=google`, `account_email`, `account_label` (default = email)
+  - Lista muestra todas las conexiones activas con badge "Conectado" + última sync
+  - User puede agregar N conexiones (sin tope hardcoded v1; soft limit informado en config)
+  - Después de cada connect: lista de calendarios de esa cuenta, user toggle cuáles incluir (default: primary)
+  - Tokens encriptados en DB (`access_token`, `refresh_token`) per-connection
+  - Component test (RTL): connect flow stub + UI muestra la conexión nueva agregada a la lista
 
-### US-091 — Mostrar busy slots en weekly planning
+### US-090b — Etiquetar y colorear conexión
 
-**Como** P-1, **quiero** ver mis bloques ocupados al planear la semana **para** no doble-bookear.
+**Como** P-1, **quiero** ponerle un nombre y color a cada conexión **para** distinguir trabajo vs personal en el grid.
+
+- Linked: FT-094
+- AC:
+  - Cada `CalendarConnection` row en settings tiene input `account_label` editable y color picker (paleta predefinida)
+  - El color se usa para teñir busy slots de esa conexión en `/today` grid y `/month`
+  - Default label = email; default color = ronda paleta por orden de conexión
+
+### US-091 — Mostrar busy slots cross-calendar en planning
+
+**Como** P-1, **quiero** ver TODOS mis bloques ocupados (de todas las conexiones) al planear **para** no doble-bookear.
 
 - Linked: FT-092
 - AC:
-  - En WeekSheet kickoff, cuando agente sugiere `calendar_blocks`, los slots ocupados se muestran gris
-  - Si user intenta agendar una activity en un slot ocupado → warning "tenés [evento Google] en ese horario"
-  - Sync cada 15 min via Inngest
+  - En WeekSheet kickoff, Today grid y MonthSheet planning, busy slots de TODAS las conexiones activas se muestran agregados
+  - Cada slot indica de qué conexión viene (color + tooltip con label)
+  - Si user intenta agendar una activity en un slot ocupado → warning "tenés [evento] en [account_label] a esa hora"
+  - Sync cada 15 min via Inngest, por cada conexión
 
-### US-092 — Disconnect Google Calendar
+### US-092 — Desconectar una conexión
 
-**Como** P-1, **quiero** poder desconectar **para** revocar permisos.
+**Como** P-1, **quiero** poder desconectar una cuenta individual **para** revocar permisos sin perder las otras.
 
 - Linked: FT-093
-- AC: Settings botón; tokens se borran de DB; UI vuelve a "no conectado"
+- AC:
+  - Botón "Desconectar" en cada `CalendarConnection` row
+  - Confirmación modal: "¿Desconectar [email]? Los busy slots de esta cuenta dejarán de sincronizar."
+  - Tokens de esa conexión se borran de DB; busy slots agregados se purgan
+  - UI vuelve a mostrar la conexión como "Desconectado" o se elimina del listado
 
 ---
 
@@ -734,6 +802,165 @@ Stories agrupadas por **capa** (matching Feature Map). Cada story:
 
 ---
 
+## Capa 14 — Iteración prototipo (pantallas, atributos, plan snapshot)
+
+> Validados con stakeholder durante prototipo (`src/app/(agendaInteligente)/`). Forman parte del MVP v1.
+
+### US-130 — Vista plana de todas las tareas (`/tasks`)
+
+**Como** P-1, **quiero** una vista plana cross-project con todas mis actividades **para** encontrar y manejar tareas sin entrar a cada proyecto.
+
+- Linked: FT-130
+- AC:
+  - Ruta `/tasks` accesible desde bottom nav (item "Tasks")
+  - Filter chips: `open` (pending+in_progress) / `done` / `skipped` / `blocked` / `all` — default `open`
+  - Sort dropdown: `date` (scheduled_date asc) / `priority` (desc) / `deadline` (asc, nulls last) / `project` (alfabético)
+  - Búsqueda por título (input al tope, fuzzy match)
+  - Capture rápido inline (`ActivityQuickAdd`) en la parte superior, default project=Inbox
+  - Cada row muestra: title, project chip, scheduled_date, priority dots, status badge
+  - Tap en row → `/activities/[id]`
+  - Component test (RTL): aplicar filtro `done` y verificar que solo aparecen activities con status=done; cambiar sort a priority y verificar orden
+
+### US-131 — Planning mensual + MonthSheet (`/month`)
+
+**Como** P-1, **quiero** ver y planear el mes completo **para** distribuir mis wins mensuales y proyectos largos.
+
+- Linked: FT-131, FT-140
+- AC:
+  - Ruta `/month` accesible desde bottom nav (item "Plan" → tabs Week | Month) o desde Week
+  - Calendar grid mensual (`MonthGrid` + `MonthDayCell`), cada celda muestra count de activities scheduled + dot indicators por proyecto principal
+  - Tap en día → `DayActivitiesSheet` con lista de activities de ese día (editables inline)
+  - Drag-and-drop activity entre días cambia `scheduled_date`
+  - `MonthSheet` con campo "una cosa del mes" (análogo a WeekSheet `one_thing`), wins mensuales opcionales (max 3) y "evitar" opcional
+  - Botón "Congelar plan" (PlanSnapshot — ver US-133)
+  - Component test (RTL): drag activity de día X a día Y → action `updateActivity` se llama con nueva date
+
+### US-132 — Detalle de categoría (`/categories/[id]`)
+
+**Como** P-1, **quiero** abrir una categoría y ver sus proyectos para gestionar el área completa.
+
+- Linked: FT-132
+- AC:
+  - Ruta `/categories/[id]` accesible desde bottom nav (item "Categorías") tap en row, o desde sidebar (si aplica)
+  - Header con nombre + icon + color de la categoría
+  - Lista de projects bajo la categoría (`ProjectRow`), cada row: name, status badge, activity count (pending/done), deadline
+  - Acción "+ Nuevo proyecto" → abre `NewProjectModal` con `category_id` pre-rellenado (no pickeable)
+  - Sort: status (active arriba) / deadline / nombre
+  - Component test (RTL): tap "+ Nuevo proyecto" → modal abre con select de categoría deshabilitado y valor correcto
+
+### US-133 — Dashboard de métricas (`/stats`)
+
+**Como** P-1, **quiero** ver métricas de consistencia y ejecución **para** entender mis patrones sin abrir el chat.
+
+- Linked: FT-133
+- AC:
+  - Ruta `/stats` accesible desde Settings o bottom nav (overflow si no cabe en 7 items)
+  - Cards de KPIs (visual-only en prototipo, KPIs reales se definen en backlog v1):
+    - Consistencia check-ins (% últimos 30 días con morning + close-day completos)
+    - Completion rate (% activities done de las scheduled últimos 30 días)
+    - Top 5 projects por actividad (count de activities done último mes)
+  - Bar chart simple (`BarChart`) por semana/mes
+  - Sin escritura — read-only
+  - NO incluye gamification (streaks/badges) — diferido v2 (DD-014)
+
+### US-134 — Bottom nav SIEMPRE horizontal
+
+**Como** P-1, **quiero** la navegación principal abajo en TODOS los breakpoints **para** consistencia mobile/desktop y porque la app es mobile-first.
+
+- Linked: FT-134
+- AC:
+  - Bottom nav (`AgendaBottomNav`) visible en mobile, tablet y desktop sin diferencia de layout
+  - 7 items en orden: Today / Plan / Tasks / Goals / Chat / Categorías / Settings
+  - Si 7 items no caben en viewport estrecho (< 360px), los últimos 2 colapsan en menú "Más"
+  - NO existe desktop side nav (DD-001 deprecated por iteración prototipo)
+  - Safe-area-inset-bottom respetado en iOS
+  - Active state: ink-primary; inactive: ink-hint
+
+### US-135 — Clasificar activity por Eisenhower quadrant
+
+**Como** P-1, **quiero** clasificar mis actividades en cuadrantes (urgente × importante) **para** priorizar con criterio explícito.
+
+- Linked: FT-135
+- AC:
+  - En `/today` view "Matriz", grid 2×2 con cuadrantes Q1 (urgente+importante) / Q2 (no urgente+importante) / Q3 (urgente+no importante) / Q4 (no urgente+no importante)
+  - Activities scheduled hoy se distribuyen en su quadrant
+  - User arrastra activity entre cuadrantes → action update `quadrant` ('Q1'|'Q2'|'Q3'|'Q4'|null)
+  - Si activity no tiene quadrant asignado, aparece en "Sin clasificar" arriba
+  - Detail view de activity muestra quadrant editable
+  - Component test (RTL): drag de Q3 a Q1 → action correcta con nuevo quadrant value
+
+### US-136 — Programar activity en N días específicos (multi-día sin recurrencia)
+
+**Como** P-1, **quiero** programar una actividad en varias fechas específicas (ej: lunes 19, jueves 22, lunes 26) sin crear una recurrencia **para** tareas con cadencia irregular.
+
+- Linked: FT-136
+- AC:
+  - En activity form, campo "Programar en varios días" abre `MultiDayPicker` (multi-fecha calendar picker)
+  - Persiste como `scheduledDates: Date[]` en activity (separado de `scheduled_date` single y RRULE recurrence)
+  - En `/today`, `/week`, `/month`, la activity aparece en cada una de las fechas
+  - Marcar done en un día NO marca done en los otros (cada aparición es instancia individual)
+  - Si user usa `scheduledDates` con N entradas, no se puede combinar con RRULE (UI deshabilita recurrence picker)
+  - Component test (RTL): seleccionar 3 fechas en picker → activity aparece en `/week` en esas 3 fechas
+
+### US-137 — Slider de progress percent en close-day
+
+**Como** P-1, **quiero** marcar el % de avance de una actividad cuando no la terminé pero avancé **para** capturar progreso real.
+
+- Linked: FT-137, FT-031b
+- AC: ver US-031b (`progress_percent` aparece como slider cuando user elige "Avanzada" en close-day)
+
+### US-138 — Resize de bloque horario en grid
+
+**Como** P-1, **quiero** ajustar la duración de un bloque horario arrastrando sus bordes **para** corregir estimaciones sin abrir form.
+
+- Linked: FT-138
+- AC:
+  - En `/today` view "Grid" (calendario por horas), cada bloque tiene handles top + bottom (5-6px de altura, visibles en hover/tap-hold)
+  - Arrastrar handle top → ajusta `start_time` (manteniendo `end_time` fijo)
+  - Arrastrar handle bottom → ajusta `end_time` (manteniendo `start_time` fijo)
+  - Snap a intervalos de 15 min
+  - Validación: no solapar con otra task scheduled del user ni con external event (busy slot de calendar connection)
+  - Si solape detectado → resize se cancela visualmente y toast "No se puede solapar con [otra task / evento de Google]"
+  - Mínimo 15 min de duración
+  - Component test (RTL): simular drag de handle bottom → action update con nuevo `end_time`; test caso solape → action NO se llama y toast aparece
+
+### US-140 — Congelar plan semanal / mensual
+
+**Como** P-1, **quiero** "congelar" el plan de la semana o mes **para** después comparar qué se cumplió vs qué se movió.
+
+- Linked: FT-140
+- AC:
+  - En `/week` y `/month`, control `PlanSnapshotControls` con botón "Congelar plan"
+  - Tap → snapshot del estado actual de activities scheduled (date, status, project) se guarda como `PlanSnapshot` row con `scope='week'|'month'`, `period_start`, `created_at`
+  - Banner persistente arriba del view: "Plan congelado · [fecha snapshot]"
+  - Solo 1 snapshot activo por scope por periodo (re-congelar pisa el anterior con confirm)
+  - User puede "Descongelar" (borra snapshot) o "Ver plan original" (abre `PlanSnapshotViewer`)
+  - Component test (RTL): tap congelar → banner aparece; tap descongelar → banner desaparece
+
+### US-141 — Indicador "movida desde" en tasks reprogramadas
+
+**Como** P-1, **quiero** ver qué tasks cambiaron de fecha después de congelar el plan **para** detectar mi patrón de procrastinación.
+
+- Linked: FT-141
+- AC:
+  - Si una activity tiene `scheduled_date != snapshot.scheduled_date` (cambió post-snapshot), aparece icon History junto al row
+  - Tooltip / press: "Movida desde [fecha original del snapshot]"
+  - El indicador desaparece si user descongela el plan o si activity vuelve a la fecha original
+  - Aplica también a activities movidas del pool al día y viceversa
+
+### US-142 — Comparar plan congelado vs ejecución
+
+**Como** P-1, **quiero** ver lado a lado plan original vs ejecución **para** análisis honesto en weekly/monthly review.
+
+- Linked: FT-142
+- AC:
+  - `PlanSnapshotViewer` abre vista split: izquierda = plan congelado, derecha = ejecución actual
+  - Cada row indica: same / moved (con fecha original → nueva) / added (no estaba en plan) / removed (estaba pero borrada)
+  - KPI superior: % de tasks del plan original que se cumplieron en su fecha
+  - Alimenta el post-mortem semanal (FT-103) cuando existe snapshot
+
+---
+
 ## V1.5 — Placeholders (definir al iniciar v1.5)
 
 | US     | Linked FT      | Resumen                                                                  |
@@ -759,23 +986,24 @@ Stories agrupadas por **capa** (matching Feature Map). Cada story:
 
 ## Coverage check
 
-| Capa            | # MVP US    | # MVP FT    | Coverage                                    |
-| --------------- | ----------- | ----------- | ------------------------------------------- |
-| Auth            | US-001..005 | FT-001..004 | 100%                                        |
-| Organización    | US-010..018 | FT-010..014 | 100%                                        |
-| Modelo temporal | US-020..027 | FT-020..028 | 100%                                        |
-| Sheets          | US-030..035 | FT-030..036 | 100%                                        |
-| Goals           | US-040..043 | FT-040..043 | 100%                                        |
-| AI Agent core   | US-050..053 | FT-050..056 | ~85% (FT-053, FT-054, FT-056 covered by AC) |
-| Challenges      | US-060..062 | FT-060..065 | ~80% (FT-063..065 v1.5)                     |
-| Voice capture   | US-070..073 | FT-070..075 | 100%                                        |
-| Check-ins       | US-080..087 | FT-080..089 | 100%                                        |
-| Google Cal      | US-090..092 | FT-090..093 | 100%                                        |
-| AI sugerencias  | US-100..103 | FT-100..104 | 100%                                        |
-| Billing infra   | US-110..111 | FT-110..113 | 100%                                        |
-| PWA + Settings  | US-120..124 | FT-120..124 | 100%                                        |
+| Capa            | # MVP US             | # MVP FT    | Coverage                                    |
+| --------------- | -------------------- | ----------- | ------------------------------------------- |
+| Auth            | US-001..005          | FT-001..004 | 100%                                        |
+| Organización    | US-010..018          | FT-010..014 | 100%                                        |
+| Modelo temporal | US-020..027          | FT-020..028 | 100%                                        |
+| Sheets          | US-030..035          | FT-030..036 | 100%                                        |
+| Goals           | US-040..043          | FT-040..043 | 100%                                        |
+| AI Agent core   | US-050..053          | FT-050..056 | ~85% (FT-053, FT-054, FT-056 covered by AC) |
+| Challenges      | US-060..062          | FT-060..065 | ~80% (FT-063..065 v1.5)                     |
+| Voice capture   | US-070..073          | FT-070..075 | 100%                                        |
+| Check-ins       | US-080..087          | FT-080..089 | 100%                                        |
+| Multi-calendar  | US-090..092, US-090b | FT-090..094 | 100%                                        |
+| Prototipo iter  | US-130..142          | FT-130..144 | 100%                                        |
+| AI sugerencias  | US-100..103          | FT-100..104 | 100%                                        |
+| Billing infra   | US-110..111          | FT-110..113 | 100%                                        |
+| PWA + Settings  | US-120..124          | FT-120..124 | 100%                                        |
 
-**Total MVP US:** ~60 stories cubriendo 74 features.
+**Total MVP US:** ~78 stories cubriendo 90 features (incluye 18 stories nuevas de iteración prototipo + 2 deprecaciones marcadas).
 
 ---
 

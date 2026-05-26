@@ -27,15 +27,18 @@
    │
    ├──── ∗ ──── DaySheet
    ├──── ∗ ──── WeekSheet
+   ├──── ∗ ──── MonthSheet
    ├──── ∗ ──── QuarterSheet (v1.5)
    ├──── ∗ ──── YearSheet (v1.5)
    ├──── ∗ ──── FiveYearSheet (v2)
    ├──── ∗ ──── LifeSheet (v2)
    │
+   ├──── ∗ ──── PlanSnapshot  (1:1 opcional con WeekSheet | MonthSheet)
+   │
    ├──── ∗ ──── Conversation ──── ∗ ──── Message
    ├──── ∗ ──── ProactiveTask
    ├──── ∗ ──── SheetEmbedding (v1.5, polymorphic)
-   ├──── 1 ──── GoogleCalendarConnection
+   ├──── ∗ ──── CalendarConnection  (N:1; multi-cuenta, multi-provider)
    ├──── 1 ──── Subscription ──── ∗ ──── 1 ──── Plan
    └──── ∗ ──── UsageMeter (bucketed monthly)
 ```
@@ -85,21 +88,26 @@ Cuenta del usuario. Multi-tenant root.
 
 Preferencias de check-in 1-to-1 con User.
 
-| Field                 | Type                               | Notes                               |
-| --------------------- | ---------------------------------- | ----------------------------------- |
-| `user_id`             | uuid pk FK → users.id              | ON DELETE CASCADE                   |
-| `morning_time`        | time NOT NULL DEFAULT '08:00'      | User TZ aware                       |
-| `midday_time`         | time NOT NULL DEFAULT '13:00'      |                                     |
-| `evening_time`        | time NOT NULL DEFAULT '21:00'      |                                     |
-| `weekly_kickoff_dow`  | smallint NOT NULL DEFAULT 0        | 0=Sunday … 6=Saturday               |
-| `weekly_kickoff_time` | time NOT NULL DEFAULT '18:00'      |                                     |
-| `weekly_review_dow`   | smallint NOT NULL DEFAULT 6        | 6=Saturday                          |
-| `weekly_review_time`  | time NOT NULL DEFAULT '20:00'      |                                     |
-| `weekend_enabled`     | boolean NOT NULL DEFAULT false     | Skip morning/midday/evening Sat+Sun |
-| `push_enabled`        | boolean NOT NULL DEFAULT true      |                                     |
-| `email_enabled`       | boolean NOT NULL DEFAULT false     | Email fallback                      |
-| `muted_until`         | timestamptz NULL                   | Temporary mute (US-087)             |
-| `updated_at`          | timestamptz NOT NULL DEFAULT now() |                                     |
+| Field                 | Type                               | Notes                                                                                                                                                                                           |
+| --------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user_id`             | uuid pk FK → users.id              | ON DELETE CASCADE                                                                                                                                                                               |
+| `morning_time`        | time NOT NULL DEFAULT '08:00'      | User TZ aware                                                                                                                                                                                   |
+| `midday_time`         | time NOT NULL DEFAULT '13:00'      |                                                                                                                                                                                                 |
+| `evening_time`        | time NOT NULL DEFAULT '21:00'      |                                                                                                                                                                                                 |
+| `weekly_kickoff_dow`  | smallint NOT NULL DEFAULT 0        | 0=Sunday … 6=Saturday                                                                                                                                                                           |
+| `weekly_kickoff_time` | time NOT NULL DEFAULT '18:00'      |                                                                                                                                                                                                 |
+| `weekly_review_dow`   | smallint NOT NULL DEFAULT 6        | 6=Saturday                                                                                                                                                                                      |
+| `weekly_review_time`  | time NOT NULL DEFAULT '20:00'      |                                                                                                                                                                                                 |
+| `weekend_skip`        | boolean NOT NULL DEFAULT false     | Toggle simple: si `true`, NO se envían check-ins sábado/domingo. Renombrado desde `weekend_enabled` para alinear semánticamente (skip-true = no enviar). Default `false` → manda 7 días/semana. |
+| `days_off`            | date[] NOT NULL DEFAULT '{}'       | Fechas absolutas en las que el agente NO debe enviar check-ins (vacaciones, días puntuales). NO recurring — para recurring usar `weekend_skip` u opciones futuras.                              |
+| `push_enabled`        | boolean NOT NULL DEFAULT true      |                                                                                                                                                                                                 |
+| `email_enabled`       | boolean NOT NULL DEFAULT false     | Email fallback                                                                                                                                                                                  |
+| `muted_until`         | timestamptz NULL                   | Temporary mute (US-087)                                                                                                                                                                         |
+| `updated_at`          | timestamptz NOT NULL DEFAULT now() |                                                                                                                                                                                                 |
+
+**Indexes:** GIN on `days_off` (filtrar rápido en cron de scheduling)
+
+**Channels v1:** solo push (PWA) + email. Discord movido a v2 (cualquier mención de Discord como canal en planning original queda diferida a v2 scope).
 
 **Linked:** FT-085, US-085, OPS-1..4
 
@@ -165,44 +173,56 @@ Nivel 2 de organización.
 
 Unidad de trabajo.
 
-| Field                  | Type                               | Notes                                                    |
-| ---------------------- | ---------------------------------- | -------------------------------------------------------- |
-| `id`                   | uuid pk                            |                                                          |
-| `user_id`              | uuid NOT NULL FK → users.id        | ON DELETE CASCADE                                        |
-| `project_id`           | uuid NOT NULL FK → projects.id     | ON DELETE RESTRICT (BR-2)                                |
-| `title`                | text NOT NULL                      |                                                          |
-| `description`          | text NULL                          |                                                          |
-| `scheduled_date`       | date NULL                          | NULL = pool task                                         |
-| `scheduled_time`       | time NULL                          | NULL = no anchor, just date                              |
-| `time_blocks`          | text[] NULL                        | Subset of {'morning','afternoon','evening'}              |
-| `deadline`             | timestamptz NULL                   | Different from scheduled                                 |
-| `estimated_minutes`    | int NULL                           |                                                          |
-| `priority`             | smallint NOT NULL DEFAULT 3        | 1-5, 5 highest                                           |
-| `recurrence_rule`      | text NULL                          | iCal RRULE string                                        |
-| `recurrence_parent_id` | uuid NULL FK → activities.id       | If this is a materialized instance                       |
-| `status`               | text NOT NULL DEFAULT 'pending'    | pending \| in_progress \| done \| skipped \| blocked     |
-| `completed_at`         | timestamptz NULL                   |                                                          |
-| `reason_not_done`      | text NULL                          | When skipped/blocked                                     |
-| `reason_category`      | text NULL                          | enum: time \| priority \| blocked \| didnt_want \| other |
-| `tags`                 | text[] NOT NULL DEFAULT '{}'       | Lowercase normalized                                     |
-| `deleted_at`           | timestamptz NULL                   |                                                          |
-| `created_at`           | timestamptz NOT NULL DEFAULT now() |                                                          |
-| `updated_at`           | timestamptz NOT NULL DEFAULT now() |                                                          |
+| Field                  | Type                               | Notes                                                                                                                                                                             |
+| ---------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                   | uuid pk                            |                                                                                                                                                                                   |
+| `user_id`              | uuid NOT NULL FK → users.id        | ON DELETE CASCADE                                                                                                                                                                 |
+| `project_id`           | uuid NOT NULL FK → projects.id     | ON DELETE RESTRICT (BR-2)                                                                                                                                                         |
+| `title`                | text NOT NULL                      |                                                                                                                                                                                   |
+| `description`          | text NULL                          |                                                                                                                                                                                   |
+| `scheduled_dates`      | date[] NOT NULL DEFAULT '{}'       | Reemplaza `scheduled_date`. `{}` = pool / backlog. v1 típicamente 0 o 1 elemento; multi-día soportado sin migration destructiva.                                                  |
+| `scheduled_time`       | time NULL                          | NULL = no anchor. Aplica al día agendado (sin fecha; combinada con cada `scheduled_dates[i]`).                                                                                    |
+| `duration_minutes`     | int NULL                           | Duración programada cuando la tarea está anchored en grid (`scheduled_time` set). NULL si pool o sin anchor.                                                                      |
+| `deadline`             | timestamptz NULL                   | Different from scheduled                                                                                                                                                          |
+| `estimated_minutes`    | int NULL                           | Estimación al crear; `duration_minutes` es el bloque agendado real.                                                                                                               |
+| `priority`             | smallint NOT NULL DEFAULT 3        | 1-5, 5 highest                                                                                                                                                                    |
+| `quadrant`             | smallint NULL                      | Eisenhower 1\|2\|3\|4. Materializado (no derivable) — user puede moverlo drag-and-drop sin cambiar priority/urgency. NULL = no clasificada.                                       |
+| `progress_percent`     | smallint NULL                      | 0..100. Usado en close-day cuando user marca "Avanzada" en vez de "Hecha". NULL si no aplica.                                                                                     |
+| `recurrence_rule`      | text NULL                          | DSL simplificado (NO RRULE completo). Sintaxis: `daily` \| `weekly:MO,WE,FR` \| `monthly:1` \| `monthly:last`. Validación Zod en `lib/validations/activity.ts`. v2 puede ampliar. |
+| `recurrence_parent_id` | uuid NULL FK → activities.id       | If this is a materialized instance                                                                                                                                                |
+| `status`               | text NOT NULL DEFAULT 'pending'    | pending \| in_progress \| done \| skipped \| blocked                                                                                                                              |
+| `completed_at`         | timestamptz NULL                   |                                                                                                                                                                                   |
+| `reason_not_done`      | text NULL                          | When skipped/blocked                                                                                                                                                              |
+| `reason_category`      | text NULL                          | enum: time \| priority \| blocked \| didnt_want \| other                                                                                                                          |
+| `tags`                 | text[] NOT NULL DEFAULT '{}'       | Lowercase normalized                                                                                                                                                              |
+| `deleted_at`           | timestamptz NULL                   |                                                                                                                                                                                   |
+| `created_at`           | timestamptz NOT NULL DEFAULT now() |                                                                                                                                                                                   |
+| `updated_at`           | timestamptz NOT NULL DEFAULT now() |                                                                                                                                                                                   |
+
+**Removed in prototype iteration:**
+
+- `scheduled_date` (single date) — reemplazado por `scheduled_dates` array.
+- `time_blocks` — la combinación `scheduled_time + duration_minutes` cubre todos los casos de uso del prototipo (no se requieren bloques semánticos morning/afternoon/evening).
 
 **Indexes:**
 
-- `(user_id, scheduled_date)` for daily queries
+- GIN on `scheduled_dates` for daily queries (`scheduled_dates @> ARRAY[?]::date[]`)
 - `(user_id, status, deadline)` for risk detection
 - `(user_id, project_id)`
+- `(user_id, quadrant)` for matrix views
 - `(recurrence_parent_id)` for cascade of materialized instances
 - GIN on `tags`
 
 **Constraints:**
 
 - `priority BETWEEN 1 AND 5`
+- `quadrant IS NULL OR quadrant BETWEEN 1 AND 4`
+- `progress_percent IS NULL OR progress_percent BETWEEN 0 AND 100`
+- `duration_minutes IS NULL OR duration_minutes > 0`
 - `status IN (...)`
 - `reason_category IN (...) OR reason_category IS NULL`
 - `(status IN ('skipped','blocked')) OR reason_not_done IS NULL` (only set when not done — soft rule, app enforces)
+- App-level: `scheduled_dates` se normaliza a fechas únicas y ordenadas asc antes de persistir.
 
 **Linked:** BR-2, BR-5, BR-8, BR-11, FT-012..028
 
@@ -286,36 +306,38 @@ M2M polymorphic Goal ↔ {Project | Activity}.
 
 ### E-020 — DaySheet
 
-Sheet del scope Day.
+Sheet del scope Day. Set de campos consolidado tras iteración del prototipo (se removieron `intention`, `gratitude` y los tres `energy_*` por ser redundantes con `identity_statement` o de bajo valor en la sesión matutina).
 
-| Field                  | Type                               | Notes                               |
-| ---------------------- | ---------------------------------- | ----------------------------------- |
-| `id`                   | uuid pk                            |                                     |
-| `user_id`              | uuid NOT NULL FK → users.id        | ON DELETE CASCADE                   |
-| `date`                 | date NOT NULL                      | User-TZ-local date                  |
-| **Morning fields:**    |                                    |                                     |
-| `notes_dreams`         | text NULL                          | Optional: notes from previous night |
-| `intention`            | text NULL                          |                                     |
-| `gratitude`            | text NULL                          |                                     |
-| `identity_statement`   | text NULL                          | "Hoy soy alguien que…"              |
-| `wins_planned`         | text[] NULL                        | Up to 3                             |
-| `avoidance`            | text NULL                          |                                     |
-| `energy_physical`      | smallint NULL                      | 1-5                                 |
-| `energy_mental`        | smallint NULL                      | 1-5                                 |
-| `energy_emotional`     | smallint NULL                      | 1-5                                 |
-| `morning_completed_at` | timestamptz NULL                   |                                     |
-| **Evening fields:**    |                                    |                                     |
-| `evening_win`          | text NULL                          |                                     |
-| `evening_lesson`       | text NULL                          |                                     |
-| `tomorrow_top`         | text NULL                          |                                     |
-| `insight`              | text NULL                          | Worth keeping (opt)                 |
-| `evening_completed_at` | timestamptz NULL                   |                                     |
-| `created_at`           | timestamptz NOT NULL DEFAULT now() |                                     |
-| `updated_at`           | timestamptz NOT NULL DEFAULT now() |                                     |
+| Field                       | Type                               | Notes                                                                                                                                                                                             |
+| --------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                        | uuid pk                            |                                                                                                                                                                                                   |
+| `user_id`                   | uuid NOT NULL FK → users.id        | ON DELETE CASCADE                                                                                                                                                                                 |
+| `date`                      | date NOT NULL                      | User-TZ-local date                                                                                                                                                                                |
+| **Morning fields:**         |                                    |                                                                                                                                                                                                   |
+| `notes_dreams`              | text NULL                          | Optional: notes from previous night                                                                                                                                                               |
+| `identity_statement`        | text NULL                          | "Hoy soy alguien que…"                                                                                                                                                                            |
+| `wins_planned`              | text[] NULL                        | Up to 3 (wins del día, se llenan en sesión matutina; el cierre NO los re-pregunta)                                                                                                                |
+| `avoidance`                 | text NULL                          |                                                                                                                                                                                                   |
+| `morning_completed_at`      | timestamptz NULL                   |                                                                                                                                                                                                   |
+| **Evening / close fields:** |                                    |                                                                                                                                                                                                   |
+| `close_summary`             | text NULL                          | One-liner reflexión al cerrar el día. Es el único campo de cierre — el outcome de cada activity vive en la propia Activity (status + `progress_percent` + `reason_not_done` + `reason_category`). |
+| `evening_completed_at`      | timestamptz NULL                   |                                                                                                                                                                                                   |
+| `created_at`                | timestamptz NOT NULL DEFAULT now() |                                                                                                                                                                                                   |
+| `updated_at`                | timestamptz NOT NULL DEFAULT now() |                                                                                                                                                                                                   |
+
+**Removed in prototype iteration:** `intention`, `gratitude`, `energy_physical`, `energy_mental`, `energy_emotional`, `evening_win`, `evening_lesson`, `tomorrow_top`, `insight`. El cierre se redujo a `close_summary` + outcome individual por activity (ver párrafo siguiente).
+
+**Cierre del día (close-day modal):** cuando el user cierra el día, por cada Activity con `?::date = ANY(scheduled_dates)` para `date` del sheet, se registra un outcome individual en la propia Activity:
+
+- "Hecha" → `status = 'done'`, `completed_at = now()`
+- "Avanzada" → `status` permanece (típicamente `in_progress` o `pending`) + `progress_percent` set
+- "Pendiente / saltada" → `status = 'skipped'` + `reason_not_done` + `reason_category`
+
+No hay sección "wins" en el modal de cierre — los wins viven en `wins_planned` del morning.
 
 **Indexes:** UNIQUE `(user_id, date)` (BR-7); `(user_id, date DESC)` for "last N days" queries
 
-**Constraints:** energy fields BETWEEN 1 AND 5; `array_length(wins_planned, 1) <= 3 OR wins_planned IS NULL`
+**Constraints:** `array_length(wins_planned, 1) <= 3 OR wins_planned IS NULL`
 
 **Linked:** BR-7, FT-030, FT-031
 
@@ -354,6 +376,64 @@ Sheet del scope Week. Week starts Sunday in user TZ.
 **Constraints:** `review_energy BETWEEN 1 AND 10`; `array_length(three_wins, 1) <= 3 OR three_wins IS NULL`
 
 **Linked:** BR-7, FT-034, FT-035
+
+---
+
+### E-026 — MonthSheet
+
+Sheet del scope Month. Planning mensual ligero. Snapshot mechanism via [E-027 PlanSnapshot](#e-027--plansnapshot).
+
+| Field            | Type                               | Notes                                                                                          |
+| ---------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `id`             | uuid pk                            |                                                                                                |
+| `user_id`        | uuid NOT NULL FK → users.id        | ON DELETE CASCADE                                                                              |
+| `month_starting` | date NOT NULL                      | Siempre día 1 del mes en TZ del user                                                           |
+| `goals`          | text NULL                          | Texto libre o JSON estructurado de objetivos del mes (decisión schema final en implementación) |
+| `themes`         | text[] NOT NULL DEFAULT '{}'       | 3-5 temas / focus areas                                                                        |
+| `close_summary`  | text NULL                          | Reflexión al cerrar el mes                                                                     |
+| `closed_at`      | timestamptz NULL                   |                                                                                                |
+| `created_at`     | timestamptz NOT NULL DEFAULT now() |                                                                                                |
+| `updated_at`     | timestamptz NOT NULL DEFAULT now() |                                                                                                |
+
+**Indexes:** UNIQUE `(user_id, month_starting)`; `(user_id, month_starting DESC)`
+
+**Constraints:**
+
+- App-level: `month_starting` debe ser día 1 del mes en TZ del user (`EXTRACT(DAY FROM month_starting) = 1`)
+- `array_length(themes, 1) BETWEEN 3 AND 5 OR array_length(themes, 1) IS NULL` (soft — UI sugiere, DB no bloquea)
+
+**Relación:** 1:1 opcional con `PlanSnapshot` vía `plan_snapshot.reference_id` con `scope='month'`.
+
+**Linked:** BR-7 (extendido — ver nota), FT-???
+
+> ⚠️ **Nota BR-7:** este sheet extiende BR-7 ("Sheets únicos por (user_id, period)") a scope `month`. Actualmente BR-7 enumera day/week/quarter/year — pendiente de reconciliar en 05_BUSINESS_RULES.md.
+
+---
+
+### E-027 — PlanSnapshot
+
+Congela el estado planificado de un Week o Month al inicio del período, para comparar contra ejecución real. La UI usa el snapshot para mostrar "moved-from indicator" cuando una activity cambia de fecha vs el plan original.
+
+| Field          | Type                               | Notes                                                                                                                  |
+| -------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `id`           | uuid pk                            |                                                                                                                        |
+| `user_id`      | uuid NOT NULL FK → users.id        | ON DELETE CASCADE                                                                                                      |
+| `scope`        | text NOT NULL                      | enum: `week` \| `month`                                                                                                |
+| `reference_id` | uuid NOT NULL                      | FK lógica a `week_sheet.id` (si scope=week) o `month_sheet.id` (si scope=month). Polymorphic; FK enforced en app code. |
+| `frozen_at`    | timestamptz NOT NULL DEFAULT now() | Momento del freeze                                                                                                     |
+| `payload`      | jsonb NOT NULL                     | Snapshot de actividades del período: `[{activity_id, title, scheduled_dates, priority, quadrant, project_id, ...}]`    |
+| `created_at`   | timestamptz NOT NULL DEFAULT now() |                                                                                                                        |
+
+**Indexes:** UNIQUE `(user_id, scope, reference_id)` — exactamente 1 snapshot por (user, scope, period)
+
+**Constraints:** `scope IN ('week','month')`
+
+**Lifecycle:**
+
+- Crear: cuando el user "compromete" el plan al inicio del Week/Month (kickoff). Una sola snapshot por (user, scope, reference).
+- Read-only: el payload no se actualiza tras `frozen_at` — la comparación con realidad la hace la UI cruzando `payload` con el estado actual de las Activities.
+
+**Linked:** FT-??? (week kickoff freeze, monthly plan freeze)
 
 ---
 
@@ -511,20 +591,32 @@ Embeddings de campos clave para pattern detection.
 
 ---
 
-### E-060 — GoogleCalendarConnection
+### E-060 — CalendarConnection
 
-OAuth tokens encriptados.
+OAuth tokens encriptados. Reemplaza la antigua `GoogleCalendarConnection` 1:1 con una relación N:1 — un mismo user puede conectar 2+ cuentas (típicamente trabajo + personal) y, a futuro, providers distintos.
 
-| Field             | Type                               | Notes                   |
-| ----------------- | ---------------------------------- | ----------------------- |
-| `user_id`         | uuid pk FK → users.id              | ON DELETE CASCADE       |
-| `access_token`    | bytea NOT NULL                     | `pgp_sym_encrypt`       |
-| `refresh_token`   | bytea NOT NULL                     | `pgp_sym_encrypt`       |
-| `expires_at`      | timestamptz NOT NULL               | OAuth token expiry      |
-| `calendar_ids`    | text[] NOT NULL DEFAULT '{}'       | Which calendars to sync |
-| `connected_at`    | timestamptz NOT NULL DEFAULT now() |                         |
-| `last_synced_at`  | timestamptz NULL                   |                         |
-| `last_sync_error` | text NULL                          |                         |
+| Field                 | Type                               | Notes                                                                                                                                   |
+| --------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                  | uuid pk                            |                                                                                                                                         |
+| `user_id`             | uuid NOT NULL FK → users.id        | ON DELETE CASCADE                                                                                                                       |
+| `provider`            | text NOT NULL                      | enum: `google` \| `apple` \| `outlook`. v1 sólo `google`; `apple`/`outlook` diferidos a v1.5.                                           |
+| `external_account_id` | text NOT NULL                      | Identificador estable de la cuenta externa (ej: email de la cuenta Google). Permite distinguir 2+ conexiones del mismo user.            |
+| `access_token`        | bytea NOT NULL                     | `pgp_sym_encrypt` (BR-12)                                                                                                               |
+| `refresh_token`       | bytea NOT NULL                     | `pgp_sym_encrypt` (BR-12)                                                                                                               |
+| `expires_at`          | timestamptz NOT NULL               | OAuth token expiry                                                                                                                      |
+| `calendar_ids`        | text[] NOT NULL DEFAULT '{}'       | Which calendars de esta cuenta a sync                                                                                                   |
+| `enabled`             | boolean NOT NULL DEFAULT true      | Toggle por-conexión sin desconectar (pausa sync sin borrar tokens)                                                                      |
+| `connected_at`        | timestamptz NOT NULL DEFAULT now() |                                                                                                                                         |
+| `last_synced_at`      | timestamptz NULL                   |                                                                                                                                         |
+| `last_sync_error`     | text NULL                          |                                                                                                                                         |
+| `account_label`       | text NULL                          | Label opcional editable por el user (ej. "Trabajo", "Personal"). Si NULL, UI muestra `external_account_id`.                             |
+| `color`               | text NULL                          | Hex color (`#RRGGBB`) para distinguir visualmente eventos de cada cuenta en /week + /month. Default null → UI hashea desde provider/id. |
+
+**Indexes:** UNIQUE `(user_id, provider, external_account_id)`; `(user_id, enabled)` for active-connections queries
+
+**Constraints:** `provider IN ('google','apple','outlook')`; `color ~ '^#[0-9A-Fa-f]{6}$' OR color IS NULL`
+
+**Relación:** N:1 con User (vs 1:1 anterior). [E-061 CalendarBusySlot](#e-061--calendarbusyslot-cache) gana columna `connection_id` FK → calendar_connections.id (ver E-061 update).
 
 **Linked:** BR-12, FT-090
 
@@ -534,17 +626,18 @@ OAuth tokens encriptados.
 
 Cached busy slots, refreshed every 15 min.
 
-| Field         | Type                               | Notes              |
-| ------------- | ---------------------------------- | ------------------ |
-| `id`          | uuid pk                            |                    |
-| `user_id`     | uuid NOT NULL FK                   |                    |
-| `calendar_id` | text NOT NULL                      | Google calendar ID |
-| `start_at`    | timestamptz NOT NULL               |                    |
-| `end_at`      | timestamptz NOT NULL               |                    |
-| `event_title` | text NULL                          | For display        |
-| `synced_at`   | timestamptz NOT NULL DEFAULT now() |                    |
+| Field           | Type                                       | Notes                                                       |
+| --------------- | ------------------------------------------ | ----------------------------------------------------------- |
+| `id`            | uuid pk                                    |                                                             |
+| `user_id`       | uuid NOT NULL FK                           |                                                             |
+| `connection_id` | uuid NOT NULL FK → calendar_connections.id | ON DELETE CASCADE. Permite saber de qué cuenta vino el slot |
+| `calendar_id`   | text NOT NULL                              | Provider calendar ID (Google/Apple/Outlook)                 |
+| `start_at`      | timestamptz NOT NULL                       |                                                             |
+| `end_at`        | timestamptz NOT NULL                       |                                                             |
+| `event_title`   | text NULL                                  | For display                                                 |
+| `synced_at`     | timestamptz NOT NULL DEFAULT now()         |                                                             |
 
-**Indexes:** `(user_id, start_at, end_at)`
+**Indexes:** `(user_id, start_at, end_at)`; `(connection_id, start_at)`
 
 ---
 
@@ -631,12 +724,13 @@ These live alongside our schema but are managed by NextAuth conventions. See [sr
 ### v1 launch migrations
 
 1. `000_init` — Auth (users, accounts, sessions, verification_tokens) + Plans + Subscriptions + UsageMeters
-2. `001_organization` — Categories, Projects, Activities, Subtasks
-3. `002_sheets` — DaySheet, WeekSheet
-4. `003_goals` — Goal, GoalLink
-5. `004_conversations` — Conversation, Message, ProactiveTask
-6. `005_calendar` — GoogleCalendarConnection, CalendarBusySlot
-7. `006_seed` — Plan 'free' default; trigger to auto-create Inbox category+project for new users
+2. `001_organization` — Categories, Projects, Activities (con `scheduled_dates`, `quadrant`, `progress_percent`, `duration_minutes`), Subtasks
+3. `002_sheets` — DaySheet, WeekSheet, MonthSheet
+4. `003_plan_snapshot` — PlanSnapshot (scope week + month)
+5. `004_goals` — Goal, GoalLink
+6. `005_conversations` — Conversation, Message, ProactiveTask
+7. `006_calendar` — CalendarConnection (multi-provider, multi-cuenta), CalendarBusySlot
+8. `007_seed` — Plan 'free' default; trigger to auto-create Inbox category+project for new users
 
 ### v1.5 migrations
 
@@ -653,32 +747,34 @@ These live alongside our schema but are managed by NextAuth conventions. See [sr
 
 ## Data lifecycle
 
-| Entity                   | Hard delete trigger                                      | Soft delete? |
-| ------------------------ | -------------------------------------------------------- | ------------ |
-| User                     | Cron 30d after `deleted_at` (BR-14)                      | Yes          |
-| Category                 | Cron 30d after `deleted_at`                              | Yes (BR-4)   |
-| Project                  | Cron 30d after `deleted_at`                              | Yes          |
-| Activity                 | Cron 30d after `deleted_at`                              | Yes          |
-| Subtask                  | CASCADE from Activity                                    | No           |
-| Goal                     | Cron 30d after `deleted_at`                              | Yes          |
-| DaySheet, WeekSheet, etc | CASCADE from User only                                   | No           |
-| Conversation, Message    | CASCADE from User only; retention TBD (OQ-5)             | No           |
-| ProactiveTask            | Cron 90d after `created_at` if status='sent'/'dismissed' | No           |
-| CalendarBusySlot         | TTL 15 min refresh                                       | No           |
-| UsageMeter               | Keep forever (analytics)                                 | No           |
+| Entity                               | Hard delete trigger                                      | Soft delete? |
+| ------------------------------------ | -------------------------------------------------------- | ------------ |
+| User                                 | Cron 30d after `deleted_at` (BR-14)                      | Yes          |
+| Category                             | Cron 30d after `deleted_at`                              | Yes (BR-4)   |
+| Project                              | Cron 30d after `deleted_at`                              | Yes          |
+| Activity                             | Cron 30d after `deleted_at`                              | Yes          |
+| Subtask                              | CASCADE from Activity                                    | No           |
+| Goal                                 | Cron 30d after `deleted_at`                              | Yes          |
+| DaySheet, WeekSheet, MonthSheet, etc | CASCADE from User only                                   | No           |
+| PlanSnapshot                         | CASCADE from User; referencia lógica week/month sheet    | No           |
+| CalendarConnection                   | CASCADE from User                                        | No           |
+| Conversation, Message                | CASCADE from User only; retention TBD (OQ-5)             | No           |
+| ProactiveTask                        | Cron 90d after `created_at` if status='sent'/'dismissed' | No           |
+| CalendarBusySlot                     | TTL 15 min refresh                                       | No           |
+| UsageMeter                           | Keep forever (analytics)                                 | No           |
 
 ---
 
 ## Sensitive data classification
 
-| Field                                                      | Sensitivity | Treatment                                         |
-| ---------------------------------------------------------- | ----------- | ------------------------------------------------- |
-| `users.password_hash`                                      | High        | bcrypt; never logged                              |
-| `users.email`                                              | Medium      | Logged in error reports as hash                   |
-| `google_calendar_connection.access_token`, `refresh_token` | High        | pgcrypto encrypted (BR-12)                        |
-| `conversations.*` user messages content                    | Medium      | Logged for AI eval, redacted in errors            |
-| `usage_meters.*`                                           | Low         | No PII; safe to log                               |
-| `messages.audio_url`                                       | High        | NULL in production (BR-13); audio never persisted |
+| Field                                               | Sensitivity | Treatment                                                 |
+| --------------------------------------------------- | ----------- | --------------------------------------------------------- |
+| `users.password_hash`                               | High        | bcrypt; never logged                                      |
+| `users.email`                                       | Medium      | Logged in error reports as hash                           |
+| `calendar_connection.access_token`, `refresh_token` | High        | pgcrypto encrypted (BR-12) — aplica a todos los providers |
+| `conversations.*` user messages content             | Medium      | Logged for AI eval, redacted in errors                    |
+| `usage_meters.*`                                    | Low         | No PII; safe to log                                       |
+| `messages.audio_url`                                | High        | NULL in production (BR-13); audio never persisted         |
 
 ---
 

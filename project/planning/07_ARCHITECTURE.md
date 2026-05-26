@@ -169,7 +169,7 @@ src/
 │   │   └── google-calendar-sync.ts
 │   ├── domain/                          # Pure logic
 │   │   ├── activity-transitions.ts      # BR-8
-│   │   ├── recurrence.ts                # RRULE expansion BR-11
+│   │   ├── recurrence.ts                # DSL expansion BR-11 (daily | weekly:DOWs | monthly:N|last)
 │   │   ├── week-calc.ts                 # Sunday boundary in user TZ
 │   │   ├── challenge-detect.ts          # 5 challenge types
 │   │   └── goal-status.ts               # BR-9

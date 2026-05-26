@@ -67,7 +67,8 @@ import {
   type StatusReason,
 } from './ActivityStatusModal';
 import type { TodayView } from './TodayViewToggle';
-import type { Quadrant } from './EisenhowerMatrix';
+
+type Quadrant = 1 | 2 | 3 | 4;
 
 type PoolScope = 'today' | 'week' | 'backlog';
 
@@ -325,7 +326,7 @@ export function TodayActivitiesBoard({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const blockedHours = useMemo(() => {
@@ -345,11 +346,7 @@ export function TodayActivitiesBoard({
 
   const activeActivity = useMemo(() => {
     if (!activeId) return null;
-    return (
-      scheduled.find((a) => a.id === activeId) ??
-      pool.find((a) => a.id === activeId) ??
-      null
-    );
+    return scheduled.find((a) => a.id === activeId) ?? pool.find((a) => a.id === activeId) ?? null;
   }, [activeId, scheduled, pool]);
 
   function handleDragStart(e: DragStartEvent) {
@@ -372,11 +369,7 @@ export function TodayActivitiesBoard({
     // --- Drop on a pool section ---
     if (POOL_DROP_TARGETS.has(overId)) {
       const nextScope: PoolScope =
-        overId === DROP_POOL_TODAY
-          ? 'today'
-          : overId === DROP_POOL_WEEK
-            ? 'week'
-            : 'backlog';
+        overId === DROP_POOL_TODAY ? 'today' : overId === DROP_POOL_WEEK ? 'week' : 'backlog';
 
       if (inScheduled) {
         const moved = scheduled.find((a) => a.id === aId);
@@ -397,9 +390,7 @@ export function TodayActivitiesBoard({
           },
         ]);
       } else if (inPool) {
-        setPool((prev) =>
-          prev.map((a) => (a.id === aId ? { ...a, scope: nextScope } : a)),
-        );
+        setPool((prev) => prev.map((a) => (a.id === aId ? { ...a, scope: nextScope } : a)));
       }
       return;
     }
@@ -439,9 +430,7 @@ export function TodayActivitiesBoard({
       if (blockedHours.has(hour)) return;
 
       if (inScheduled) {
-        setScheduled((prev) =>
-          prev.map((a) => (a.id === aId ? { ...a, scheduledTime: hour } : a)),
-        );
+        setScheduled((prev) => prev.map((a) => (a.id === aId ? { ...a, scheduledTime: hour } : a)));
       } else if (inPool) {
         const moved = pool.find((a) => a.id === aId);
         if (!moved) return;
@@ -499,23 +488,17 @@ export function TodayActivitiesBoard({
 
   function handleResize(id: string, nextDurationMinutes: number) {
     setScheduled((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, durationMinutes: nextDurationMinutes } : a,
-      ),
+      prev.map((a) => (a.id === id ? { ...a, durationMinutes: nextDurationMinutes } : a))
     );
   }
 
-  function handleResizeStart(
-    id: string,
-    nextStartTime: string,
-    nextDurationMinutes: number,
-  ) {
+  function handleResizeStart(id: string, nextStartTime: string, nextDurationMinutes: number) {
     setScheduled((prev) =>
       prev.map((a) =>
         a.id === id
           ? { ...a, scheduledTime: nextStartTime, durationMinutes: nextDurationMinutes }
-          : a,
-      ),
+          : a
+      )
     );
   }
 
@@ -606,19 +589,21 @@ export function TodayActivitiesBoard({
           {existing}
           {row}
         </>
-      ) : row;
+      ) : (
+        row
+      );
     }
     for (const evt of EXTERNAL_EVENTS) {
       const existing = map[evt.hour];
-      const block = (
-        <ExternalEventRow key={evt.id} title={evt.title} timeRange={evt.timeRange} />
-      );
+      const block = <ExternalEventRow key={evt.id} title={evt.title} timeRange={evt.timeRange} />;
       map[evt.hour] = existing ? (
         <>
           {existing}
           {block}
         </>
-      ) : block;
+      ) : (
+        block
+      );
     }
     return map;
   }, [scheduled]);
@@ -792,9 +777,7 @@ export function TodayActivitiesBoard({
           </div>
         </div>
 
-        <DragOverlay
-          dropAnimation={{ duration: 160, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}
-        >
+        <DragOverlay dropAnimation={{ duration: 160, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}>
           {activeActivity ? (
             <div
               style={{
