@@ -149,6 +149,22 @@ export const deleteActivitySchema = z.object({
   id: idSchema,
 });
 
+/**
+ * ISSUE-017 — guarded state-machine transition. The action validates the
+ * BR-8 matrix (see `lib/domain/activity-transitions.ts`) and the reason
+ * requirements (textRequired for `blocked`).
+ *
+ * `reasonCategory` is the structured enum (time | priority | blocked |
+ * didnt_want | other), `reasonText` is free-form user input.
+ */
+export const transitionActivitySchema = z.object({
+  id: idSchema,
+  toStatus: z.enum(ACTIVITY_STATUSES),
+  reasonCategory: reasonCategorySchema,
+  reasonText: z.string().trim().max(500, 'Máximo 500 caracteres').nullable().optional(),
+});
+
 export type CreateActivityInput = z.infer<typeof createActivitySchema>;
 export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
 export type DeleteActivityInput = z.infer<typeof deleteActivitySchema>;
+export type TransitionActivityInput = z.infer<typeof transitionActivitySchema>;

@@ -27,7 +27,11 @@ import {
   createActivitySchema,
   updateActivitySchema,
   deleteActivitySchema,
+  transitionActivitySchema,
 } from '@/lib/validations/activity';
+import { isAllowedTransition, reasonRequirementFor } from '@/lib/domain/activity-transitions';
+import { logger } from '@/lib/logger';
+import type { ActivityStatus } from '@/lib/db/schema/activities';
 
 /** Find the Inbox project id for the user, or null if not yet seeded. */
 async function findInboxProjectId(userId: string): Promise<string | null> {
@@ -166,6 +170,97 @@ export async function updateActivity(input: unknown): Promise<ActionResult> {
         .update('activities', updates as Record<string, unknown>)
         .where(eq(activities.id, data.id))
         .execute();
+    }
+  );
+}
+
+/**
+ * Guarded state-machine transition (ISSUE-017, BR-8).
+ *
+ * Public user-facing API for status changes. Unlike `updateActivity`
+ * (which is permissive on status for internal/admin paths), this action:
+ *
+ *   1. Validates the (from, to) edge against the BR-8 matrix
+ *      — `done → skipped` etc are rejected with ActionError.
+ *   2. Enforces reason requirements:
+ *      - `blocked` REQUIRES `reasonText` (textarea filled).
+ *      - `skipped` accepts optional `reasonCategory` + `reasonText`.
+ *      - Other targets ignore reason inputs.
+ *   3. Applies BR-17 (status=done forces progress=100 + sets completed_at).
+ *   4. Clears `completed_at` when leaving `done` (undo flow).
+ *   5. Clears stale `reason_*` when transitioning to `pending` (re-activate).
+ *   6. Logs a stub for the agent challenge layer (ISSUE-060) — when the
+ *      user marks `skipped`/`blocked` without a reason category, the
+ *      challenge system can pick up the gap.
+ */
+export async function transitionActivity(input: unknown): Promise<ActionResult> {
+  return await withSelf(
+    { schema: transitionActivitySchema, revalidate: '/today' },
+    input,
+    async (data, userId) => {
+      const sdb = scopedDb(userId);
+
+      const existing = await sdb.select('activities', eq(activities.id, data.id));
+      if (existing.length === 0) {
+        throw new ActionError('Actividad no encontrada');
+      }
+      const current = existing[0];
+      const fromStatus = current.status as ActivityStatus;
+      const toStatus = data.toStatus;
+
+      // No-op when status doesn't change. Defensive — UI shouldn't request
+      // it but a double-tap could.
+      if (fromStatus === toStatus) return;
+
+      if (!isAllowedTransition(fromStatus, toStatus)) {
+        throw new ActionError('Transición no permitida');
+      }
+
+      const reqs = reasonRequirementFor(toStatus);
+      if (reqs.textRequired && (!data.reasonText || data.reasonText.length === 0)) {
+        throw new ActionError('Indica por qué está bloqueado');
+      }
+
+      const updates: Partial<typeof activities.$inferInsert> & {
+        completedAt?: Date | null;
+        reasonNotDone?: string | null;
+        reasonCategory?: string | null;
+        progressPercent?: number | null;
+      } = {
+        status: toStatus,
+      };
+
+      // BR-17: status=done forces progress=100 + completed_at.
+      if (toStatus === 'done') {
+        updates.progressPercent = 100;
+        if (!current.completedAt) updates.completedAt = new Date();
+      } else if (fromStatus === 'done') {
+        // Undo from done — clear completed_at.
+        updates.completedAt = null;
+      }
+
+      // Reason payload — only persisted when the target accepts it.
+      if (reqs.categoryAllowed) {
+        updates.reasonCategory = data.reasonCategory ?? null;
+        updates.reasonNotDone = data.reasonText ?? null;
+      } else if (toStatus === 'pending') {
+        // Re-activating wipes stale reason fields.
+        updates.reasonCategory = null;
+        updates.reasonNotDone = null;
+      }
+
+      await sdb
+        .update('activities', updates as Record<string, unknown>)
+        .where(eq(activities.id, data.id))
+        .execute();
+
+      // ISSUE-060 stub — agent challenge picks up activities transitioned
+      // to skipped/blocked without a reason category.
+      if ((toStatus === 'skipped' || toStatus === 'blocked') && !data.reasonCategory) {
+        logger.info(
+          `[activity] transition ${fromStatus}→${toStatus} without reason_category (userId=${userId}, activityId=${data.id})`
+        );
+      }
     }
   );
 }

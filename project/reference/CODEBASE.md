@@ -360,6 +360,7 @@
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
 | `src\lib\db\seeds\plans.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\billing.ts` | — |
 | `src\lib\db\utils\pagination.ts` | — | — |
+| `src\lib\domain\activity-transitions.ts` | — | — |
 | `src\lib\email\index.ts` | `src\lib\email\resend.ts`, `src\lib\email\smtp.ts`, `src\lib\email\types.ts` | — |
 | `src\lib\email\logo-data.ts` | — | `src\lib\email\resend.ts`, `src\lib\email\smtp.ts` |
 | `src\lib\email\resend.ts` | `src\lib\email\types.ts`, `src\lib\email\logo-data.ts` | `src\lib\email\index.ts` |
@@ -416,10 +417,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 366 |
+| Total files analyzed | 367 |
 | Total connections | 125 |
 | High-risk files (2+ deps) | 25 |
-| Orphan files (no connections) | 246 |
+| Orphan files (no connections) | 247 |
 
 ---
 

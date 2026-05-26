@@ -402,3 +402,204 @@ describe('deleteActivity', () => {
     expect(result.error).toBe('Actividad no encontrada');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// transitionActivity (ISSUE-017) — BR-8 matrix + reason capture
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('transitionActivity — BR-8 enforcement', () => {
+  beforeEach(reset);
+
+  it('happy path: pending → done sets progress=100 + completed_at', async () => {
+    scopedState.selectResults = [
+      [{ id: ACTIVITY_ID, status: 'pending', progressPercent: null, completedAt: null }],
+    ];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'done' });
+
+    expect(result.error).toBeUndefined();
+    const set = scopedState.updated?.set as Record<string, unknown>;
+    expect(set.status).toBe('done');
+    expect(set.progressPercent).toBe(100);
+    expect(set.completedAt).toBeInstanceOf(Date);
+  });
+
+  it('rejects done → skipped (BR-8 forbidden)', async () => {
+    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'done', completedAt: new Date() }]];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'skipped' });
+
+    expect(result.error).toBe('Transición no permitida');
+    expect(scopedState.updated).toBeUndefined();
+  });
+
+  it('rejects done → blocked (BR-8 forbidden)', async () => {
+    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'done', completedAt: new Date() }]];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'blocked' });
+
+    expect(result.error).toBe('Transición no permitida');
+  });
+
+  it('rejects skipped → done (must route via pending)', async () => {
+    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'skipped' }]];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'done' });
+
+    expect(result.error).toBe('Transición no permitida');
+  });
+
+  it('no-ops when fromStatus === toStatus', async () => {
+    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'pending' }]];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'pending' });
+
+    expect(result.error).toBeUndefined();
+    expect(scopedState.updated).toBeUndefined();
+  });
+});
+
+describe('transitionActivity — reason capture', () => {
+  beforeEach(reset);
+
+  it('rejects → blocked without reasonText with "Indica por qué..."', async () => {
+    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'pending' }]];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({
+      id: ACTIVITY_ID,
+      toStatus: 'blocked',
+      // no reasonText
+    });
+
+    expect(result.error).toMatch(/Indica por qué está bloqueado/);
+    expect(scopedState.updated).toBeUndefined();
+  });
+
+  it('accepts → blocked with reasonText + reasonCategory', async () => {
+    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'pending' }]];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({
+      id: ACTIVITY_ID,
+      toStatus: 'blocked',
+      reasonText: 'Espero feedback de cliente',
+      reasonCategory: 'blocked',
+    });
+
+    expect(result.error).toBeUndefined();
+    const set = scopedState.updated?.set as Record<string, unknown>;
+    expect(set.status).toBe('blocked');
+    expect(set.reasonNotDone).toBe('Espero feedback de cliente');
+    expect(set.reasonCategory).toBe('blocked');
+  });
+
+  it('accepts → skipped without reasonText (optional)', async () => {
+    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'pending' }]];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({
+      id: ACTIVITY_ID,
+      toStatus: 'skipped',
+      reasonCategory: 'time',
+    });
+
+    expect(result.error).toBeUndefined();
+    const set = scopedState.updated?.set as Record<string, unknown>;
+    expect(set.status).toBe('skipped');
+    expect(set.reasonCategory).toBe('time');
+  });
+
+  it('rejects invalid reasonCategory at Zod layer', async () => {
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({
+      id: ACTIVITY_ID,
+      toStatus: 'skipped',
+      reasonCategory: 'bogus_value',
+    });
+
+    expect(result.error).toBeDefined();
+    expect(scopedState.updated).toBeUndefined();
+  });
+});
+
+describe('transitionActivity — undo + reactivate semantics', () => {
+  beforeEach(reset);
+
+  it('done → pending clears completed_at', async () => {
+    scopedState.selectResults = [
+      [{ id: ACTIVITY_ID, status: 'done', completedAt: new Date('2026-05-19') }],
+    ];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'pending' });
+
+    expect(result.error).toBeUndefined();
+    const set = scopedState.updated?.set as Record<string, unknown>;
+    expect(set.status).toBe('pending');
+    expect(set.completedAt).toBeNull();
+  });
+
+  it('skipped → pending clears reason_* fields', async () => {
+    scopedState.selectResults = [
+      [
+        {
+          id: ACTIVITY_ID,
+          status: 'skipped',
+          reasonCategory: 'time',
+          reasonNotDone: 'No tuve tiempo',
+        },
+      ],
+    ];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'pending' });
+
+    expect(result.error).toBeUndefined();
+    const set = scopedState.updated?.set as Record<string, unknown>;
+    expect(set.reasonCategory).toBeNull();
+    expect(set.reasonNotDone).toBeNull();
+  });
+
+  it('blocked → in_progress preserves the existing reason fields (cleanup happens on pending)', async () => {
+    scopedState.selectResults = [
+      [
+        {
+          id: ACTIVITY_ID,
+          status: 'blocked',
+          reasonCategory: 'blocked',
+          reasonNotDone: 'Esperando aprobación',
+        },
+      ],
+    ];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'in_progress' });
+
+    expect(result.error).toBeUndefined();
+    const set = scopedState.updated?.set as Record<string, unknown>;
+    expect(set.status).toBe('in_progress');
+    // No keys for reason* — old values persist (intentional; UI clears on user action).
+    expect(Object.prototype.hasOwnProperty.call(set, 'reasonCategory')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(set, 'reasonNotDone')).toBe(false);
+  });
+});
+
+describe('transitionActivity — auth + not-found', () => {
+  beforeEach(reset);
+
+  it('returns "no encontrada" if row missing for user', async () => {
+    scopedState.selectResults = [[]];
+
+    const { transitionActivity } = await import('@/lib/actions/activity');
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'done' });
+
+    expect(result.error).toBe('Actividad no encontrada');
+    expect(scopedState.updated).toBeUndefined();
+  });
+});
