@@ -64,6 +64,7 @@ import { and, eq, type SQL } from 'drizzle-orm';
 import { db } from './drizzle';
 import { notificationPrefs } from './schema/notification-prefs';
 import { subscriptions, usageMeters } from './schema/billing';
+import { categories } from './schema/categories';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Tenant table registry
@@ -81,6 +82,7 @@ export const TENANT_TABLES = {
   notificationPrefs,
   subscriptions,
   usageMeters,
+  categories,
 } as const;
 
 export type TenantTableKey = keyof typeof TENANT_TABLES;
@@ -129,12 +131,24 @@ export function scopedDb(userId: string) {
       return userId;
     },
 
-    /** SELECT scoped to userId. Returns a Drizzle builder you can chain on. */
-    select<K extends TenantTableKey>(key: K) {
-      return db
-        .select()
-        .from(TENANT_TABLES[key] as never)
-        .where(tableUserIdEq(key));
+    /**
+     * SELECT scoped to userId. Optionally combines an additional WHERE
+     * clause via AND. Returns a typed array of rows (awaited internally so
+     * the typed return survives the union-of-tables generic).
+     *
+     * @example
+     *   const all = await sdb.select('categories');
+     *   const one = await sdb.select('categories', eq(categories.id, id));
+     */
+    async select<K extends TenantTableKey>(
+      key: K,
+      extraWhere?: SQL
+    ): Promise<(typeof TENANT_TABLES)[K]['$inferSelect'][]> {
+      const base = db.select().from(TENANT_TABLES[key] as never);
+      const rows = await (extraWhere
+        ? base.where(and(tableUserIdEq(key), extraWhere))
+        : base.where(tableUserIdEq(key)));
+      return rows as (typeof TENANT_TABLES)[K]['$inferSelect'][];
     },
 
     /**

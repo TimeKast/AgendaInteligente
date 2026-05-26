@@ -50,6 +50,13 @@
       "when": 1779767659999,
       "tag": "0006_sloppy_reaper",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779805582317,
+      "tag": "0007_flippant_xavin",
+      "breakpoints": true
     }
   ]
 }

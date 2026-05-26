@@ -39,3 +39,8 @@ export * from './notification-prefs';
 // AgendaInteligente — Billing scaffold (E-070, E-071, E-072)
 // =============================================================================
 export * from './billing';
+
+// =============================================================================
+// AgendaInteligente — Organization hierarchy (E-003 Category)
+// =============================================================================
+export * from './categories';

@@ -206,10 +206,11 @@ describe('scopedDb — UPDATE / DELETE', () => {
 });
 
 describe('scopedDb — TENANT_TABLES registry', () => {
-  it('lists the v1.0-ready tables', async () => {
+  it('lists every registered tenant table', async () => {
     const { TENANT_TABLES } = await import('@/lib/db/scoped');
+    // Sort both sides so the assertion is stable regardless of registration order.
     expect(Object.keys(TENANT_TABLES).sort()).toEqual(
-      ['notificationPrefs', 'subscriptions', 'usageMeters'].sort()
+      ['categories', 'notificationPrefs', 'subscriptions', 'usageMeters'].sort()
     );
   });
 });
