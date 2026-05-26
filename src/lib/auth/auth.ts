@@ -312,6 +312,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     authorized: authConfig.callbacks.authorized,
 
     /**
+     * Redirect callback — Default landing post-signin.
+     *
+     * - Same-origin URLs (relative or absolute) are respected.
+     * - Cross-origin → fall back to /today.
+     *
+     * Onboarding-vs-app branching (US-001) lives in the /today Server
+     * Component (ISSUE-006), not here — at redirect time the session token
+     * isn't readable, so we can't check onboarding_completed_at.
+     */
+    redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (url.startsWith(baseUrl)) return url;
+      return `${baseUrl}/today`;
+    },
+
+    /**
      * JWT callback — Extends Edge-safe base with DB-dependent logic.
      * Base (auth.config.ts): maps token.id, token.role, token.picture
      * This override: syncs image from DB on signIn/signUp/update
@@ -379,11 +395,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (existingUser) {
           // Build update object for missing fields
-          const updates: { name?: string; image?: string } = {};
+          const updates: { name?: string; image?: string; googleOauthId?: string } = {};
 
           // Sync Name if missing
           if (!existingUser.name && profile?.name) {
             updates.name = profile.name as string;
+          }
+
+          // AgendaInteligente: persist Google `sub` claim for fast lookups
+          // without joining accounts (BR-1 multi-tenant query pattern).
+          // The kit's accounts table still stores the canonical OAuth link;
+          // google_oauth_id is a denormalized shortcut keyed off users.
+          if (
+            account?.provider === 'google' &&
+            !existingUser.googleOauthId &&
+            account?.providerAccountId
+          ) {
+            updates.googleOauthId = account.providerAccountId;
           }
 
           // Sync Image - try multiple sources (only if no custom avatar)
@@ -490,10 +518,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     /**
-     * Link account event - Sync profile image when OAuth account is linked
+     * Link account event - Sync profile image + google_oauth_id when OAuth
+     * account is linked. Runs on first OAuth signup (after createUser) and
+     * when a user links an additional OAuth provider to an existing account.
      */
     async linkAccount({ user, account, profile }) {
       if (!isDatabaseConfigured()) return;
+
+      const updates: { image?: string; googleOauthId?: string } = {};
+
+      // AgendaInteligente: cache Google `sub` claim on the user row for
+      // fast lookups without joining accounts (BR-1).
+      if (account.provider === 'google' && account.providerAccountId) {
+        updates.googleOauthId = account.providerAccountId;
+      }
 
       let profileImage =
         (profile as { picture?: string })?.picture ||
@@ -511,9 +549,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         columns: { avatarData: true },
       });
 
-      if (profileImage && user.id && !existingUser?.avatarData) {
-        await db.update(users).set({ image: profileImage }).where(eq(users.id, user.id));
-        logger.info(`[Auth] Synced image for ${user.email} via linkAccount`);
+      if (profileImage && !existingUser?.avatarData) {
+        updates.image = profileImage;
+      }
+
+      if (user.id && Object.keys(updates).length > 0) {
+        await db.update(users).set(updates).where(eq(users.id, user.id));
+        logger.info(
+          `[Auth] Synced ${Object.keys(updates).join(', ')} for ${user.email} via linkAccount`
+        );
       }
     },
   },

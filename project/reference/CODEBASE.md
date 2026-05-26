@@ -316,7 +316,8 @@
 | `src\lib\api\client.ts` | — | — |
 | `src\lib\audit.ts` | — | — |
 | `src\lib\auth\auth.config.ts` | — | `src\lib\auth\auth.ts` |
-| `src\lib\auth\auth.ts` | `src\lib\auth\utils.ts`, `src\lib\auth\auth.config.ts` | — |
+| `src\lib\auth\auth.ts` | `src\lib\auth\utils.ts`, `src\lib\auth\auth.config.ts` | `src\lib\auth\helpers.ts` |
+| `src\lib\auth\helpers.ts` | `src\lib\auth\auth.ts` | — |
 | `src\lib\auth\index.ts` | — | — |
 | `src\lib\auth\password-reset.ts` | `src\lib\auth\utils.ts` | — |
 | `src\lib\auth\permissions.ts` | — | — |
@@ -387,6 +388,7 @@
 | `src\lib\utils\platform.ts` | — | — |
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
+| `src\middleware.ts` | — | — |
 
 ---
 
@@ -394,10 +396,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 347 |
-| Total connections | 112 |
+| Total files analyzed | 349 |
+| Total connections | 113 |
 | High-risk files (2+ deps) | 22 |
-| Orphan files (no connections) | 233 |
+| Orphan files (no connections) | 234 |
 
 ---
 
