@@ -116,6 +116,19 @@ const envSchema = z.object({
   VAPID_SUBJECT: z.string().optional(),
 
   // ─────────────────────────────────────────────────────────────
+  // AgendaInteligente — AI agent + voice + jobs (REQUIRED in v1)
+  // ─────────────────────────────────────────────────────────────
+  // Anthropic Claude — agent backbone (proactive check-ins, weekly review)
+  ANTHROPIC_API_KEY: z.string().optional(),
+  // OpenAI Whisper — STT fallback when Web Speech API unavailable
+  OPENAI_API_KEY: z.string().optional(),
+  // Inngest — background jobs / scheduled cron
+  INNGEST_EVENT_KEY: z.string().optional(),
+  INNGEST_SIGNING_KEY: z.string().optional(),
+  // pgcrypto symmetric key for OAuth tokens at-rest (BR-12, BR-20)
+  ENCRYPTION_KEY: z.string().optional(),
+
+  // ─────────────────────────────────────────────────────────────
   // Vercel System Variables (auto-injected by Vercel runtime)
   // ─────────────────────────────────────────────────────────────
   VERCEL_URL: z.string().optional(),
@@ -437,4 +450,55 @@ export function validateAuthMethods(): void {
         '  - AUTH_GITHUB_ID + AUTH_GITHUB_SECRET'
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AgendaInteligente — service accessors
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function getAnthropicKey(): string {
+  const e = getEnv();
+  if (!e.ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY is required. Get one at https://console.anthropic.com');
+  }
+  return e.ANTHROPIC_API_KEY;
+}
+
+export function isOpenAIConfigured(): boolean {
+  return !!getEnv().OPENAI_API_KEY;
+}
+
+export function getOpenAIKey(): string {
+  const e = getEnv();
+  if (!e.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is required for Whisper fallback.');
+  }
+  return e.OPENAI_API_KEY;
+}
+
+export function isInngestConfigured(): boolean {
+  const e = getEnv();
+  return !!e.INNGEST_EVENT_KEY && !!e.INNGEST_SIGNING_KEY;
+}
+
+export function getInngestConfig(): { eventKey: string; signingKey: string } {
+  const e = getEnv();
+  if (!e.INNGEST_EVENT_KEY || !e.INNGEST_SIGNING_KEY) {
+    throw new Error(
+      'Inngest not configured. Set INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY (see https://app.inngest.com).'
+    );
+  }
+  return { eventKey: e.INNGEST_EVENT_KEY, signingKey: e.INNGEST_SIGNING_KEY };
+}
+
+/**
+ * Get the pgcrypto symmetric key for encrypting OAuth tokens at-rest (BR-12, BR-20).
+ * Required to use any feature that stores sensitive tokens (Calendar connections).
+ */
+export function getEncryptionKey(): string {
+  const e = getEnv();
+  if (!e.ENCRYPTION_KEY) {
+    throw new Error('ENCRYPTION_KEY is required. Generate with: openssl rand -base64 32');
+  }
+  return e.ENCRYPTION_KEY;
 }
