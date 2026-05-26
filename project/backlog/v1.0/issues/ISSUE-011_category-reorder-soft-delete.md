@@ -5,7 +5,8 @@ epic: EPIC-ORG
 milestone: v1.0
 priority: P1
 story_points: 2
-status: ready
+status: completed
+completed_date: 2026-05-26
 dependencies: [ISSUE-010]
 user_stories: [US-011, US-012]
 features: [FT-010]
@@ -64,3 +65,38 @@ Scenario: Delete with cascade
 - [ ] Cascade delete tested with realistic counts
 - [ ] Inbox delete blocked at API + UI level
 - [ ] Tests for atomicity (transaction)
+
+## Implementation Evidence
+
+**Archivos:**
+
+- `src/lib/validations/category.ts` — `reorderCategoriesSchema` (min 2, max 100, unique UUIDs).
+- `src/lib/actions/category.ts`:
+  - `deleteCategory` refactor: ahora cascade en `db.transaction` sobre activities → projects → category (deepest first); retorna `{ projectCount, activityCount }` para toast.
+  - `reorderCategories` nuevo: valida ownership + Inbox-no-incluido + N UPDATEs en tx con `position = i`.
+- `eslint.config.mjs` — `category.ts` allowlisted (multi-table tx; misma justificación que onboarding.ts).
+- `tests/unit/category-actions.test.ts`:
+  - +mock de `db.transaction` con captura en `scopedState.txUpdates`.
+  - +6 tests cascade (empty cat, cascade con counts, skip activities branch, Inbox guard, not-found, idempotent).
+  - +5 tests reorder (atomic, missing id, Inbox guard, dup ids, single-element).
+  - 21/21 totales.
+
+**Decisiones de diseño:**
+
+- **Cascade order activities → projects → category**: deepest first. Order cosmetic en soft-delete pero matchea la dirección de dependencia, así una futura migración a hard-delete (con FK CASCADE) funciona sin reorder.
+- **`ON DELETE RESTRICT` en projects.category_id**: solo dispara en HARD delete. Soft delete (setear `deleted_at`) no triggerea FK. Por eso la cascade es app-level en transaction.
+- **`reorderCategories` no usa CASE WHEN**: opté por N UPDATEs en tx por simplicidad — categories per user es bajo (<20), y CTE-based reorder agrega complejidad sin gain.
+- **Counts retornados** para que UI muestre "Borrado X categoría con 2 proyectos y 14 actividades".
+
+**Scope deferred:**
+
+- **UI wiring**: el prototype `/categories/page.tsx` ya tiene dnd-kit configurado (PointerSensor + KeyboardSensor) y ConfirmDeleteModal con copy de cascade. Wireado a `reorderCategories` + `deleteCategory.data.projectCount` queda para futuro UI polish issue (consistente con el resto del prototype).
+- **Web Vibration API haptic**: UI polish.
+- **Cron `purge-soft-deleted` >30 días**: ISSUE-080 (Inngest setup).
+
+**Verificación:**
+
+- `pnpm typecheck` ✅
+- `pnpm lint` ✅ 0 errors (BR-1 allowlist OK).
+- `pnpm test category-actions` ✅ 21/21.
+- `pnpm test` full ✅ 595/595 en 2 runs estables.

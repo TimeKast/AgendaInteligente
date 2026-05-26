@@ -103,6 +103,10 @@ const eslintConfig = defineConfig([
       // scopedDb can't model atomicity across tables, so the action uses `db`
       // directly with explicit `where(eq(table.userId, userId))` scoping.
       'src/lib/actions/onboarding.ts',
+      // ISSUE-011: deleteCategory cascades over categories + projects +
+      // activities in a single transaction; reorderCategories applies N
+      // UPDATEs inside one tx. Same userId-scoping pattern as onboarding.
+      'src/lib/actions/category.ts',
       'src/app/api/auth/**',
       'src/app/api/avatar/**',
       'src/app/api/health/**',

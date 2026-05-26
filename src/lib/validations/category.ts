@@ -59,6 +59,22 @@ export const deleteCategorySchema = z.object({
   id: idSchema,
 });
 
+/**
+ * Reorder schema (ISSUE-011): pass the desired sort as an array of UUIDs.
+ * The action validates that every id belongs to the user and that the array
+ * has no duplicates. Min 2 — reordering a single category is a no-op.
+ */
+export const reorderCategoriesSchema = z.object({
+  orderedIds: z
+    .array(idSchema)
+    .min(2, 'Necesitas al menos 2 categorías para reordenar')
+    .max(100, 'Demasiadas categorías')
+    .refine((arr) => new Set(arr).size === arr.length, {
+      message: 'IDs duplicados',
+    }),
+});
+
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
 export type DeleteCategoryInput = z.infer<typeof deleteCategorySchema>;
+export type ReorderCategoriesInput = z.infer<typeof reorderCategoriesSchema>;

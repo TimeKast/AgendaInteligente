@@ -38,8 +38,33 @@ const { scopedState } = vi.hoisted(() => ({
     inserted: undefined as unknown,
     insertedReturning: undefined as unknown,
     updated: undefined as { table: string; set: unknown; where: unknown } | undefined,
+    // ISSUE-011: cascade delete + reorder use db.transaction directly.
+    // We capture every tx.update(table).set(...).where(...) call so tests
+    // can assert the correct order and payloads.
+    transactionInvoked: false,
+    txUpdates: [] as Array<{ set: unknown }>,
   },
 }));
+
+vi.mock('@/lib/db/drizzle', () => {
+  const mkTx = () => ({
+    update: vi.fn(() => ({
+      set: vi.fn((set: unknown) => {
+        scopedState.txUpdates.push({ set });
+        return { where: vi.fn(async () => undefined) };
+      }),
+    })),
+  });
+
+  return {
+    db: {
+      transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
+        scopedState.transactionInvoked = true;
+        return cb(mkTx());
+      }),
+    },
+  };
+});
 
 vi.mock('@/lib/db/scoped', () => {
   return {
@@ -91,6 +116,8 @@ function resetState() {
   scopedState.inserted = undefined;
   scopedState.insertedReturning = undefined;
   scopedState.updated = undefined;
+  scopedState.transactionInvoked = false;
+  scopedState.txUpdates = [];
 }
 
 describe('createCategory', () => {
@@ -222,23 +249,78 @@ describe('updateCategory', () => {
   });
 });
 
-describe('deleteCategory', () => {
+// ISSUE-011 — deleteCategory cascade + reorderCategories tests.
+// The old single-row deleteCategory tests were superseded; the new suite
+// covers Inbox guard / not-found / idempotent paths against the cascade
+// implementation.
+
+describe('deleteCategory — cascade (ISSUE-011)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetState();
     authedSession();
   });
 
-  it('soft-deletes a non-Inbox category', async () => {
+  it('soft-deletes a category with NO projects (just the category row)', async () => {
     scopedState.selectResults = [
       [{ id: CATEGORY_ID, name: 'Personal', isInbox: false, deletedAt: null }],
+      [], // active projects under category — empty
     ];
 
     const { deleteCategory } = await import('@/lib/actions/category');
     const result = await deleteCategory({ id: CATEGORY_ID });
 
     expect(result.error).toBeUndefined();
-    expect(scopedState.updated?.set).toHaveProperty('deletedAt');
+    expect(result.data).toEqual({ projectCount: 0, activityCount: 0 });
+    expect(scopedState.transactionInvoked).toBe(true);
+    // Only the category UPDATE inside the tx (no projects, no activities).
+    expect(scopedState.txUpdates).toHaveLength(1);
+    expect((scopedState.txUpdates[0].set as Record<string, unknown>).deletedAt).toBeDefined();
+  });
+
+  it('cascades to projects + activities and returns counts', async () => {
+    scopedState.selectResults = [
+      [{ id: CATEGORY_ID, name: 'Empresa Genomma', isInbox: false, deletedAt: null }],
+      // 2 active projects
+      [
+        { id: 'proj-1', categoryId: CATEGORY_ID, deletedAt: null },
+        { id: 'proj-2', categoryId: CATEGORY_ID, deletedAt: null },
+      ],
+      // 3 active activities across those projects
+      [
+        { id: 'act-1', projectId: 'proj-1', deletedAt: null },
+        { id: 'act-2', projectId: 'proj-1', deletedAt: null },
+        { id: 'act-3', projectId: 'proj-2', deletedAt: null },
+      ],
+    ];
+
+    const { deleteCategory } = await import('@/lib/actions/category');
+    const result = await deleteCategory({ id: CATEGORY_ID });
+
+    expect(result.error).toBeUndefined();
+    expect(result.data).toEqual({ projectCount: 2, activityCount: 3 });
+    expect(scopedState.transactionInvoked).toBe(true);
+    // 3 updates in tx: activities, projects, category — deepest first.
+    expect(scopedState.txUpdates).toHaveLength(3);
+    expect((scopedState.txUpdates[0].set as Record<string, unknown>).deletedAt).toBeDefined();
+    expect((scopedState.txUpdates[1].set as Record<string, unknown>).deletedAt).toBeDefined();
+    expect((scopedState.txUpdates[2].set as Record<string, unknown>).deletedAt).toBeDefined();
+  });
+
+  it('skips activity update when projects have no activities', async () => {
+    scopedState.selectResults = [
+      [{ id: CATEGORY_ID, name: 'Side', isInbox: false, deletedAt: null }],
+      [{ id: 'proj-x', categoryId: CATEGORY_ID, deletedAt: null }],
+      [], // no activities
+    ];
+
+    const { deleteCategory } = await import('@/lib/actions/category');
+    const result = await deleteCategory({ id: CATEGORY_ID });
+
+    expect(result.error).toBeUndefined();
+    expect(result.data).toEqual({ projectCount: 1, activityCount: 0 });
+    // 2 updates in tx: project + category (no activities branch)
+    expect(scopedState.txUpdates).toHaveLength(2);
   });
 
   it('blocks deleting Inbox', async () => {
@@ -248,7 +330,7 @@ describe('deleteCategory', () => {
     const result = await deleteCategory({ id: CATEGORY_ID });
 
     expect(result.error).toBe('Inbox no se puede borrar');
-    expect(scopedState.updated).toBeUndefined();
+    expect(scopedState.transactionInvoked).toBe(false);
   });
 
   it('returns "no encontrada" if row does not exist for this user', async () => {
@@ -257,6 +339,7 @@ describe('deleteCategory', () => {
     const result = await deleteCategory({ id: CATEGORY_ID });
 
     expect(result.error).toBe('Categoría no encontrada');
+    expect(scopedState.transactionInvoked).toBe(false);
   });
 
   it('idempotent: no-ops if already soft-deleted', async () => {
@@ -275,6 +358,86 @@ describe('deleteCategory', () => {
     const result = await deleteCategory({ id: CATEGORY_ID });
 
     expect(result.error).toBeUndefined();
-    expect(scopedState.updated).toBeUndefined();
+    expect(result.data).toEqual({ projectCount: 0, activityCount: 0 });
+    expect(scopedState.transactionInvoked).toBe(false);
+  });
+});
+
+describe('reorderCategories (ISSUE-011)', () => {
+  const ID_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001';
+  const ID_B = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002';
+  const ID_C = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa003';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetState();
+    authedSession();
+  });
+
+  it('reorders three categories atomically with positions 0/1/2', async () => {
+    scopedState.selectResults = [
+      [
+        { id: ID_A, isInbox: false },
+        { id: ID_B, isInbox: false },
+        { id: ID_C, isInbox: false },
+      ],
+    ];
+
+    const { reorderCategories } = await import('@/lib/actions/category');
+    const result = await reorderCategories({ orderedIds: [ID_C, ID_A, ID_B] });
+
+    expect(result.error).toBeUndefined();
+    expect(scopedState.transactionInvoked).toBe(true);
+    // One UPDATE per id in the array.
+    expect(scopedState.txUpdates).toHaveLength(3);
+    expect((scopedState.txUpdates[0].set as Record<string, unknown>).position).toBe(0);
+    expect((scopedState.txUpdates[1].set as Record<string, unknown>).position).toBe(1);
+    expect((scopedState.txUpdates[2].set as Record<string, unknown>).position).toBe(2);
+  });
+
+  it('rejects when an id is missing from the user-scoped query', async () => {
+    // User has only 2 of the 3 requested ids.
+    scopedState.selectResults = [
+      [
+        { id: ID_A, isInbox: false },
+        { id: ID_B, isInbox: false },
+      ],
+    ];
+
+    const { reorderCategories } = await import('@/lib/actions/category');
+    const result = await reorderCategories({ orderedIds: [ID_A, ID_B, ID_C] });
+
+    expect(result.error).toMatch(/no existen o no te pertenecen/);
+    expect(scopedState.transactionInvoked).toBe(false);
+  });
+
+  it('rejects when one of the ids is Inbox', async () => {
+    scopedState.selectResults = [
+      [
+        { id: ID_A, isInbox: false },
+        { id: ID_B, isInbox: true }, // Inbox sneaked in
+      ],
+    ];
+
+    const { reorderCategories } = await import('@/lib/actions/category');
+    const result = await reorderCategories({ orderedIds: [ID_A, ID_B] });
+
+    expect(result.error).toBe('Inbox no se puede reordenar');
+    expect(scopedState.transactionInvoked).toBe(false);
+  });
+
+  it('rejects duplicate ids at the Zod layer', async () => {
+    const { reorderCategories } = await import('@/lib/actions/category');
+    const result = await reorderCategories({ orderedIds: [ID_A, ID_A] });
+
+    expect(result.error).toMatch(/duplicados/);
+    expect(scopedState.transactionInvoked).toBe(false);
+  });
+
+  it('rejects single-element arrays at the Zod layer', async () => {
+    const { reorderCategories } = await import('@/lib/actions/category');
+    const result = await reorderCategories({ orderedIds: [ID_A] });
+
+    expect(result.error).toMatch(/al menos 2/);
   });
 });
