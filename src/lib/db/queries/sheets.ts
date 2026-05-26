@@ -1,21 +1,23 @@
 /**
- * DaySheet queries — ISSUE-030.
+ * DaySheet + WeekSheet queries — ISSUE-030, ISSUE-032.
  *
- * `getOrCreateDaySheet` is the canonical entry point for reading the
- * sheet for a given (user, date). Atomic upsert keyed on the BR-7
- * UNIQUE index — under concurrent calls exactly one row is created,
- * both callers receive the same row.
+ * `getOrCreateDaySheet` / `getOrCreateWeekSheet` are the canonical
+ * entry points for reading a sheet for a given (user, date|week).
+ * Atomic upsert keyed on the BR-7 UNIQUE index — under concurrent
+ * calls exactly one row is created, both callers receive the same row.
  *
- * Operates `db` directly (allowlisted) because it's a DB primitive
- * consumed by server actions that already validate ownership at their
- * own layer. The `eq(daySheets.userId, userId)` scoping is explicit.
+ * Operates `db` directly (allowlisted via `src/lib/db/queries/**`)
+ * because these are DB primitives consumed by server actions that
+ * already validate ownership at their own layer. The
+ * `eq(*.userId, userId)` scoping is explicit on every statement.
  *
- * Linked: BR-7, FT-030.
+ * Linked: BR-7, FT-030, FT-034.
  */
 
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { daySheets, type DaySheet } from '@/lib/db/schema/day-sheets';
+import { weekSheets, type WeekSheet } from '@/lib/db/schema/week-sheets';
 
 /**
  * Get the existing DaySheet for (userId, dateStr) or create an empty one.
@@ -48,6 +50,38 @@ export async function getOrCreateDaySheet(userId: string, dateStr: string): Prom
     // Extremely unlikely race: the row was inserted then deleted before
     // our SELECT. Caller surfaces this as a generic "no encontrada".
     throw new Error(`DaySheet vanished after upsert (${userId}, ${dateStr})`);
+  }
+  return existing[0];
+}
+
+/**
+ * Mirror of `getOrCreateDaySheet` for WeekSheet (ISSUE-032). Same atomic
+ * upsert + fallback SELECT pattern keyed on the BR-7 UNIQUE index over
+ * `(user_id, week_starting)`.
+ *
+ * @param userId           user UUID
+ * @param weekStartingStr  ISO date YYYY-MM-DD of the Sunday in user TZ
+ *                         (caller resolves via `weekStartingFor`)
+ */
+export async function getOrCreateWeekSheet(
+  userId: string,
+  weekStartingStr: string
+): Promise<WeekSheet> {
+  const inserted = await db
+    .insert(weekSheets)
+    .values({ userId, weekStarting: weekStartingStr })
+    .onConflictDoNothing({ target: [weekSheets.userId, weekSheets.weekStarting] })
+    .returning();
+
+  if (inserted.length > 0) return inserted[0];
+
+  const existing = await db
+    .select()
+    .from(weekSheets)
+    .where(and(eq(weekSheets.userId, userId), eq(weekSheets.weekStarting, weekStartingStr)));
+
+  if (existing.length === 0) {
+    throw new Error(`WeekSheet vanished after upsert (${userId}, ${weekStartingStr})`);
   }
   return existing[0];
 }

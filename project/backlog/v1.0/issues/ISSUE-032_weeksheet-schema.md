@@ -5,7 +5,8 @@ epic: EPIC-SHEETS
 milestone: v1.0
 priority: P0
 story_points: 3
-status: ready
+status: completed
+completed_date: 2026-05-26
 dependencies: [ISSUE-002]
 user_stories: [US-033]
 features: [FT-034, FT-035]
@@ -65,3 +66,47 @@ Scenario: WeekSheet uniqueness
 - [ ] Migration applied
 - [ ] week-calc tested with multiple timezones + DST scenarios (U-003)
 - [ ] getOrCreate atomic under concurrency
+
+## Implementation Evidence
+
+**Archivos:**
+
+- `src/lib/db/schema/week-sheets.ts` — E-021 (19 cols: kickoff fields + review fields + 4 JSONB shapes con TypeScript types: CalendarBlock, PersonToConnect, SelfCare, ReviewPostMortem).
+- `src/lib/db/scoped.ts` — `weekSheets` registrada (8 tablas en TENANT_TABLES).
+- `src/lib/db/migrations/0013_breezy_pestilence.sql` — autogen + 2 CHECK manuales (`review_energy BETWEEN 1 AND 10 OR NULL`, `array_length(three_wins) <= 3 OR NULL`). UNIQUE `(user_id, week_starting)` (BR-7) + index DESC.
+- `src/lib/domain/week-calc.ts` NEW — pure functions DST-safe:
+  - `weekStartingFor(date, tz)` → ISO string del Sunday usando ISO-weekday read en TZ del user.
+  - `weekEndingFor(weekStartingStr)` → Saturday (Sunday + 6 días).
+- `src/lib/db/queries/sheets.ts` EXTENDED — `getOrCreateWeekSheet(userId, weekStartingStr)` mirror del DaySheet pattern.
+- `tests/unit/week-calc.test.ts` NEW — 21 tests.
+
+**Decisiones de diseño:**
+
+- **`weekStartingFor` retorna string (YYYY-MM-DD), no Date**: alinea con la columna `date` y evita TZ comparison bugs cuando el caller pase la string directamente al WHERE.
+- **Sunday-as-week-start** (US/LatAm convention). Si futuro requiere ISO-week (Mon-start), un solo cambio en la función.
+- **DST-safe via `setUTCDate(+N)` + Intl read**: nunca sumamos 24h numéricos; walk en UTC y resolvemos weekday/date en TZ via `Intl.DateTimeFormat`. Spring-forward y fall-back no shiftean la cadencia.
+- **JSONB shapes**: documentadas como TypeScript interfaces (CalendarBlock, PersonToConnect, SelfCare, ReviewPostMortem) y type-hinted via `.$type<>()`. Validación full Zod va en ISSUE-033 (week screen wire).
+- **Server action de update deferred**: los JSONB shapes son complejos y benefician de UI real para shape validation.
+
+**Cobertura tests (21):**
+
+- 7-day mapping (Sun-Sat → mismo Sunday).
+- Cross-month boundary (3): Mon Jun 1 → Sun May 31, Sat May 30 → Sun May 24, Sun May 31 → itself.
+- TZ behavior (2): UTC vs local day boundary, same instant en CST vs CEST.
+- DST edges (3): US Pacific spring-forward (Mar 2026), US Pacific fall-back (Nov 2026), Spain CEST→CET (Oct 2026).
+- Boundary instants (2): Sat 23:59 local → old week, Sun 00:01 local → new week.
+- weekEndingFor (4): basic +6, cross-month, cross-year (Dec 2026 → Jan 2027), leap-year Feb 2028.
+
+**Scope deferred:**
+
+- Server action `updateWeekSheet` con full Zod para JSONB shapes → **ISSUE-033** (week screen).
+- Cron `materializeWeekSheet` Friday auto-create + reminder → **ISSUE-034**.
+- UI completo SCR-021 → ISSUE-033.
+
+**Verificación:**
+
+- `pnpm typecheck` ✅
+- `pnpm lint` ✅ 0 errors
+- `pnpm test week-calc` ✅ 21/21
+- `pnpm test` full ✅ 739/739 (re-run; 1 flake transitorio register-test pre-existente)
+- `pnpm db:migrate` ✅ aplicado a Neon dev branch

@@ -218,6 +218,7 @@ describe('scopedDb — TENANT_TABLES registry', () => {
         'projects',
         'subscriptions',
         'usageMeters',
+        'weekSheets',
       ].sort()
     );
   });
