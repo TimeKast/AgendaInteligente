@@ -65,6 +65,7 @@ import { db } from './drizzle';
 import { notificationPrefs } from './schema/notification-prefs';
 import { subscriptions, usageMeters } from './schema/billing';
 import { categories } from './schema/categories';
+import { projects } from './schema/projects';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Tenant table registry
@@ -83,6 +84,7 @@ export const TENANT_TABLES = {
   subscriptions,
   usageMeters,
   categories,
+  projects,
 } as const;
 
 export type TenantTableKey = keyof typeof TENANT_TABLES;

@@ -12,8 +12,8 @@
 | File | Dependents |
 |------|------------|
 | `src\lib\email\templates\layout.ts` | 9 |
+| `src\lib\db\schema\users.ts` | 7 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
-| `src\lib\db\schema\users.ts` | 6 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
 | `src\components\agenda\ActivityQuickAdd.tsx` | 4 |
@@ -32,6 +32,7 @@
 | `src\components\agenda\StatusBadge.tsx` | 2 |
 | `src\lib\auth\utils.ts` | 2 |
 | `src\lib\db\schema\index.ts` | 2 |
+| `src\lib\db\schema\categories.ts` | 2 |
 | `src\lib\db\schema\billing.ts` | 2 |
 | `src\lib\email\logo-data.ts` | 2 |
 
@@ -313,6 +314,7 @@
 | `src\lib\actions\helpers.ts` | — | — |
 | `src\lib\actions\notifications.ts` | — | — |
 | `src\lib\actions\profile.ts` | — | — |
+| `src\lib\actions\project.ts` | — | — |
 | `src\lib\actions\send-reset-email.ts` | — | — |
 | `src\lib\actions\types.ts` | — | — |
 | `src\lib\api\client.ts` | — | — |
@@ -335,14 +337,15 @@
 | `src\lib\db\queries\users.ts` | — | — |
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\billing.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seeds\plans.ts` |
-| `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\index.ts` | — | `src\lib\db\drizzle.ts`, `src\lib\db\seeds\admin.ts` |
 | `src\lib\db\schema\invites.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\notification-prefs.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\notifications.ts` | `src\lib\db\schema\users.ts` | — |
+| `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts` |
-| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts` | — |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts` |
+| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
@@ -393,6 +396,7 @@
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\category.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
+| `src\lib\validations\project.ts` | — | — |
 | `src\middleware.ts` | — | — |
 
 ---
@@ -401,10 +405,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 353 |
-| Total connections | 118 |
-| High-risk files (2+ deps) | 23 |
-| Orphan files (no connections) | 236 |
+| Total files analyzed | 356 |
+| Total connections | 121 |
+| High-risk files (2+ deps) | 24 |
+| Orphan files (no connections) | 238 |
 
 ---
 

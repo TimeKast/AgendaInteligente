@@ -26,14 +26,20 @@ vi.mock('@/lib/auth/permissions', () => ({
   requirePermission: vi.fn(),
 }));
 
-// Shared spies — the scopedDb mock writes into these so each test can assert.
-const scopedState: {
-  selectResults: unknown[];
-  selectCalls: { key: string; extra: unknown }[];
-  inserted?: unknown;
-  insertedReturning?: unknown;
-  updated?: { table: string; set: unknown; where: unknown };
-} = { selectResults: [], selectCalls: [] };
+// vi.hoisted ensures scopedState is created in the same hoist phase as the
+// vi.mock factory below, so they share the same per-file closure even under
+// parallel test execution. Without this, multiple test files mocking the
+// same module path can have their factories re-bound to the wrong file's
+// state, causing assertion bleed.
+const { scopedState } = vi.hoisted(() => ({
+  scopedState: {
+    selectResults: [] as unknown[],
+    selectCalls: [] as { key: string; extra: unknown }[],
+    inserted: undefined as unknown,
+    insertedReturning: undefined as unknown,
+    updated: undefined as { table: string; set: unknown; where: unknown } | undefined,
+  },
+}));
 
 vi.mock('@/lib/db/scoped', () => {
   return {
