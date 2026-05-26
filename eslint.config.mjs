@@ -107,6 +107,11 @@ const eslintConfig = defineConfig([
       // activities in a single transaction; reorderCategories applies N
       // UPDATEs inside one tx. Same userId-scoping pattern as onboarding.
       'src/lib/actions/category.ts',
+      // ISSUE-015: subtasks have no user_id column (E-006 spec fidelity —
+      // BR-5). Ownership is enforced via the parent activity through
+      // scopedDb('activities'); subtask CRUD goes through `db` directly
+      // with explicit activity_id scoping.
+      'src/lib/actions/subtask.ts',
       'src/app/api/auth/**',
       'src/app/api/avatar/**',
       'src/app/api/health/**',

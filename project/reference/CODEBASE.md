@@ -34,6 +34,7 @@
 | `src\lib\db\schema\index.ts` | 2 |
 | `src\lib\db\schema\projects.ts` | 2 |
 | `src\lib\db\schema\categories.ts` | 2 |
+| `src\lib\db\schema\activities.ts` | 2 |
 | `src\lib\db\schema\billing.ts` | 2 |
 | `src\lib\email\logo-data.ts` | 2 |
 
@@ -321,6 +322,7 @@
 | `src\lib\actions\profile.ts` | — | — |
 | `src\lib\actions\project.ts` | — | — |
 | `src\lib\actions\send-reset-email.ts` | — | — |
+| `src\lib\actions\subtask.ts` | — | — |
 | `src\lib\actions\types.ts` | — | — |
 | `src\lib\api\client.ts` | — | — |
 | `src\lib\audit.ts` | — | — |
@@ -342,7 +344,7 @@
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
 | `src\lib\db\queries\users.ts` | — | — |
-| `src\lib\db\schema\activities.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\projects.ts` | `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\activities.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\projects.ts` | `src\lib\db\schema\subtasks.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\billing.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seeds\plans.ts` |
 | `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
@@ -353,6 +355,7 @@
 | `src\lib\db\schema\notifications.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
+| `src\lib\db\schema\subtasks.ts` | `src\lib\db\schema\activities.ts` | — |
 | `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts` |
 | `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
@@ -409,6 +412,7 @@
 | `src\lib\validations\onboarding.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
 | `src\lib\validations\project.ts` | — | — |
+| `src\lib\validations\subtask.ts` | — | — |
 | `src\middleware.ts` | — | — |
 
 ---
@@ -417,10 +421,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 367 |
-| Total connections | 125 |
-| High-risk files (2+ deps) | 25 |
-| Orphan files (no connections) | 247 |
+| Total files analyzed | 370 |
+| Total connections | 126 |
+| High-risk files (2+ deps) | 26 |
+| Orphan files (no connections) | 249 |
 
 ---
 

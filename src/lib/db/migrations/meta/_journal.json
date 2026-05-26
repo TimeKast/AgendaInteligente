@@ -78,6 +78,13 @@
       "when": 1779823291010,
       "tag": "0010_ancient_stone_men",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779829197324,
+      "tag": "0011_bumpy_cannonball",
+      "breakpoints": true
     }
   ]
 }
