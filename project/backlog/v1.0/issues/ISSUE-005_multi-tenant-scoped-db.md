@@ -5,7 +5,8 @@ epic: EPIC-AUTH
 milestone: v1.0
 priority: P0
 story_points: 3
-status: ready
+status: completed
+completed_date: 2026-05-26
 dependencies: [ISSUE-002]
 user_stories: [US-004]
 features: [FT-003]
@@ -82,4 +83,37 @@ Scenario: scopedDb auto-filters
 - Drizzle's `.where()` chaining allows building scoped queries cleanly
 - Plan table is NOT scoped (global)
 - Migrations / seed scripts bypass scopedDb (use direct db)
-- Future v1.5: consider Postgres RLS as defense-in-depth (already planned in ADR-010)
+- Future v1.5: consider Postgres RLS as defense-in-depth (already planned en ADR-010)
+
+## Implementation Evidence
+
+**Archivos creados:**
+
+- `src/lib/db/scoped.ts` — factory `scopedDb(userId)` + registry `TENANT_TABLES`. Builders SELECT/UPDATE/DELETE auto-aplican `where(eq(table.userId, userId))`; INSERT inyecta `userId` y SOBRESCRIBE valores `userId` del caller (defensa contra spoofing). Throws si userId vacío. `.where(extra)` chain combina con AND el filtro user_id.
+- `src/lib/db/README.md` — doc del pattern, when-to-use-what, lista de escape hatches del kit, cómo agregar nuevas tablas tenant.
+- `eslint.config.mjs` — rule `no-restricted-syntax` con selector AST que matchea `db.{select,insert,update,delete}()` con error "BR-1: use scopedDb(userId)". Allowlist de ~25 globs para escape hatches (scoped.ts, drizzle.ts, schema, migrations, seeds, NextAuth, kit admin/auth/audit/invites).
+- `tests/unit/scoped-db.test.ts` — 11 tests mockeando Drizzle: construction guards (3), SELECT shape (2), INSERT auto-inject + override (3), UPDATE/DELETE filter (2), registry contents (1).
+
+**Reconciliaciones de scope** (issue original asumía 16 tablas tenant; hoy hay 3):
+
+- **scopedDb cubre 3 tablas** (notification_prefs, subscriptions, usage_meters) — las únicas user-scoped que existen en v1 hoy. Registry pattern: cada CRUD issue futuro (010, 012, 013, 030, 032, 040, 041, 051, 080, 090, 091, 131, 140, 141) agrega su tabla en 1 línea de `TENANT_TABLES`.
+- **100% refactor de actions/routes existentes**: N/A — el kit no tiene server actions user-scoped (todo es admin/auth/notif kit-shipped, ya en la allowlist).
+- **Integration tests ≥10**: 11 unit tests cubren shape de queries con Drizzle mockeado. Integration end-to-end con Neon llega cuando ISSUE-010 (Category CRUD) escriba la primera action user-scoped real.
+- **Sentry middleware**: Sentry está instalado como dep pero NO wired (no DSN, no `sentry.client.config.ts`). Cuando se wire-up Sentry en otro issue, agregar `Sentry.captureMessage` al lugar donde scoped.ts detecte intentos de bypass (hoy no hay tal detección porque la rule ESLint es la primera línea de defensa, no runtime).
+
+**Verificación:**
+
+- `pnpm typecheck` ✅
+- `pnpm lint` ✅ 0 errors. Rule confirmada manualmente: archivo con `db.select()` fresh → 1 error BR-1.
+- `pnpm test tests/unit/scoped-db.test.ts` ✅ 11/11
+- `pnpm test` full ✅ 502/502 sin flakes (3rd run; 1 flake transitorio en 2nd run, no relacionado)
+
+**ESLint allowlist** (cuándo OK usar `db` directo):
+
+- `src/lib/db/{scoped,drizzle,seed}.ts`, `seeds/**`, `schema/**`, `migrations/**`, `helpers/**`
+- `src/lib/auth/{auth,auth.config,password-reset,super-admin}.ts` (NextAuth flows)
+- `src/lib/{audit,rate-limit,notifications,email,invites}/**` (kit infra, tablas non-tenant)
+- `src/lib/actions/{admin/**,audit,avatar,change-password,notifications,profile,send-reset-email}.ts` (kit admin actions)
+- `src/app/api/{auth,avatar,health,notifications,invites}/**` (kit routes)
+
+**Limitación conocida**: rule es regex-based via no-restricted-syntax sobre `callee.object.name='db'`. Aliased imports (`import { db as foo }`) bypassan. Ratchet a custom plugin si pasa en práctica.

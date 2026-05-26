@@ -53,6 +53,65 @@ const eslintConfig = defineConfig([
       'no-console': 'off',
     },
   },
+
+  // ───────────────────────────────────────────────────────────────────────
+  // BR-1 — Multi-tenant data isolation enforcement (ISSUE-005)
+  //
+  // Forbid direct `db.select|insert|update|delete()` calls outside the
+  // small set of files allowed to bypass scopedDb: the scopedDb impl
+  // itself, migrations, seeds, schema definitions, the drizzle client,
+  // and the kit-shipped admin/auth subsystems that operate outside the
+  // tenant-user model.
+  //
+  // Tier-1 enforcement via no-restricted-syntax — catches direct `db.x()`
+  // calls. Aliased imports (`import { db as foo }`) bypass; ratchet up
+  // to a custom rule if that becomes a real anti-pattern.
+  // ───────────────────────────────────────────────────────────────────────
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: [
+      'src/lib/db/scoped.ts',
+      'src/lib/db/drizzle.ts',
+      'src/lib/db/seed.ts',
+      'src/lib/db/seeds/**',
+      'src/lib/db/schema/**',
+      'src/lib/db/migrations/**',
+      'src/lib/db/helpers/**', // kit user-admin helpers (can-hard-delete, etc)
+      'src/lib/auth/auth.ts',
+      'src/lib/auth/auth.config.ts',
+      'src/lib/auth/password-reset.ts',
+      'src/lib/auth/super-admin.ts',
+      'src/lib/audit.ts', // audit_logs is admin table, not tenant
+      'src/lib/audit/**',
+      'src/lib/rate-limit/**',
+      'src/lib/notifications/**',
+      'src/lib/email/**',
+      'src/lib/invites/**', // invite_tokens is admin table
+      'src/lib/actions/admin/**',
+      'src/lib/actions/audit.ts',
+      'src/lib/actions/avatar.ts',
+      'src/lib/actions/change-password.ts',
+      'src/lib/actions/notifications.ts',
+      'src/lib/actions/profile.ts',
+      'src/lib/actions/send-reset-email.ts',
+      'src/app/api/auth/**',
+      'src/app/api/avatar/**',
+      'src/app/api/health/**',
+      'src/app/api/notifications/**',
+      'src/app/api/invites/**', // kit invite system
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.type='MemberExpression'][callee.object.name='db'][callee.property.name=/^(select|insert|update|delete)$/]",
+          message:
+            'BR-1: use scopedDb(userId) instead of direct db.{select,insert,update,delete} on tenant tables. See src/lib/db/scoped.ts.',
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
