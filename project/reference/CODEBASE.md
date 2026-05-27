@@ -109,6 +109,9 @@
 | `src\app\api\auth\reset-password\route.ts` | — | — |
 | `src\app\api\auth\verify\route.ts` | — | — |
 | `src\app\api\avatar\[userId]\route.ts` | — | — |
+| `src\app\api\calendar\connections\[id]\disconnect\route.ts` | — | — |
+| `src\app\api\calendar\google\callback\route.ts` | — | — |
+| `src\app\api\calendar\google\connect\route.ts` | — | — |
 | `src\app\api\email\test\route.ts` | — | — |
 | `src\app\api\health\route.ts` | — | — |
 | `src\app\api\inngest\route.ts` | — | — |
@@ -413,7 +416,10 @@
 | `src\lib\inngest\functions\user-signed-up.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\weeksheet-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\publish.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | — |
-| `src\lib\integrations\calendar\tokens.ts` | — | — |
+| `src\lib\integrations\calendar\google.ts` | — | `src\lib\integrations\calendar\refresh.ts` |
+| `src\lib\integrations\calendar\refresh.ts` | `src\lib\integrations\calendar\tokens.ts`, `src\lib\integrations\calendar\google.ts` | — |
+| `src\lib\integrations\calendar\state.ts` | — | — |
+| `src\lib\integrations\calendar\tokens.ts` | — | `src\lib\integrations\calendar\refresh.ts` |
 | `src\lib\invites\index.ts` | `src\lib\invites\token.ts` | — |
 | `src\lib\invites\token.ts` | — | `src\lib\invites\index.ts` |
 | `src\lib\logger.ts` | — | — |
@@ -448,10 +454,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 395 |
-| Total connections | 143 |
+| Total files analyzed | 401 |
+| Total connections | 145 |
 | High-risk files (2+ deps) | 28 |
-| Orphan files (no connections) | 262 |
+| Orphan files (no connections) | 265 |
 
 ---
 

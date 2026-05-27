@@ -169,6 +169,9 @@
 | /api/auth/reset-password | `src\app\api\auth\reset-password\route.ts` |
 | /api/auth/verify | `src\app\api\auth\verify\route.ts` |
 | /api/avatar/[userId] | `src\app\api\avatar\[userId]\route.ts` |
+| /api/calendar/connections/[id]/disconnect | `src\app\api\calendar\connections\[id]\disconnect\route.ts` |
+| /api/calendar/google/callback | `src\app\api\calendar\google\callback\route.ts` |
+| /api/calendar/google/connect | `src\app\api\calendar\google\connect\route.ts` |
 | /api/email/test | `src\app\api\email\test\route.ts` |
 | /api/health | `src\app\api\health\route.ts` |
 | /api/inngest | `src\app\api\inngest\route.ts` |
@@ -187,9 +190,9 @@
 |--------|-------|
 | Dependencies | 44 |
 | Page Routes | 48 |
-| API Routes | 15 |
+| API Routes | 18 |
 | Components & Utils | 40 |
-| **Total items** | **147** |
+| **Total items** | **150** |
 
 ---
 

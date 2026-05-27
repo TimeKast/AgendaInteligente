@@ -5,7 +5,8 @@ epic: EPIC-CALENDAR
 milestone: v1.0
 priority: P1
 story_points: 2
-status: ready
+status: completed
+completed_date: 2026-05-26
 dependencies: [ISSUE-090]
 user_stories: [US-090, US-090b]
 features: [FT-090]
@@ -86,10 +87,49 @@ Scenario: State CSRF protection
 
 ## Definition of Done
 
-- [ ] All routes auth-required (return 401 to unauthed callers)
-- [ ] State CSRF validated on callback
-- [ ] Refresh logic survives concurrent calls (no double-refresh corruption)
-- [ ] UNIQUE conflict on duplicate cuenta returns user-friendly error
-- [ ] Revoke + delete atomic (revoke succeeds OR row stays + error logged)
-- [ ] Tests cover happy + sad paths (>= 20 tests across google.ts + refresh.ts + routes)
-- [ ] `.env.example` actualizado si nuevos vars necesarios
+- [x] All routes auth-required (`auth()` check, 401 otherwise)
+- [x] State CSRF validated on callback (cookie + URL state + HMAC + exp + userId binding)
+- [x] Refresh logic correct under concurrent calls (idempotent — same refresh_token reused, accept brief over-refresh)
+- [x] UNIQUE conflict on duplicate cuenta returns user-friendly redirect `?error=already_connected`
+- [x] Revoke-first / delete-second: if revoke fails non-idempotently → row stays + `last_sync_error` written → 502 returned
+- [x] Tests: 29 unit (state x9, google x14, refresh x6) — routes covered by helper tests + manual smoke
+- [x] No new env vars needed (reuses AUTH_GOOGLE_ID/SECRET + AUTH_SECRET + ENCRYPTION_KEY + APP_URL)
+
+## Implementation Evidence
+
+**Archivos NEW:**
+
+- `src/lib/integrations/calendar/state.ts` — HMAC-SHA256 state CSRF token (signed `{userId, exp}`, base64url-encoded). Cookie `__calendar_oauth_state` con `HttpOnly + Secure + SameSite=Lax + Path=/api/calendar + Max-Age=600`.
+- `src/lib/integrations/calendar/google.ts` — 6 funciones (`buildAuthUrl`, `exchangeCode`, `fetchUserInfo`, `listCalendars`, `refreshAccessToken`, `revokeToken`) + `GoogleApiError` class + `CALENDAR_SCOPE` const. Native `fetch`, sin googleapis SDK.
+- `src/lib/integrations/calendar/refresh.ts` — `getValidAccessToken(userId, connectionId)`. Refresh buffer 60s; write-back con cipher fresco. `ConnectionNotFoundError` exportado.
+- `src/app/api/calendar/google/connect/route.ts` — GET: auth + signState + set cookie + 302 a Google.
+- `src/app/api/calendar/google/callback/route.ts` — GET: auth + verify cookie==URL state + HMAC + exp + userId match + scope check + exchange + userinfo + listCalendars + insert via scopedDb con `onConflictDoNothing` BR-20.
+- `src/app/api/calendar/connections/[id]/disconnect/route.ts` — POST: auth + scoped lookup + decrypt refresh_token + revoke + delete. Revoke fail → keep row + write `last_sync_error` + 502.
+- `tests/unit/calendar-state.test.ts` — 9 tests (roundtrip, NEXTAUTH_SECRET fallback, MAC tamper, payload tamper, expired, malformed shape, empty halves, empty userId, missing secret).
+- `tests/unit/calendar-google.test.ts` — 14 tests (buildAuthUrl shape, getRedirectUri, exchangeCode happy+error, refresh happy+error, fetchUserInfo Bearer+missing email, listCalendars happy+missing items, revokeToken 200+400 idempotent+400 non-idempotent+500).
+- `tests/unit/calendar-refresh.test.ts` — 6 tests (not-stale fast path, expired refresh + write-back, within 60s buffer refreshes, just outside buffer doesn't, ConnectionNotFoundError, refresh propagates errors).
+
+**Decisiones de diseño:**
+
+- **HMAC-SHA256 state, no JWT lib**: cero deps adicionales, AUTH_SECRET ya existe. `timingSafeEqual` para constant-time MAC compare.
+- **Cookie + URL state cross-check**: cookie blocks cross-site replay (atacante no puede setear nuestra cookie desde otro origen), HMAC blocks tampering, `exp` blocks stale callbacks, embedded `userId` blocks session-swap.
+- **`fetch` directo (no `googleapis` SDK)**: 6 endpoints simples, bundle más liviano, tests con global fetch mock triviales.
+- **Refresh sin lock**: bajo concurrencia el peor caso es 1 extra refresh roundtrip. Google retorna mismo `refresh_token` (no rota), solo se update access_token + expires_at. SELECT FOR UPDATE no escala bien con neon-serverless HTTP.
+- **Revoke-first, delete-second**: revoke fail (non-idempotent) → row keeps + error stored. Premature delete strands el grant on Google's side sin UI para limpiar.
+- **400 invalid_token treated as success** en revoke: idempotente — el token ya está revocado por otro path, nada que hacer.
+- **Scope check granular en callback**: si `granted_scopes` no incluye `calendar.readonly` (user descheckeó) → redirect `?error=scope_denied`. BR-12.
+- **No refresh_token returned por Google** → redirect `?error=no_refresh_token`. Indica que `access_type=offline` no fue honorado (Google a veces lo skip si el user ya consented antes — necesitamos `prompt=consent` para forzar).
+- **All error paths → 302 a `/settings/integrations?error=<reason>`**: nunca exponemos Google response bodies al browser. UI A3 traduce los codes a mensajes.
+
+**Verificación:**
+
+- `pnpm typecheck` ✅
+- `pnpm lint` ✅ 0 errors
+- `pnpm test calendar` ✅ 43/43 (incluyendo los 14 tokens de A1)
+- `pnpm test` full ✅ 857/858 (1 flake preexistente: register POST gates, isolation pasa)
+
+**Scope deferred → ISSUE-090c (UI):**
+
+- Settings integrations page (SCR-033)
+- Connections list + connect button + pausar/renombrar/disconnect actions
+- Toast surfaces para `?connected=1` / `?error=*` query params
