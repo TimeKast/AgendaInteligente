@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$doc": "Crisis line lookup by ISO country code — ISSUE-056. Reviewed pre-launch by clinical contact. Phone numbers are in display format AND tel: format. The fallback entry is used when country inference fails.",
+  "lines": {
+    "MX": {
+      "name": "SAPTEL",
+      "phone_display": "800 911 2000",
+      "phone_tel": "tel:+528009112000",
+      "hours": "24h",
+      "language": "es"
+    },
+    "US": {
+      "name": "988 Suicide & Crisis Lifeline",
+      "phone_display": "988",
+      "phone_tel": "tel:988",
+      "hours": "24h",
+      "language": "en"
+    },
+    "ES": {
+      "name": "Teléfono de la Esperanza",
+      "phone_display": "717 003 717",
+      "phone_tel": "tel:+34717003717",
+      "hours": "24h",
+      "language": "es"
+    },
+    "AR": {
+      "name": "Centro de Asistencia al Suicida",
+      "phone_display": "135",
+      "phone_tel": "tel:135",
+      "hours": "24h",
+      "language": "es"
+    },
+    "CO": {
+      "name": "Línea de Emergencias",
+      "phone_display": "106",
+      "phone_tel": "tel:106",
+      "hours": "24h",
+      "language": "es"
+    },
+    "CL": {
+      "name": "Salud Responde — Suicidio",
+      "phone_display": "600 360 7777",
+      "phone_tel": "tel:+5660036077777",
+      "hours": "24h",
+      "language": "es"
+    },
+    "PE": {
+      "name": "Línea 113",
+      "phone_display": "113 opción 5",
+      "phone_tel": "tel:113",
+      "hours": "24h",
+      "language": "es"
+    },
+    "BR": {
+      "name": "Centro de Valorização da Vida",
+      "phone_display": "188",
+      "phone_tel": "tel:188",
+      "hours": "24h",
+      "language": "pt"
+    },
+    "UY": {
+      "name": "Línea Vida",
+      "phone_display": "0800 0767",
+      "phone_tel": "tel:+59808000767",
+      "hours": "24h",
+      "language": "es"
+    },
+    "GB": {
+      "name": "Samaritans",
+      "phone_display": "116 123",
+      "phone_tel": "tel:116123",
+      "hours": "24h",
+      "language": "en"
+    },
+    "CA": {
+      "name": "Talk Suicide Canada",
+      "phone_display": "1-833-456-4566",
+      "phone_tel": "tel:+18334564566",
+      "hours": "24h",
+      "language": "en"
+    }
+  },
+  "fallback": {
+    "name": "International — befrienders.org",
+    "phone_display": "befrienders.org (find your local line)",
+    "phone_tel": "https://www.befrienders.org",
+    "hours": "—",
+    "language": "en"
+  }
+}

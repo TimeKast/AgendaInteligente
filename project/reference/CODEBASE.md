@@ -337,6 +337,7 @@
 | `src\lib\actions\subtask.ts` | — | — |
 | `src\lib\actions\types.ts` | — | — |
 | `src\lib\ai\client.ts` | `src\lib\ai\models.ts`, `src\lib\ai\telemetry.ts` | — |
+| `src\lib\ai\crisis-detection.ts` | — | — |
 | `src\lib\ai\models.ts` | — | `src\lib\ai\client.ts`, `src\lib\ai\telemetry.ts` |
 | `src\lib\ai\system-prompts\agent-base.ts` | — | — |
 | `src\lib\ai\telemetry.ts` | `src\lib\ai\models.ts` | `src\lib\ai\client.ts` |
@@ -466,10 +467,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 411 |
+| Total files analyzed | 412 |
 | Total connections | 156 |
 | High-risk files (2+ deps) | 30 |
-| Orphan files (no connections) | 269 |
+| Orphan files (no connections) | 270 |
 
 ---
 

@@ -49,6 +49,15 @@ export const conversations = pgTable(
 
     /** ProactiveTask trigger (ISSUE-082). NULL until that issue lands. */
     linkedProactiveTaskId: uuid('linked_proactive_task_id'),
+
+    /**
+     * AI-8 crisis exit timestamp. Stamped by the chat route when EITHER
+     * the regex pre-filter OR the LLM tool call fires. NULL = no crisis
+     * detected on this thread. Tracked here (not on messages) so the
+     * thread carries the safety signal forward — a user returning to a
+     * flagged conversation gets the crisis panel re-rendered.
+     */
+    crisisExitAt: timestamp('crisis_exit_at', { mode: 'date', withTimezone: true }),
   },
   (table) => [
     // "List my recent chats" hot path.
