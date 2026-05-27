@@ -5,7 +5,8 @@ epic: EPIC-CHECKINS
 milestone: v1.0
 priority: P1
 story_points: 4
-status: ready
+status: in_progress
+slice_a1_completed_date: 2026-05-27
 dependencies: [ISSUE-083]
 user_stories: [US-081, US-082]
 features: [FT-081, FT-082, FT-104]

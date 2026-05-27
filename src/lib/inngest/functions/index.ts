@@ -20,6 +20,13 @@ import { calendarSyncCron, calendarSyncOnDemand } from './calendar-sync';
 import { silenceDetection } from './silence-detection';
 import { riskAlertDaily } from './risk-alert';
 import { projectKillSuggestion } from './project-kill-suggestion';
+import {
+  morningCheckInHandler,
+  middayCheckInHandler,
+  eveningCheckInHandler,
+  weeklyKickoffHandler,
+  weeklyReviewHandler,
+} from './check-in-handlers';
 
 export const inngestFunctions = [
   userSignedUp,
@@ -34,4 +41,9 @@ export const inngestFunctions = [
   silenceDetection,
   riskAlertDaily,
   projectKillSuggestion,
+  morningCheckInHandler,
+  middayCheckInHandler,
+  eveningCheckInHandler,
+  weeklyKickoffHandler,
+  weeklyReviewHandler,
 ] as const;
