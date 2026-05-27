@@ -603,3 +603,91 @@ describe('transitionActivity — auth + not-found', () => {
     expect(scopedState.updated).toBeUndefined();
   });
 });
+
+// ─── listActivities ──────────────────────────────────────────────────────
+
+describe('listActivities — scope classification', () => {
+  beforeEach(reset);
+
+  function row(overrides: Partial<Record<string, unknown>>) {
+    return {
+      id: 'r-' + Math.random().toString(36).slice(2, 8),
+      userId: USER_A,
+      projectId: PROJECT_INBOX,
+      title: 'x',
+      description: null,
+      scheduledDates: [],
+      scheduledTime: null,
+      durationMinutes: null,
+      deadline: null,
+      estimatedMinutes: null,
+      priority: 3,
+      quadrant: null,
+      progressPercent: null,
+      recurrenceRule: null,
+      status: 'pending' as const,
+      reasonNotDone: null,
+      reasonCategory: null,
+      tags: [],
+      completedAt: null,
+      deletedAt: null,
+      ...overrides,
+    };
+  }
+
+  it('splits rows into today_scheduled / today_pool / week / backlog', async () => {
+    scopedState.selectResults = [
+      [
+        row({ id: 'a', scheduledDates: ['2026-05-27'], scheduledTime: '09:00:00' }),
+        row({ id: 'b', scheduledDates: ['2026-05-27'], scheduledTime: null }),
+        row({ id: 'c', scheduledDates: ['2026-05-29'], scheduledTime: null }),
+        row({ id: 'd', scheduledDates: ['2026-06-15'], scheduledTime: null }),
+        row({ id: 'e', scheduledDates: [], scheduledTime: null }),
+        row({ id: 'f', scheduledDates: ['2025-01-01'], scheduledTime: null }),
+      ],
+    ];
+
+    const { listActivities } = await import('@/lib/actions/activity');
+    const result = await listActivities({ date: '2026-05-27' });
+
+    if (result.error) throw new Error(result.error);
+    expect(result.data.scheduled.map((r) => r.id)).toEqual(['a']);
+    expect(result.data.pool.todayUnscheduled.map((r) => r.id)).toEqual(['b']);
+    expect(result.data.pool.thisWeek.map((r) => r.id)).toEqual(['c']);
+    // d (far future), e (no dates), f (past only) → all backlog.
+    expect(result.data.pool.backlog.map((r) => r.id).sort()).toEqual(['d', 'e', 'f']);
+  });
+
+  it('skips done activities when includeDone=false', async () => {
+    scopedState.selectResults = [
+      [
+        row({ id: 'p', status: 'pending', scheduledDates: ['2026-05-27'] }),
+        row({ id: 'd', status: 'done', scheduledDates: ['2026-05-27'] }),
+      ],
+    ];
+
+    const { listActivities } = await import('@/lib/actions/activity');
+    const result = await listActivities({ date: '2026-05-27', includeDone: false });
+
+    if (result.error) throw new Error(result.error);
+    expect(result.data.rows.map((r) => r.id)).toEqual(['p']);
+  });
+
+  it('excludes soft-deleted rows by default', async () => {
+    scopedState.selectResults = [[row({ id: 'live' })]];
+
+    const { listActivities } = await import('@/lib/actions/activity');
+    await listActivities({ date: '2026-05-27' });
+
+    // First (and only) select call must carry the isNull(deletedAt) extra clause.
+    expect(scopedState.selectCalls).toHaveLength(1);
+    expect(scopedState.selectCalls[0].extra).toBeDefined();
+  });
+
+  it('returns "Debes iniciar sesión" when no session', async () => {
+    authMock.mockResolvedValueOnce(null);
+    const { listActivities } = await import('@/lib/actions/activity');
+    const result = await listActivities({ date: '2026-05-27' });
+    expect(result.error).toBe('Debes iniciar sesión');
+  });
+});

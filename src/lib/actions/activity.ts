@@ -17,8 +17,8 @@
  * Linked: E-005, BR-1, BR-2, BR-8, BR-15, BR-16, BR-17.
  */
 
-import { eq, sql } from 'drizzle-orm';
-import { activities } from '@/lib/db/schema/activities';
+import { eq, isNull, sql } from 'drizzle-orm';
+import { activities, type Activity } from '@/lib/db/schema/activities';
 import { projects } from '@/lib/db/schema/projects';
 import { scopedDb } from '@/lib/db/scoped';
 import { withSelf } from '@/lib/actions/helpers';
@@ -28,6 +28,7 @@ import {
   updateActivitySchema,
   deleteActivitySchema,
   transitionActivitySchema,
+  listActivitiesSchema,
 } from '@/lib/validations/activity';
 import { isAllowedTransition, reasonRequirementFor } from '@/lib/domain/activity-transitions';
 import { logger } from '@/lib/logger';
@@ -263,6 +264,96 @@ export async function transitionActivity(input: unknown): Promise<ActionResult> 
       }
     }
   );
+}
+
+// ─── Today screen anchor query ─────────────────────────────────────────
+
+/**
+ * Scope buckets used by the Today screen pool sidebar.
+ *
+ * Derived (not stored) from `scheduled_dates` relative to the user's
+ * local `date` argument. Storing scope would force every recurrence
+ * materialization + every drag-to-tomorrow to update a denorm field;
+ * deriving here keeps the source of truth in `scheduled_dates` alone.
+ */
+export type ActivityScope = 'today_scheduled' | 'today_pool' | 'week' | 'backlog';
+
+export interface ListActivitiesResult {
+  /** All non-deleted activities for the user, with their derived scope. */
+  rows: Array<Activity & { scope: ActivityScope }>;
+  /** Quick split for the Today screen — same rows, regrouped. */
+  scheduled: Array<Activity & { scope: 'today_scheduled' }>;
+  pool: {
+    todayUnscheduled: Activity[];
+    thisWeek: Activity[];
+    backlog: Activity[];
+  };
+}
+
+/** Compute scope from scheduled_dates + scheduled_time relative to today. */
+function classifyScope(act: Activity, today: string, weekEnd: string): ActivityScope {
+  const dates = act.scheduledDates ?? [];
+  if (dates.length === 0) return 'backlog';
+  // `scheduled_dates` is sorted ascending (BR-15) — earliest date wins for scope.
+  const next = dates.find((d) => d >= today);
+  if (!next) return 'backlog'; // every scheduled date is in the past
+  if (next === today) {
+    return act.scheduledTime ? 'today_scheduled' : 'today_pool';
+  }
+  return next <= weekEnd ? 'week' : 'backlog';
+}
+
+/** YYYY-MM-DD of `date + days` in UTC arithmetic (no TZ ambiguity). */
+function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * List the user's activities and split them into Today screen buckets.
+ *
+ * - `today_scheduled` — has `scheduled_time` AND `scheduled_dates` includes today.
+ * - `today_pool` — `scheduled_dates` includes today but no `scheduled_time`.
+ * - `week` — earliest future scheduled date falls within today..today+6.
+ * - `backlog` — no `scheduled_dates`, or every scheduled date is past.
+ *
+ * Tenant isolation: routed through `scopedDb` so cross-user reads are
+ * impossible by construction (BR-1).
+ */
+export async function listActivities(input: unknown): Promise<ActionResult<ListActivitiesResult>> {
+  return await withSelf({ schema: listActivitiesSchema }, input, async (data, userId) => {
+    const sdb = scopedDb(userId);
+
+    // Pull every non-deleted row in one query; client-side scope split
+    // is cheap and avoids 3-4 round trips. Skip soft-deleted unless
+    // explicitly asked (admin/debug use).
+    const allRows = await sdb.select(
+      'activities',
+      data.includeDeleted ? undefined : isNull(activities.deletedAt)
+    );
+
+    const filtered = data.includeDone ? allRows : allRows.filter((r) => r.status !== 'done');
+
+    const weekEnd = addDays(data.date, 6);
+    const annotated = filtered.map((r) => ({
+      ...r,
+      scope: classifyScope(r, data.date, weekEnd),
+    }));
+
+    const scheduled = annotated.filter(
+      (r): r is Activity & { scope: 'today_scheduled' } => r.scope === 'today_scheduled'
+    );
+    const todayUnscheduled = annotated.filter((r) => r.scope === 'today_pool');
+    const thisWeek = annotated.filter((r) => r.scope === 'week');
+    const backlog = annotated.filter((r) => r.scope === 'backlog');
+
+    return {
+      rows: annotated,
+      scheduled,
+      pool: { todayUnscheduled, thisWeek, backlog },
+    };
+  });
 }
 
 /**

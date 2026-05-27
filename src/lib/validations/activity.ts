@@ -171,3 +171,18 @@ export type CreateActivityInput = z.infer<typeof createActivitySchema>;
 export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
 export type DeleteActivityInput = z.infer<typeof deleteActivitySchema>;
 export type TransitionActivityInput = z.infer<typeof transitionActivitySchema>;
+
+/**
+ * Input for `listActivities` — the Today screen's anchor query.
+ *
+ * `date` is the user's local YYYY-MM-DD; the action computes pool /
+ * scheduled split from `scheduled_dates` relative to it. `includeDone`
+ * defaults to true so closed days still render; the Today view passes
+ * false when only the live-work list is wanted.
+ */
+export const listActivitiesSchema = z.object({
+  date: isoDate,
+  includeDone: z.boolean().default(true),
+  includeDeleted: z.boolean().default(false),
+});
+export type ListActivitiesInput = z.infer<typeof listActivitiesSchema>;
