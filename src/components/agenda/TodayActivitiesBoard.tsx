@@ -309,11 +309,26 @@ interface TodayActivitiesBoardProps {
   morningSection?: React.ReactNode;
   /** Modo de agrupación del pool sidebar. Default 'fecha'. */
   view?: TodayView;
+  /**
+   * Persistence hook for quick-adds — Phase 2 wiring (ISSUE-025).
+   * When provided, the optimistic insert still happens locally for
+   * snappy UX and this callback is invoked in parallel for the real
+   * server write. Leave undefined for prototype demos.
+   */
+  onCreatePersist?: (draft: QuickAddDraft) => void;
+  /**
+   * Persistence hook for swipe / status-modal transitions — Phase 2
+   * wiring. Receives the activity id + the BR-8 target status. The
+   * board updates its local view optimistically before invoking.
+   */
+  onTransitionPersist?: (id: string, toStatus: 'done' | 'skipped' | 'blocked' | 'pending') => void;
 }
 
 export function TodayActivitiesBoard({
   morningSection,
   view = 'fecha',
+  onCreatePersist,
+  onTransitionPersist,
 }: TodayActivitiesBoardProps) {
   const [scheduled, setScheduled] = useState<ScheduledActivity[]>(INITIAL_SCHEDULED);
   const [pool, setPool] = useState<PoolActivity[]>(INITIAL_POOL);
@@ -484,6 +499,10 @@ export function TodayActivitiesBoard({
         },
       ]);
     }
+    // Fire-and-forget the server persist alongside the optimistic insert.
+    // The parent owns reconciling the optimistic id with the persisted
+    // UUID on the next page revalidation.
+    onCreatePersist?.(draft);
   }
 
   function handleResize(id: string, nextDurationMinutes: number) {
@@ -514,6 +533,20 @@ export function TodayActivitiesBoard({
   function applyStatus(next: ExtendedActivityStatus, _reason?: StatusReason) {
     if (!statusModal) return;
     setScheduledStatus(statusModal.id, next);
+    // Map the UI's ExtendedActivityStatus to the BR-8 enum the action
+    // expects. 'todo' is the rest state — no transition to record.
+    const mapped: Record<
+      ExtendedActivityStatus,
+      'done' | 'skipped' | 'blocked' | 'pending' | null
+    > = {
+      done: 'done',
+      skipped: 'skipped',
+      blocked: 'blocked',
+      todo: 'pending',
+      in_progress: null,
+    };
+    const toStatus = mapped[next];
+    if (toStatus) onTransitionPersist?.(statusModal.id, toStatus);
     setStatusModal(null);
   }
 

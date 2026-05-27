@@ -7,11 +7,12 @@
  * + date label, then hands them here. This client component owns:
  *   - View toggle state (fecha / matriz)
  *   - Close-day modal state + submission to `closeDay()` action
- *   - Toast feedback after a successful close
+ *   - Quick-add + status-transition persistence callbacks routed to
+ *     `createActivity` / `transitionActivity` (Phase 2 wiring).
  *
- * Drag-and-drop + pool internals (TodayActivitiesBoard) remain
- * visual-only in this slice; Phase 2 wires them to updateActivity /
- * transitionActivity.
+ * Drag-and-drop on the calendar grid + pool moves stay client-only
+ * in this slice — the data-shape mapping (ScheduledActivity ↔
+ * scheduled_dates + scheduled_time) lands in the next Phase 2 sub-slice.
  */
 
 import { useEffect, useState, useTransition } from 'react';
@@ -25,7 +26,9 @@ import {
   type CloseDayActivityInput,
 } from '@/components/agenda/CloseDayModal';
 import { TodayViewToggle, type TodayView } from '@/components/agenda/TodayViewToggle';
+import type { QuickAddDraft } from '@/components/agenda/ActivityQuickAdd';
 import { closeDay } from '@/lib/actions/close-day';
+import { createActivity, transitionActivity } from '@/lib/actions/activity';
 
 export interface TodayClientProps {
   /** YYYY-MM-DD for the user's local "today". Server-resolved. */
@@ -53,6 +56,40 @@ export function TodayClient({ todayDate, dateLabel, initials, todayActivities }:
     const t = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(t);
   }, [toast]);
+
+  function handleCreatePersist(draft: QuickAddDraft) {
+    // Fire-and-forget — the board already inserted the optimistic
+    // row. Failures surface as a toast; the row will reconcile on the
+    // next page revalidation (createActivity calls revalidatePath).
+    startTransition(async () => {
+      const result = await createActivity({
+        title: draft.title,
+        priority: draft.priority,
+        description: draft.description,
+        scheduledTime: draft.scheduledTime ? `${draft.scheduledTime}:00` : null,
+        // Quick-add on the Today page implies today's date.
+        scheduledDates: [todayDate],
+        // RecurrenceRule is already a string in the DSL the schema accepts.
+        recurrenceRule: draft.recurrenceRule ?? null,
+        deadline: draft.deadline ? new Date(`${draft.deadline}T23:59:59`).toISOString() : null,
+      });
+      if (result.error) {
+        setToast(`No se pudo guardar: ${result.error}`);
+      }
+    });
+  }
+
+  function handleTransitionPersist(
+    id: string,
+    toStatus: 'done' | 'skipped' | 'blocked' | 'pending'
+  ) {
+    startTransition(async () => {
+      const result = await transitionActivity({ id, toStatus });
+      if (result.error) {
+        setToast(`No se pudo actualizar: ${result.error}`);
+      }
+    });
+  }
 
   function handleClose(payload: CloseDayPayload) {
     startTransition(async () => {
@@ -107,7 +144,12 @@ export function TodayClient({ todayDate, dateLabel, initials, todayActivities }:
           <TodayViewToggle value={view} onChange={setView} />
         </div>
 
-        <TodayActivitiesBoard view={view} morningSection={<DaySheetMorningSection />} />
+        <TodayActivitiesBoard
+          view={view}
+          morningSection={<DaySheetMorningSection />}
+          onCreatePersist={handleCreatePersist}
+          onTransitionPersist={handleTransitionPersist}
+        />
 
         <button
           type="button"
