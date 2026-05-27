@@ -5,7 +5,8 @@ epic: EPIC-AI-AGENT
 milestone: v1.0
 priority: P2
 story_points: 1
-status: ready
+status: completed
+completed_date: 2026-05-27
 dependencies: [ISSUE-050, ISSUE-050b]
 user_stories: []
 features: [FT-051]
@@ -23,14 +24,16 @@ Documents how we evaluate prompt quality + ships a tiny eval harness so prompt c
 
 ## Tasks
 
-- [ ] `tests/ai-eval/golden/` — JSON fixtures: input messages + ideal output.
-- [ ] `scripts/ai-eval.ts` — replay each fixture against the current prompt, assert: (a) no forbidden tokens (vos/tenés/che), (b) AI-3 compliance (no automatic praise tokens), (c) sentence-count budget (AI-6).
-- [ ] `src/lib/ai/README.md` — explains:
-  - Where prompts live + how to add a new ritual.
-  - Eval methodology: golden fixtures, what we test, what we don't.
-  - How to interpret usage_meters dashboards.
-  - Cost guardrails (alert thresholds).
-- [ ] `pnpm ai:eval` script in package.json.
+- [x] `tests/ai-eval/golden/voice-principles.json` — 19 fixtures (5 ES pass, 7 ES fail, 3 EN pass, 4 EN fail).
+- [x] `scripts/tools/ai-eval.ts` — replays fixtures against `lintAgentReply`, exit 1 on any regression.
+- [x] `src/lib/ai/README.md` — layout + eval methodology + cost guardrails.
+- [x] `pnpm ai:eval` script in package.json.
+
+## Implementation Evidence
+
+- Commits: `d324dbb` (harness + fixtures), `115061b` (README).
+- `pnpm ai:eval` → 19/19 (100%).
+- Voice contract frozen — runner exits non-zero on any regression.
 
 ## Acceptance Criteria
 
