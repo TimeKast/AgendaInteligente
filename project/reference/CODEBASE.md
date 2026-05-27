@@ -15,6 +15,7 @@
 | `src\lib\inngest\client.ts` | 12 |
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
+| `src\lib\ai\system-prompts\agent-base.ts` | 5 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
 | `src\components\agenda\ActivityQuickAdd.tsx` | 4 |
@@ -348,8 +349,12 @@
 | `src\lib\ai\crisis-detection.ts` | — | — |
 | `src\lib\ai\models.ts` | — | `src\lib\ai\client.ts`, `src\lib\ai\telemetry.ts` |
 | `src\lib\ai\sse.ts` | — | — |
-| `src\lib\ai\system-prompts\agent-base.ts` | — | `src\lib\ai\system-prompts\voice-parser.ts` |
+| `src\lib\ai\system-prompts\agent-base.ts` | — | `src\lib\ai\system-prompts\evening-ritual.ts`, `src\lib\ai\system-prompts\morning-ritual.ts`, `src\lib\ai\system-prompts\voice-parser.ts`, `src\lib\ai\system-prompts\weekly-kickoff.ts`, `src\lib\ai\system-prompts\weekly-review.ts` |
+| `src\lib\ai\system-prompts\evening-ritual.ts` | `src\lib\ai\system-prompts\agent-base.ts` | — |
+| `src\lib\ai\system-prompts\morning-ritual.ts` | `src\lib\ai\system-prompts\agent-base.ts` | — |
 | `src\lib\ai\system-prompts\voice-parser.ts` | `src\lib\ai\system-prompts\agent-base.ts` | — |
+| `src\lib\ai\system-prompts\weekly-kickoff.ts` | `src\lib\ai\system-prompts\agent-base.ts` | — |
+| `src\lib\ai\system-prompts\weekly-review.ts` | `src\lib\ai\system-prompts\agent-base.ts` | — |
 | `src\lib\ai\telemetry.ts` | `src\lib\ai\models.ts` | `src\lib\ai\client.ts` |
 | `src\lib\ai\tools\dispatch.ts` | `src\lib\ai\tools\index.ts` | — |
 | `src\lib\ai\tools\index.ts` | — | `src\lib\ai\tools\dispatch.ts` |
@@ -495,9 +500,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 437 |
-| Total connections | 178 |
-| High-risk files (2+ deps) | 33 |
+| Total files analyzed | 441 |
+| Total connections | 182 |
+| High-risk files (2+ deps) | 34 |
 | Orphan files (no connections) | 282 |
 
 ---

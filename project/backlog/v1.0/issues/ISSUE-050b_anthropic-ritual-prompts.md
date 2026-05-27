@@ -5,7 +5,9 @@ epic: EPIC-AI-AGENT
 milestone: v1.0
 priority: P1
 story_points: 2
-status: ready
+status: completed
+completed_date: 2026-05-27
+completion_note: voice-parser already shipped in ISSUE-073. Multi-turn tool loop in chat route remains in ISSUE-052b.
 dependencies: [ISSUE-050]
 user_stories: [US-051]
 features: [FT-051, FT-054]
