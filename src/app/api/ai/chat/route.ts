@@ -1,5 +1,5 @@
 /**
- * POST /api/ai/chat — SSE chat endpoint (ISSUE-052, Slice A1).
+ * POST /api/ai/chat — SSE chat endpoint (ISSUE-052, Slice A1 + A2).
  *
  * Sequence:
  *   1. Auth + Zod validate the request body.
@@ -14,17 +14,20 @@
  *      knows to challenge based on intensity_mode).
  *   5. Load the recent message history (last 50, chronological).
  *   6. Render the agent-base system prompt with the user's context.
- *   7. Stream Claude's response via `client.messages.stream`:
- *      - Forward every text delta as a `token` SSE event.
- *      - Collect tool_use blocks for post-stream dispatch.
- *   8. On stream end, dispatch any tool_use blocks (via `dispatchAll`),
- *      emit `tool_result` SSE events.
- *   9. Persist the agent message (full text + challenges_fired + tool_calls).
- *  10. Emit `done` + close.
+ *   7. Multi-turn tool loop (up to `MAX_TOOL_ROUNDS` rounds):
+ *      - Stream Claude's response — forward text deltas as `token` SSE.
+ *      - If `stop_reason === 'tool_use'`, dispatch the tool_use blocks,
+ *        emit `tool_result` SSE events, append (assistant content,
+ *        tool_result content) to the message list, loop.
+ *      - Otherwise break (the model is done).
+ *   8. Persist the agent message — concatenation of text across rounds,
+ *      with `challenges_fired` + cumulative `tool_calls`.
+ *   9. Emit `done` + close.
  *
- * Slice scope: SINGLE-turn streaming + post-stream tool dispatch.
- * Multi-turn tool loops (LLM → tool → LLM follow-up) defer to
- * ISSUE-052b. The first round is the 90% case.
+ * Cap rationale: 4 rounds is enough for "ask → call A → ask follow-up
+ * → call B → ack". Anything past that is almost always the model
+ * looping on a tool that's returning an error. We surface
+ * `tool_round_limit` so the UI can warn instead of hanging.
  *
  * Linked: FT-050, FT-051, AI-8, AI-9.
  */
@@ -50,6 +53,16 @@ import { chatRequestSchema } from '@/lib/validations/chat';
 
 const HISTORY_LIMIT = 50;
 const MAX_TOKENS = 1024;
+const MAX_TOOL_ROUNDS = 4;
+
+// Anthropic SDK accepts `messages: Array<{ role, content: string | Array<ContentBlockParam> }>`.
+// We mix: initial history rows carry plain strings; assistant turns we
+// emit ourselves keep the full ContentBlock[] (text + tool_use) so the
+// API can correlate the tool_use IDs with the follow-up tool_result.
+type ChatMessage = {
+  role: 'user' | 'assistant';
+  content: string | Array<Record<string, unknown>>;
+};
 
 export async function POST(req: Request): Promise<Response> {
   const session = await auth();
@@ -155,7 +168,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: history.error ?? 'history_failed' }, { status: 500 });
   }
   // history.data.messages includes the user message we just inserted.
-  const messages = history.data.messages.map((m) => ({
+  const initialMessages: ChatMessage[] = history.data.messages.map((m) => ({
     role: m.role === 'user' ? ('user' as const) : ('assistant' as const),
     content: m.content,
   }));
@@ -174,50 +187,79 @@ export async function POST(req: Request): Promise<Response> {
       sse.send('user_message', { id: userMessageId });
 
       const collectedText: string[] = [];
-      const collectedToolUses: ToolUseBlock[] = [];
+      const allToolUses: ToolUseBlock[] = [];
+      const usageTotal = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+      let hitRoundLimit = false;
 
       try {
         const client = getAnthropicClient();
-        const messageStream = client.messages.stream({
-          model: DEFAULT_MODEL,
-          max_tokens: MAX_TOKENS,
-          system: [
-            {
-              type: 'text',
-              text: systemPrompt,
-              cache_control: { type: 'ephemeral' },
-            },
-          ],
-          messages,
-          // `getToolsForAnthropic` returns properly-shaped JSON Schema
-          // objects; Anthropic's type asks for an index signature we
-          // can't model in our narrow JsonSchema interface — safe cast.
-          tools: getToolsForAnthropic() as never,
-        });
+        const conversation: ChatMessage[] = [...initialMessages];
 
-        messageStream.on('text', (delta) => {
-          collectedText.push(delta);
-          sse.send('token', { text: delta });
-        });
+        for (let round = 1; round <= MAX_TOOL_ROUNDS; round++) {
+          const messageStream = client.messages.stream({
+            model: DEFAULT_MODEL,
+            max_tokens: MAX_TOKENS,
+            system: [
+              {
+                type: 'text',
+                text: systemPrompt,
+                cache_control: { type: 'ephemeral' },
+              },
+            ],
+            // SDK type wants an index signature on each content block
+            // that we don't model — safe cast (shape is correct).
+            messages: conversation as never,
+            tools: getToolsForAnthropic() as never,
+          });
 
-        messageStream.on('contentBlock', (block) => {
-          if (block.type === 'tool_use') {
-            collectedToolUses.push({
-              type: 'tool_use',
-              id: block.id,
-              name: block.name,
-              input: block.input,
-            });
+          messageStream.on('text', (delta) => {
+            collectedText.push(delta);
+            sse.send('token', { text: delta });
+          });
+
+          const finalMessage = await messageStream.finalMessage();
+          usageTotal.input += finalMessage.usage.input_tokens;
+          usageTotal.output += finalMessage.usage.output_tokens;
+          usageTotal.cacheRead += finalMessage.usage.cache_read_input_tokens ?? 0;
+          usageTotal.cacheWrite += finalMessage.usage.cache_creation_input_tokens ?? 0;
+
+          const roundToolUses: ToolUseBlock[] = [];
+          for (const block of finalMessage.content) {
+            if (block.type === 'tool_use') {
+              roundToolUses.push({
+                type: 'tool_use',
+                id: block.id,
+                name: block.name,
+                input: block.input,
+              });
+            }
           }
-        });
 
-        const finalMessage = await messageStream.finalMessage();
+          // End-of-turn (no tool_use) → model is done talking.
+          if (finalMessage.stop_reason !== 'tool_use' || roundToolUses.length === 0) {
+            break;
+          }
 
-        // ── Dispatch any tool_use blocks (single round; multi-turn → A2)
-        if (collectedToolUses.length > 0) {
-          const results = await dispatchAll(collectedToolUses, userId);
+          allToolUses.push(...roundToolUses);
+          const results = await dispatchAll(roundToolUses, userId);
           for (const r of results) {
             sse.send('tool_result', r);
+          }
+
+          // Append the assistant's full content (so the next turn sees
+          // the tool_use IDs) and the user-role tool_result reply.
+          conversation.push({
+            role: 'assistant',
+            content: finalMessage.content as unknown as Array<Record<string, unknown>>,
+          });
+          conversation.push({
+            role: 'user',
+            content: results as unknown as Array<Record<string, unknown>>,
+          });
+
+          if (round === MAX_TOOL_ROUNDS) {
+            hitRoundLimit = true;
+            sse.send('tool_round_limit', { rounds: round });
           }
         }
 
@@ -229,20 +271,15 @@ export async function POST(req: Request): Promise<Response> {
           content: fullText,
           challengesFired,
           toolCalls:
-            collectedToolUses.length > 0
-              ? collectedToolUses.map((t) => ({ name: t.name, input: t.input, id: t.id }))
+            allToolUses.length > 0
+              ? allToolUses.map((t) => ({ name: t.name, input: t.input, id: t.id }))
               : undefined,
         });
 
         // Telemetry (fire-and-forget — a DB blip shouldn't break the
         // user's turn since the stream content already shipped).
         try {
-          await recordTokens(userId, {
-            input: finalMessage.usage.input_tokens,
-            output: finalMessage.usage.output_tokens,
-            cacheRead: finalMessage.usage.cache_read_input_tokens ?? 0,
-            cacheWrite: finalMessage.usage.cache_creation_input_tokens ?? 0,
-          });
+          await recordTokens(userId, usageTotal);
         } catch (err) {
           logger.error('[api/ai/chat] recordTokens failed', err);
         }
@@ -251,6 +288,7 @@ export async function POST(req: Request): Promise<Response> {
           conversationId,
           agentMessageId: agentAppend.error ? null : agentAppend.data?.id,
           challengesFired,
+          hitRoundLimit,
         });
       } catch (err) {
         logger.error('[api/ai/chat] stream failed', err);

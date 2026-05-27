@@ -66,8 +66,10 @@ vi.mock('@/lib/ai/telemetry', () => ({
   recordTokens: recordTokensMock,
 }));
 
-// Fake EventEmitter-like stream. We invoke `text` + `contentBlock`
-// synchronously inside the start callback to keep tests deterministic.
+// Fake EventEmitter-like stream. We invoke `text` handlers
+// synchronously inside `finalMessage()` to keep tests deterministic.
+// The route reads tool_use blocks from `finalMessage.content` (no
+// `contentBlock` listener anymore — Slice A2).
 interface FakeStreamConfig {
   textDeltas?: string[];
   toolUses?: Array<{ id: string; name: string; input: unknown }>;
@@ -90,10 +92,12 @@ function makeFakeStream(cfg: FakeStreamConfig) {
         handlers.text?.forEach((h) => h(t, text.slice(0, text.indexOf(t) + 1).join('')));
       }
       const tools = cfg.toolUses ?? [];
-      for (const u of tools) {
-        handlers.contentBlock?.forEach((h) => h({ type: 'tool_use', ...u }));
-      }
+      const content: Array<Record<string, unknown>> = [];
+      if (text.length > 0) content.push({ type: 'text', text: text.join('') });
+      for (const u of tools) content.push({ type: 'tool_use', ...u });
       return {
+        content,
+        stop_reason: tools.length > 0 ? 'tool_use' : 'end_turn',
         usage: {
           input_tokens: cfg.finalUsage?.input_tokens ?? 100,
           output_tokens: cfg.finalUsage?.output_tokens ?? 50,
@@ -350,6 +354,90 @@ describe('POST /api/ai/chat — tool dispatch', () => {
 
     const toolResults = events.filter((e) => e.event === 'tool_result');
     expect(toolResults).toHaveLength(1);
+  });
+});
+
+describe('POST /api/ai/chat — multi-turn tool loop (Slice A2)', () => {
+  it('chains a follow-up turn after a tool_use, streaming both rounds', async () => {
+    // Round 1: model calls a tool. Round 2: model writes the final reply.
+    streamFnMock
+      .mockReturnValueOnce(
+        makeFakeStream({
+          textDeltas: ['un sec'],
+          toolUses: [
+            {
+              id: 'tu-1',
+              name: 'save_sheet_field',
+              input: {
+                sheet_type: 'day',
+                date: '2026-05-26',
+                field: 'identityStatement',
+                value: 'foo',
+              },
+            },
+          ],
+        })
+      )
+      .mockReturnValueOnce(makeFakeStream({ textDeltas: ['listo'] }));
+
+    dispatchAllMock.mockResolvedValueOnce([
+      { type: 'tool_result', tool_use_id: 'tu-1', content: '{"ok":true}' },
+    ]);
+
+    const { POST } = await import('@/app/api/ai/chat/route');
+    const res = await POST(makeReq({ message: 'guarda mi identidad' }));
+    const events = await drainSse(res);
+
+    // Two stream invocations (round 1 + round 2).
+    expect(streamFnMock).toHaveBeenCalledTimes(2);
+
+    // Tokens from BOTH rounds, in order.
+    const tokens = events
+      .filter((e) => e.event === 'token')
+      .map((e) => (e.data as { text: string }).text);
+    expect(tokens).toEqual(['un sec', 'listo']);
+
+    // Round 2's messages include the assistant content + tool_result.
+    const round2Args = streamFnMock.mock.calls[1][0];
+    const round2Messages = round2Args.messages as Array<{ role: string; content: unknown }>;
+    // Last two should be assistant content + user tool_result.
+    expect(round2Messages.at(-2)?.role).toBe('assistant');
+    expect(round2Messages.at(-1)?.role).toBe('user');
+    expect(round2Messages.at(-1)?.content).toEqual([
+      expect.objectContaining({ type: 'tool_result', tool_use_id: 'tu-1' }),
+    ]);
+
+    const done = events.find((e) => e.event === 'done');
+    expect(done?.data).toMatchObject({ hitRoundLimit: false });
+  });
+
+  it('emits tool_round_limit when MAX_TOOL_ROUNDS is hit', async () => {
+    // Every round emits a tool_use → loop hits the cap.
+    const cfg = {
+      textDeltas: ['x'],
+      toolUses: [
+        {
+          id: 'tu',
+          name: 'save_sheet_field',
+          input: {
+            sheet_type: 'day',
+            date: '2026-05-26',
+            field: 'identityStatement',
+            value: 'v',
+          },
+        },
+      ],
+    } as const;
+    streamFnMock.mockReturnValue(makeFakeStream(cfg));
+    dispatchAllMock.mockResolvedValue([{ type: 'tool_result', tool_use_id: 'tu', content: '{}' }]);
+
+    const { POST } = await import('@/app/api/ai/chat/route');
+    const res = await POST(makeReq({ message: 'pruebalo' }));
+    const events = await drainSse(res);
+
+    expect(events.some((e) => e.event === 'tool_round_limit')).toBe(true);
+    const done = events.find((e) => e.event === 'done');
+    expect(done?.data).toMatchObject({ hitRoundLimit: true });
   });
 });
 

@@ -11,6 +11,8 @@
  *   - `token`           → text delta from Claude.
  *   - `tool_result`     → JSON of a single tool_result block (after
  *                         dispatch).
+ *   - `tool_round_limit` → multi-turn loop hit `MAX_TOOL_ROUNDS`; the
+ *                         agent stopped before naturally finishing.
  *   - `crisis_exit`     → AI-8 trigger fired (with crisis line info).
  *   - `done`            → stream finished cleanly (with final agent
  *                         message id + challenges_fired list).
@@ -23,6 +25,7 @@ export type SseEventName =
   | 'user_message'
   | 'token'
   | 'tool_result'
+  | 'tool_round_limit'
   | 'crisis_exit'
   | 'done'
   | 'error';
