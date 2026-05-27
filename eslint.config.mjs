@@ -122,6 +122,9 @@ const eslintConfig = defineConfig([
       // enforced via parent conversation through scopedDb('conversations')
       // before any db.* call on messages. Mirror subtask / goal-link.
       'src/lib/actions/conversation.ts',
+      // ISSUE-054: intensity mode lives on `users` (not a tenant table).
+      // Direct db.update(users) with explicit eq(users.id, userId) scoping.
+      'src/lib/actions/intensity.ts',
       // ISSUE-024: recurrence materializer runs as a system task with an
       // explicit userId arg — no session context, so scopedDb can't bind.
       // Every read/write is scoped via `eq(activities.userId, userId)`.

@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (81)
+## 📅 To Do (82)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -45,6 +45,7 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-052_chat-ui-sse-streaming.md)
 - [Sin Título](v1.0\issues\ISSUE-053_ai-tools-schemas.md)
 - [Sin Título](v1.0\issues\ISSUE-054_intensity-modes-settings-auto-revert.md)
+- [Sin Título](v1.0\issues\ISSUE-054b_intensity-settings-ui.md)
 - [Sin Título](v1.0\issues\ISSUE-055_out-of-scope-redirect-voice-principles.md)
 - [Sin Título](v1.0\issues\ISSUE-056_crisis-exit-protocol-CRITICAL.md)
 - [Sin Título](v1.0\issues\ISSUE-056b_crisis-exit-ui-integration.md)

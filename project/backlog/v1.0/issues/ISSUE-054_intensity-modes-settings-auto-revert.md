@@ -5,8 +5,10 @@ epic: EPIC-AI-AGENT
 milestone: v1.0
 priority: P1
 story_points: 5
-status: ready
+status: in_progress
+slice_a1_completed_date: 2026-05-26
 dependencies: [ISSUE-050, ISSUE-080]
+follow_ups: [ISSUE-054b]
 user_stories: [US-052]
 features: [FT-052, FT-053]
 screens: [SCR-031]

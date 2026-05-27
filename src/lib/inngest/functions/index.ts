@@ -14,6 +14,8 @@ import { recurrenceMaterialize } from './recurrence-materialize';
 import { weeksheetMaterialize } from './weeksheet-materialize';
 import { dailyCheckinFanout } from './daily-checkin-fanout';
 import { weeklyFanout } from './weekly-fanout';
+import { listeningModeExpired } from './listening-mode-expired';
+import { gentleDefaultExpired } from './gentle-default-expired';
 
 export const inngestFunctions = [
   userSignedUp,
@@ -21,4 +23,6 @@ export const inngestFunctions = [
   weeksheetMaterialize,
   dailyCheckinFanout,
   weeklyFanout,
+  listeningModeExpired,
+  gentleDefaultExpired,
 ] as const;
