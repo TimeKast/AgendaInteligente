@@ -346,6 +346,8 @@
 | `src\lib\ai\models.ts` | — | `src\lib\ai\client.ts`, `src\lib\ai\telemetry.ts` |
 | `src\lib\ai\system-prompts\agent-base.ts` | — | — |
 | `src\lib\ai\telemetry.ts` | `src\lib\ai\models.ts` | `src\lib\ai\client.ts` |
+| `src\lib\ai\tools\dispatch.ts` | `src\lib\ai\tools\index.ts` | — |
+| `src\lib\ai\tools\index.ts` | — | `src\lib\ai\tools\dispatch.ts` |
 | `src\lib\api\client.ts` | — | — |
 | `src\lib\audit.ts` | — | — |
 | `src\lib\auth\auth.config.ts` | — | `src\lib\auth\auth.ts` |
@@ -478,8 +480,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 420 |
-| Total connections | 168 |
+| Total files analyzed | 422 |
+| Total connections | 169 |
 | High-risk files (2+ deps) | 33 |
 | Orphan files (no connections) | 273 |
 
