@@ -20,6 +20,7 @@
 | `PAGE_SIZE_OPTIONS` | constant | `src\lib\hooks\useServerTableState` | `src\lib\hooks\useServerTableState.ts` |
 | `RequireRole` | component | `@/lib/hooks` | `src\lib\hooks\usePermissions.tsx` |
 | `toggleSortDirection` | function | `src\lib\hooks\useTableState` | `src\lib\hooks\useTableState.ts` |
+| `useChatStream` | hook | `src\lib\hooks\useChatStream` | `src\lib\hooks\useChatStream.ts` |
 | `useDebounce` | hook | `@/lib/hooks` | `src\lib\hooks\useDebounce.ts` |
 | `useDialogViewportFit` | hook | `@/lib/hooks` | `src\lib\hooks\useDialogViewportFit.ts` |
 | `useMounted` | hook | `src\lib\hooks\useMounted` | `src\lib\hooks\useMounted.ts` |
@@ -124,14 +125,14 @@
 
 | Category | Count |
 |----------|-------|
-| Hooks | 15 |
+| Hooks | 16 |
 | Action Helpers | 2 |
 | DB Helpers | 4 |
 | DB Utils | 11 |
 | Form Kit | 9 |
 | Common Components | 7 |
 | UI Wrappers (kit-shipped) | 1 |
-| **Total** | **49** |
+| **Total** | **50** |
 
 ---
 

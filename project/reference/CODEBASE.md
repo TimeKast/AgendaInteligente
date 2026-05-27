@@ -435,6 +435,7 @@
 | `src\lib\email\types.ts` | — | `src\lib\email\index.ts`, `src\lib\email\resend.ts`, `src\lib\email\smtp.ts` |
 | `src\lib\env.ts` | — | — |
 | `src\lib\hooks\index.ts` | — | — |
+| `src\lib\hooks\useChatStream.ts` | — | — |
 | `src\lib\hooks\useDebounce.ts` | — | — |
 | `src\lib\hooks\useDialogViewportFit.ts` | — | — |
 | `src\lib\hooks\useMounted.ts` | — | — |
@@ -507,10 +508,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 447 |
+| Total files analyzed | 448 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 285 |
+| Orphan files (no connections) | 286 |
 
 ---
 
