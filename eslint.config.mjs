@@ -139,6 +139,10 @@ const eslintConfig = defineConfig([
       // preferred_language + onboarding_context + timezone for prompt
       // rendering. Single-user lookup scoped by eq(users.id, sessionUserId).
       'src/app/api/ai/chat/**',
+      // ISSUE-073: parse-task reads users (TZ + lang) + projects (for
+      // the prompt's matching block) by id, all scoped via
+      // eq(*.userId, sessionUserId) on the WHERE clause.
+      'src/app/api/ai/parse-task/**',
       // ISSUE-091: sync.ts is a unit-of-work for the cron + manual
       // trigger. Receives explicit userId; every read/write is scoped
       // via eq(*.userId, userId) or via the connectionId FK on rows

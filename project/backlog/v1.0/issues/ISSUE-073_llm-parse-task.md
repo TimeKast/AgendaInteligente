@@ -5,7 +5,8 @@ epic: EPIC-VOICE
 milestone: v1.0
 priority: P1
 story_points: 5
-status: ready
+status: completed
+completed_date: 2026-05-27
 dependencies: [ISSUE-050, ISSUE-053, ISSUE-071, ISSUE-072]
 user_stories: [US-072]
 features: [FT-073, FT-100]
