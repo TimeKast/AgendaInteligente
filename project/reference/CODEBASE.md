@@ -12,8 +12,8 @@
 | File | Dependents |
 |------|------------|
 | `src\lib\db\schema\users.ts` | 16 |
+| `src\lib\inngest\client.ts` | 12 |
 | `src\lib\email\templates\layout.ts` | 9 |
-| `src\lib\inngest\client.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
@@ -435,14 +435,17 @@
 | `src\lib\hooks\useServerTableState.ts` | `src\lib\hooks\useTableState.ts` | — |
 | `src\lib\hooks\useTableState.ts` | — | `src\lib\hooks\useServerTableState.ts` |
 | `src\lib\hooks\useUnsavedChangesGuard.ts` | — | — |
-| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\calendar-sync.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\calendar-sync.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\project-kill-suggestion.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\risk-alert.ts`, `src\lib\inngest\functions\silence-detection.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
 | `src\lib\inngest\events.ts` | — | `src\lib\inngest\publish.ts` |
 | `src\lib\inngest\functions\calendar-sync.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\daily-checkin-fanout.ts` | `src\lib\inngest\publish.ts`, `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\gentle-default-expired.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
-| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\calendar-sync.ts` | — |
+| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\calendar-sync.ts`, `src\lib\inngest\functions\silence-detection.ts`, `src\lib\inngest\functions\risk-alert.ts`, `src\lib\inngest\functions\project-kill-suggestion.ts` | — |
 | `src\lib\inngest\functions\listening-mode-expired.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\functions\project-kill-suggestion.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\recurrence-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\functions\risk-alert.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\functions\silence-detection.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\user-signed-up.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\weekly-fanout.ts` | `src\lib\inngest\publish.ts`, `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\weeksheet-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
@@ -492,8 +495,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 434 |
-| Total connections | 172 |
+| Total files analyzed | 437 |
+| Total connections | 178 |
 | High-risk files (2+ deps) | 33 |
 | Orphan files (no connections) | 282 |
 

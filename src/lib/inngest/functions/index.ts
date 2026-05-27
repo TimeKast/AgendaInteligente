@@ -17,6 +17,9 @@ import { weeklyFanout } from './weekly-fanout';
 import { listeningModeExpired } from './listening-mode-expired';
 import { gentleDefaultExpired } from './gentle-default-expired';
 import { calendarSyncCron, calendarSyncOnDemand } from './calendar-sync';
+import { silenceDetection } from './silence-detection';
+import { riskAlertDaily } from './risk-alert';
+import { projectKillSuggestion } from './project-kill-suggestion';
 
 export const inngestFunctions = [
   userSignedUp,
@@ -28,4 +31,7 @@ export const inngestFunctions = [
   gentleDefaultExpired,
   calendarSyncCron,
   calendarSyncOnDemand,
+  silenceDetection,
+  riskAlertDaily,
+  projectKillSuggestion,
 ] as const;

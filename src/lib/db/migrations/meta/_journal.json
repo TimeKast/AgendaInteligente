@@ -148,6 +148,13 @@
       "when": 1779895336728,
       "tag": "0020_greedy_ben_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1779895742287,
+      "tag": "0021_big_captain_cross",
+      "breakpoints": true
     }
   ]
 }

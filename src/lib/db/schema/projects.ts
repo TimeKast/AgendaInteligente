@@ -65,6 +65,12 @@ export const projects = pgTable(
     /** Auto-set by server action when status transitions to 'completed'. */
     completedAt: timestamp('completed_at', { mode: 'date', withTimezone: true }),
 
+    /**
+     * ISSUE-087: last time the weekly cron suggested killing this
+     * inactive project. Used to debounce re-suggests (30-day cooldown).
+     */
+    killSuggestedAt: timestamp('kill_suggested_at', { mode: 'date', withTimezone: true }),
+
     createdAt: timestamp('created_at', { mode: 'date', withTimezone: true }).notNull().defaultNow(),
 
     updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true })
