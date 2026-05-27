@@ -12,9 +12,13 @@
 import { userSignedUp } from './user-signed-up';
 import { recurrenceMaterialize } from './recurrence-materialize';
 import { weeksheetMaterialize } from './weeksheet-materialize';
+import { dailyCheckinFanout } from './daily-checkin-fanout';
+import { weeklyFanout } from './weekly-fanout';
 
 export const inngestFunctions = [
   userSignedUp,
   recurrenceMaterialize,
   weeksheetMaterialize,
+  dailyCheckinFanout,
+  weeklyFanout,
 ] as const;

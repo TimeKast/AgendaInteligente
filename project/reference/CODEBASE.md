@@ -14,11 +14,11 @@
 | `src\lib\db\schema\users.ts` | 13 |
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
+| `src\lib\inngest\client.ts` | 6 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
 | `src\components\agenda\ActivityQuickAdd.tsx` | 4 |
 | `src\lib\db\drizzle.ts` | 4 |
-| `src\lib\inngest\client.ts` | 4 |
 | `src\components\agenda\PriorityDots.tsx` | 3 |
 | `src\lib\email\types.ts` | 3 |
 | `src\components\agenda\RecurrencePicker.tsx` | 2 |
@@ -40,6 +40,7 @@
 | `src\lib\db\schema\activities.ts` | 2 |
 | `src\lib\db\schema\billing.ts` | 2 |
 | `src\lib\email\logo-data.ts` | 2 |
+| `src\lib\inngest\publish.ts` | 2 |
 
 ---
 
@@ -385,6 +386,7 @@
 | `src\lib\db\seeds\plans.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\billing.ts` | — |
 | `src\lib\db\utils\pagination.ts` | — | — |
 | `src\lib\domain\activity-transitions.ts` | — | — |
+| `src\lib\domain\checkin-schedule.ts` | — | — |
 | `src\lib\domain\day-sheet-completion.ts` | — | — |
 | `src\lib\domain\recurrence.ts` | — | — |
 | `src\lib\domain\week-calc.ts` | — | — |
@@ -414,13 +416,15 @@
 | `src\lib\hooks\useServerTableState.ts` | `src\lib\hooks\useTableState.ts` | — |
 | `src\lib\hooks\useTableState.ts` | — | `src\lib\hooks\useServerTableState.ts` |
 | `src\lib\hooks\useUnsavedChangesGuard.ts` | — | — |
-| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
 | `src\lib\inngest\events.ts` | — | `src\lib\inngest\publish.ts` |
-| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts` | — |
+| `src\lib\inngest\functions\daily-checkin-fanout.ts` | `src\lib\inngest\publish.ts`, `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts` | — |
 | `src\lib\inngest\functions\recurrence-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\user-signed-up.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\functions\weekly-fanout.ts` | `src\lib\inngest\publish.ts`, `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\weeksheet-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
-| `src\lib\inngest\publish.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | — |
+| `src\lib\inngest\publish.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts` |
 | `src\lib\integrations\calendar\google.ts` | — | `src\lib\integrations\calendar\refresh.ts` |
 | `src\lib\integrations\calendar\refresh.ts` | `src\lib\integrations\calendar\tokens.ts`, `src\lib\integrations\calendar\google.ts` | — |
 | `src\lib\integrations\calendar\state.ts` | — | — |
@@ -459,10 +463,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 405 |
-| Total connections | 148 |
-| High-risk files (2+ deps) | 29 |
-| Orphan files (no connections) | 266 |
+| Total files analyzed | 408 |
+| Total connections | 154 |
+| High-risk files (2+ deps) | 30 |
+| Orphan files (no connections) | 267 |
 
 ---
 

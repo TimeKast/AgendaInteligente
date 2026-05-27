@@ -63,8 +63,8 @@ describe('recordTokens', () => {
       aiCallsCount: 1,
     });
     const values = state.insertedValues as { aiTokensInput: bigint; aiTokensOutput: bigint };
-    expect(values.aiTokensInput).toBe(100n);
-    expect(values.aiTokensOutput).toBe(50n);
+    expect(values.aiTokensInput).toBe(BigInt(100));
+    expect(values.aiTokensOutput).toBe(BigInt(50));
   });
 
   it('folds cacheRead + cacheWrite into the input bucket', async () => {
@@ -77,7 +77,7 @@ describe('recordTokens', () => {
     });
 
     const values = state.insertedValues as { aiTokensInput: bigint };
-    expect(values.aiTokensInput).toBe(310n); // 10 + 100 + 200
+    expect(values.aiTokensInput).toBe(BigInt(310)); // 10 + 100 + 200
   });
 
   it('stages an onConflictDoUpdate that increments counters', async () => {
