@@ -20,7 +20,11 @@
 import NextAuth from 'next-auth';
 import { authConfig } from '@/lib/auth/auth.config';
 
-export const { auth: middleware } = NextAuth(authConfig);
+// Next.js 16 static analysis can't trace a destructured re-export — keep
+// the `middleware` export as a named const assignment so the compiler
+// sees the function directly.
+const { auth } = NextAuth(authConfig);
+export const middleware = auth;
 
 export const config = {
   // Match everything EXCEPT:

@@ -16,12 +16,7 @@
 
 import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
-import {
-  conversations,
-  messages,
-  type Conversation,
-  type Message,
-} from '@/lib/db/schema/conversations';
+import { conversations, messages, type Message } from '@/lib/db/schema/conversations';
 import { scopedDb } from '@/lib/db/scoped';
 import { withSelf } from '@/lib/actions/helpers';
 import { ActionError, type ActionResult } from '@/lib/actions/types';
@@ -171,5 +166,9 @@ export async function listMessages(
   });
 }
 
-// Re-export types for callers that don't want to import from schema directly.
-export type { Conversation, Message };
+// NOTE: do NOT re-export types from this file. Next.js server-actions
+// compiler (`'use server'`) only allows async-function exports — any
+// `export type { ... }` triggers a build-time ReferenceError when the
+// type identifier appears in the emitted module wrapper. Callers that
+// need the Conversation / Message types import them from
+// `@/lib/db/schema/conversations` directly.
