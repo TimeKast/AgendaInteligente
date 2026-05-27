@@ -1,173 +1,75 @@
-'use client';
-
 /**
- * SCR-020 — Today (pool + calendar grid prototype)
+ * SCR-020 — Today (server component, wired Phase 1).
  *
- * Pure frontend visual prototype con hardcoded data. NO backend reads,
- * NO mutations.
+ * Loads:
+ *   - Session → user id + display name + email for the avatar initial.
+ *   - User row → timezone (drives the local date + Spanish label).
+ *   - `listActivities(today)` → real activity list. Today's union
+ *      (scheduled + unscheduled-but-on-today) feeds the close-day modal.
  *
- * Iteración 8: view toggle ahora controla SOLO la organización del pool
- * sidebar (mismo calendar grid en ambos modos):
- *   - 'fecha'  (default) → HOY SIN HORARIO / ESTA SEMANA / PENDIENTES.
- *   - 'matriz'           → Q1 / Q2 / Q3 / Q4.
+ * Hands everything to <TodayClient/> which keeps the interactive shell.
  *
- * El calendar grid (06:00-22:00) y el drag-and-drop son idénticos en las
- * dos vistas. La vista "Lista" desapareció — el pool ya incluye backlog en
- * la vista por defecto.
+ * Drag-and-drop / pool / quick-add mutations stay visual in this slice
+ * (Phase 2 wires them to updateActivity / transitionActivity).
  *
- * Visit: http://localhost:3002/today
+ * Linked: ISSUE-025 (Today UI), ISSUE-031 (close day), BR-7.
  */
 
-import { useEffect, useState } from 'react';
-import { AgendaHeader } from '@/components/agenda/AgendaHeader';
-import { DaySheetMorningSection } from '@/components/agenda/DaySheetMorningSection';
-import { TodayActivitiesBoard } from '@/components/agenda/TodayActivitiesBoard';
-import { PushPermissionBanner } from '@/components/agenda/PushPermissionBanner';
-import { CloseDayModal, type CloseDayPayload } from '@/components/agenda/CloseDayModal';
-import {
-  TodayViewToggle,
-  type TodayView,
-} from '@/components/agenda/TodayViewToggle';
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth/auth';
+import { listActivities } from '@/lib/actions/activity';
+import { loadTodayUserProfile, loadProjectLabelMap } from '@/lib/db/queries/today';
+import { todayInTimezone, todayLabelEs, userInitial } from '@/lib/domain/day-calc';
+import { TodayClient } from '@/components/agenda/TodayClient';
+import type { CloseDayActivityInput } from '@/components/agenda/CloseDayModal';
 
-// All of today's activities — surfaced en CloseDayModal para marcar avance.
-const TODAY_ACTIVITIES = [
-  {
-    id: 'a1',
-    title: 'Reunión Genomma — kickoff',
-    projectLabel: 'Empresa Genomma',
-    progressPercent: 100,
-  },
-  {
-    id: 'a2',
-    title: 'Reporte trimestral',
-    projectLabel: 'Empresa Genomma',
-    progressPercent: 60,
-  },
-  {
-    id: 'a3',
-    title: 'Revisar PR equipo',
-    projectLabel: 'Empresa Genomma',
-    progressPercent: 25,
-  },
-  {
-    id: 'a4',
-    title: 'Gym 1h',
-    projectLabel: 'Personal',
-    progressPercent: 0,
-  },
-  {
-    id: 'a5',
-    title: 'Llamar a mamá',
-    projectLabel: 'Personal',
-    progressPercent: 0,
-  },
-  {
-    id: 'a6',
-    title: 'Estudio alemán — capítulo 3',
-    projectLabel: 'Personal',
-    progressPercent: 40,
-  },
-];
+export default async function TodayPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect('/login?callbackUrl=/today');
+  }
 
-export default function TodayPage() {
-  const [view, setView] = useState<TodayView>('fecha');
-  const [closeOpen, setCloseOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const userId = session.user.id;
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 1800);
-    return () => clearTimeout(t);
-  }, [toast]);
+  // First-login race: middleware lets the route through but the user
+  // row is still being seeded. Fall back to UTC + empty list rather
+  // than crash; subsequent loads will land the real data.
+  const profile = (await loadTodayUserProfile(userId)) ?? {
+    timezone: 'UTC',
+    name: null,
+    email: null,
+  };
 
-  function handleClose(_payload: CloseDayPayload) {
-    setCloseOpen(false);
-    setToast('Día cerrado.');
+  const now = new Date();
+  const todayDate = todayInTimezone(now, profile.timezone);
+  const dateLabel = todayLabelEs(now, profile.timezone);
+  const initials = userInitial(profile.name ?? profile.email);
+
+  const [listResult, projectLabelById] = await Promise.all([
+    listActivities({ date: todayDate }),
+    loadProjectLabelMap(userId),
+  ]);
+
+  let todayActivities: CloseDayActivityInput[] = [];
+  if (!listResult.error && listResult.data) {
+    // Close-day cares about what the user actually had on the agenda
+    // today: scheduled OR pool-but-marked-for-today. Future scopes are
+    // out (the user isn't closing those today).
+    const todays = [...listResult.data.scheduled, ...listResult.data.pool.todayUnscheduled];
+    todayActivities = todays.map((a) => ({
+      id: a.id,
+      title: a.title,
+      projectLabel: projectLabelById.get(a.projectId) ?? '',
+      progressPercent: a.progressPercent ?? 0,
+    }));
   }
 
   return (
-    <>
-      <AgendaHeader dateLabel="Martes, 20 de mayo" initials="F" />
-
-      <main
-        style={{
-          paddingBottom:
-            'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-          marginInline: 'auto',
-          width: '100%',
-          paddingInline: 'var(--ag-space-4)',
-          paddingTop: 'var(--ag-space-2)',
-        }}
-      >
-        <PushPermissionBanner />
-
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-start',
-            paddingBlock: 'var(--ag-space-3)',
-            overflowX: 'auto',
-          }}
-        >
-          <TodayViewToggle value={view} onChange={setView} />
-        </div>
-
-        <TodayActivitiesBoard
-          view={view}
-          morningSection={<DaySheetMorningSection />}
-        />
-
-        <button
-          type="button"
-          onClick={() => setCloseOpen(true)}
-          style={{
-            appearance: 'none',
-            background: 'transparent',
-            border: '1px solid var(--ag-rule)',
-            borderRadius: 'var(--ag-radius-base)',
-            padding: '12px 16px',
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 15,
-            color: 'var(--ag-ink-soft)',
-            cursor: 'pointer',
-            width: '100%',
-            marginTop: 'var(--ag-space-5)',
-          }}
-        >
-          Cerrar día
-        </button>
-      </main>
-
-      <CloseDayModal
-        open={closeOpen}
-        activities={TODAY_ACTIVITIES}
-        onCancel={() => setCloseOpen(false)}
-        onSubmit={handleClose}
-      />
-
-      {toast ? (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: 'fixed',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            bottom: 'calc(64px + 24px + env(safe-area-inset-bottom, 0px))',
-            zIndex: 80,
-            backgroundColor: 'var(--ag-ink-primary)',
-            color: 'var(--ag-accent-on)',
-            padding: '10px 16px',
-            borderRadius: 'var(--ag-radius-pill)',
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 14,
-            boxShadow:
-              '0 1px 2px rgba(42, 40, 38, 0.12), 0 2px 6px rgba(42, 40, 38, 0.08)',
-          }}
-        >
-          {toast}
-        </div>
-      ) : null}
-    </>
+    <TodayClient
+      todayDate={todayDate}
+      dateLabel={dateLabel}
+      initials={initials}
+      todayActivities={todayActivities}
+    />
   );
 }

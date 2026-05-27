@@ -229,6 +229,7 @@
 | `src\components\agenda\SwipeableRow.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\TagChip.tsx` | — | — |
 | `src\components\agenda\TodayActivitiesBoard.tsx` | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\SwipeableRow.tsx`, `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\PoolSection.tsx`, `src\components\agenda\CalendarGrid.tsx`, `src\components\agenda\ExternalEventRow.tsx`, `src\components\agenda\ActivityStatusModal.tsx`, `src\components\agenda\TodayViewToggle.tsx` | — |
+| `src\components\agenda\TodayClient.tsx` | — | — |
 | `src\components\agenda\TodayViewToggle.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\Toggle.tsx` | — | — |
 | `src\components\agenda\UsageMeter.tsx` | — | — |
@@ -335,6 +336,7 @@
 | `src\lib\actions\avatar.ts` | — | — |
 | `src\lib\actions\category.ts` | — | — |
 | `src\lib\actions\change-password.ts` | — | — |
+| `src\lib\actions\close-day.ts` | — | — |
 | `src\lib\actions\conversation.ts` | — | — |
 | `src\lib\actions\day-sheet.ts` | — | — |
 | `src\lib\actions\goal-link.ts` | — | — |
@@ -384,6 +386,7 @@
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
+| `src\lib\db\queries\today.ts` | — | — |
 | `src\lib\db\queries\users.ts` | — | — |
 | `src\lib\db\schema\activities.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\projects.ts` | `src\lib\db\schema\subtasks.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
@@ -416,6 +419,7 @@
 | `src\lib\domain\activity-transitions.ts` | — | — |
 | `src\lib\domain\challenge-detect.ts` | — | — |
 | `src\lib\domain\checkin-schedule.ts` | — | — |
+| `src\lib\domain\day-calc.ts` | — | — |
 | `src\lib\domain\day-sheet-completion.ts` | — | — |
 | `src\lib\domain\month-calc.ts` | — | — |
 | `src\lib\domain\recurrence.ts` | — | — |
@@ -510,10 +514,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 450 |
+| Total files analyzed | 454 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 288 |
+| Orphan files (no connections) | 292 |
 
 ---
 

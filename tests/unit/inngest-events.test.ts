@@ -34,6 +34,7 @@ describe('event registry — surface', () => {
     'gentle.default.expired',
     'purge.soft_deleted.due',
     'calendar.sync.requested',
+    'crisis.exit.fired',
   ];
 
   it('declares every event from the ISSUE-080 spec', () => {
@@ -42,7 +43,7 @@ describe('event registry — surface', () => {
     }
   });
 
-  it('has exactly the 12 events listed (no drift)', () => {
+  it('has exactly every event listed (no drift)', () => {
     expect(Object.keys(eventSchemas).sort()).toEqual([...required].sort());
   });
 });
