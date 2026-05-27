@@ -120,6 +120,13 @@
       "when": 1779843449176,
       "tag": "0016_bumpy_silvermane",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1779849783836,
+      "tag": "0017_tranquil_loners",
+      "breakpoints": true
     }
   ]
 }

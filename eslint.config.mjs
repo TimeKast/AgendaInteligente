@@ -118,6 +118,10 @@ const eslintConfig = defineConfig([
       // AND target row through scopedDb('projects'|'activities') BEFORE any
       // db.* call. Same isolation guarantee as subtasks.
       'src/lib/actions/goal-link.ts',
+      // ISSUE-051: messages have no user_id column (E-031 spec). Ownership
+      // enforced via parent conversation through scopedDb('conversations')
+      // before any db.* call on messages. Mirror subtask / goal-link.
+      'src/lib/actions/conversation.ts',
       // ISSUE-024: recurrence materializer runs as a system task with an
       // explicit userId arg — no session context, so scopedDb can't bind.
       // Every read/write is scoped via `eq(activities.userId, userId)`.

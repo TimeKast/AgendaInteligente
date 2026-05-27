@@ -11,7 +11,7 @@
 
 | File | Dependents |
 |------|------------|
-| `src\lib\db\schema\users.ts` | 13 |
+| `src\lib\db\schema\users.ts` | 14 |
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\lib\inngest\client.ts` | 6 |
@@ -324,6 +324,7 @@
 | `src\lib\actions\avatar.ts` | — | — |
 | `src\lib\actions\category.ts` | — | — |
 | `src\lib\actions\change-password.ts` | — | — |
+| `src\lib\actions\conversation.ts` | — | — |
 | `src\lib\actions\day-sheet.ts` | — | — |
 | `src\lib\actions\goal-link.ts` | — | — |
 | `src\lib\actions\goal.ts` | — | — |
@@ -366,6 +367,7 @@
 | `src\lib\db\schema\billing.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seeds\plans.ts` |
 | `src\lib\db\schema\calendar-connections.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\conversations.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\day-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\email-verifications.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\goal-links.ts` | `src\lib\db\schema\goals.ts` | — |
@@ -377,9 +379,9 @@
 | `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
 | `src\lib\db\schema\subtasks.ts` | `src\lib\db\schema\activities.ts` | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
 | `src\lib\db\schema\week-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
-| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts` | — |
+| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\conversations.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
@@ -448,6 +450,7 @@
 | `src\lib\validations\activity.ts` | — | — |
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\category.ts` | — | — |
+| `src\lib\validations\conversation.ts` | — | — |
 | `src\lib\validations\day-sheet.ts` | — | — |
 | `src\lib\validations\goal-link.ts` | — | — |
 | `src\lib\validations\goal.ts` | — | — |
@@ -463,10 +466,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 408 |
-| Total connections | 154 |
+| Total files analyzed | 411 |
+| Total connections | 156 |
 | High-risk files (2+ deps) | 30 |
-| Orphan files (no connections) | 267 |
+| Orphan files (no connections) | 269 |
 
 ---
 
