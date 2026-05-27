@@ -1,0 +1,133 @@
+{
+  "$doc": "Voice-principles eval set — ISSUE-050c (A-006, A-007, A-008, A-010). Each fixture is a CANDIDATE agent reply that the linter (voice-linter.ts) must classify correctly. `expect: 'pass'` means the reply complies with AI-1..6; `expect: 'fail'` means we expect specific violation principles to fire.",
+  "fixtures": [
+    {
+      "id": "es-pass-001",
+      "lang": "es",
+      "reply": "Lo anoté. ¿Qué te queda para hoy?",
+      "expect": "pass"
+    },
+    {
+      "id": "es-pass-002",
+      "lang": "es",
+      "reply": "Entiendo. Una sola pregunta: ¿cuál de los tres es el que más te bloquea?",
+      "expect": "pass"
+    },
+    {
+      "id": "es-pass-003",
+      "lang": "es",
+      "reply": "Guardado.",
+      "expect": "pass"
+    },
+    {
+      "id": "es-pass-004",
+      "lang": "es",
+      "reply": "Tomé nota. ¿A qué hora lo cierras hoy?",
+      "expect": "pass"
+    },
+    {
+      "id": "es-pass-005",
+      "lang": "es",
+      "reply": "Buen día. ✓ Anotado.",
+      "expect": "pass"
+    },
+
+    {
+      "id": "es-fail-voseo-001",
+      "lang": "es",
+      "reply": "¿Qué tenés pensado hoy?",
+      "expect": "fail",
+      "principles": ["AI-1"]
+    },
+    {
+      "id": "es-fail-voseo-002",
+      "lang": "es",
+      "reply": "Vos sos capaz. ¿Querés que lo guarde?",
+      "expect": "fail",
+      "principles": ["AI-1"]
+    },
+    {
+      "id": "es-fail-praise-001",
+      "lang": "es",
+      "reply": "¡Excelente! ¿Qué sigue?",
+      "expect": "fail",
+      "principles": ["AI-3"]
+    },
+    {
+      "id": "es-fail-praise-002",
+      "lang": "es",
+      "reply": "Tú puedes con esto.",
+      "expect": "fail",
+      "principles": ["AI-3"]
+    },
+    {
+      "id": "es-fail-multi-q-001",
+      "lang": "es",
+      "reply": "¿Cómo estás? ¿Qué pendiente tenés? ¿Cuándo lo cerrás?",
+      "expect": "fail",
+      "principles": ["AI-1", "AI-2"]
+    },
+    {
+      "id": "es-fail-emoji-001",
+      "lang": "es",
+      "reply": "Hoy va a ser un gran día 🚀💪🔥",
+      "expect": "fail",
+      "principles": ["AI-4"]
+    },
+    {
+      "id": "es-fail-length-001",
+      "lang": "es",
+      "reply": "Anotado. Buen día. Espero que te vaya bien. Te busco al mediodía.",
+      "expect": "fail",
+      "principles": ["AI-6"]
+    },
+
+    {
+      "id": "en-pass-001",
+      "lang": "en",
+      "reply": "Got it. What's next?",
+      "expect": "pass"
+    },
+    {
+      "id": "en-pass-002",
+      "lang": "en",
+      "reply": "Saved.",
+      "expect": "pass"
+    },
+    {
+      "id": "en-pass-003",
+      "lang": "en",
+      "reply": "Noted. When are you closing it?",
+      "expect": "pass"
+    },
+
+    {
+      "id": "en-fail-praise-001",
+      "lang": "en",
+      "reply": "Amazing! Keep going.",
+      "expect": "fail",
+      "principles": ["AI-3"]
+    },
+    {
+      "id": "en-fail-praise-002",
+      "lang": "en",
+      "reply": "You got this!",
+      "expect": "fail",
+      "principles": ["AI-3"]
+    },
+    {
+      "id": "en-fail-multi-q-001",
+      "lang": "en",
+      "reply": "How are you? What's pending? When are you closing it?",
+      "expect": "fail",
+      "principles": ["AI-2"]
+    },
+    {
+      "id": "en-fail-emoji-001",
+      "lang": "en",
+      "reply": "Today will be great 🔥💪",
+      "expect": "fail",
+      "principles": ["AI-4"]
+    }
+  ]
+}

@@ -33,6 +33,7 @@
     "analyze": "next build && node scripts/tools/analyze-bundle.mjs",
     "env:check": "tsx scripts/tools/env-check.ts",
     "check:prod-env": "tsx scripts/tools/check-prod-env.ts",
+    "ai:eval": "tsx scripts/tools/ai-eval.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

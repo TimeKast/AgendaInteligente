@@ -84,6 +84,7 @@
 | `pnpm analyze` | `next build && node scripts/tools/analyze-bundle...` |
 | `pnpm env:check` | `tsx scripts/tools/env-check.ts` |
 | `pnpm check:prod-env` | `tsx scripts/tools/check-prod-env.ts` |
+| `pnpm ai:eval` | `tsx scripts/tools/ai-eval.ts` |
 | `pnpm db:generate` | `drizzle-kit generate` |
 | `pnpm db:migrate` | `drizzle-kit migrate` |
 | `pnpm db:push` | `drizzle-kit push` |
@@ -196,8 +197,8 @@
 | Dependencies | 44 |
 | Page Routes | 48 |
 | API Routes | 22 |
-| Components & Utils | 41 |
-| **Total items** | **155** |
+| Components & Utils | 42 |
+| **Total items** | **156** |
 
 ---
 
