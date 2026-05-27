@@ -53,6 +53,7 @@ export * from './week-sheets';
 export * from './goals';
 export * from './goal-links';
 export * from './calendar-connections';
+export * from './calendar-busy-slots';
 export * from './conversations';
 
 // =============================================================================

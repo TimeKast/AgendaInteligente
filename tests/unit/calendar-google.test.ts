@@ -142,6 +142,54 @@ describe('listCalendars', () => {
   });
 });
 
+describe('freeBusy', () => {
+  it('POSTs calendar list with timeMin/timeMax to freeBusy endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        calendars: {
+          primary: { busy: [{ start: '2026-05-27T10:00:00Z', end: '2026-05-27T11:00:00Z' }] },
+          'work@cal': { busy: [] },
+        },
+      })
+    );
+
+    const { freeBusy } = await import('@/lib/integrations/calendar/google');
+    const result = await freeBusy('AT', {
+      calendarIds: ['primary', 'work@cal'],
+      timeMin: new Date('2026-05-26T00:00:00Z'),
+      timeMax: new Date('2026-06-25T00:00:00Z'),
+    });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain('/freeBusy');
+    expect(init.method).toBe('POST');
+    expect(init.headers.Authorization).toBe('Bearer AT');
+    const body = JSON.parse(init.body as string);
+    expect(body.items).toEqual([{ id: 'primary' }, { id: 'work@cal' }]);
+    expect(result.primary).toHaveLength(1);
+    expect(result['work@cal']).toEqual([]);
+  });
+
+  it('returns empty array per calendar when busy is missing', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ calendars: { primary: {} } }));
+    const { freeBusy } = await import('@/lib/integrations/calendar/google');
+    const result = await freeBusy('AT', {
+      calendarIds: ['primary'],
+      timeMin: new Date(),
+      timeMax: new Date(),
+    });
+    expect(result.primary).toEqual([]);
+  });
+
+  it('throws GoogleApiError on non-200', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'forbidden' }, 403));
+    const { freeBusy, GoogleApiError } = await import('@/lib/integrations/calendar/google');
+    await expect(
+      freeBusy('AT', { calendarIds: ['x'], timeMin: new Date(), timeMax: new Date() })
+    ).rejects.toBeInstanceOf(GoogleApiError);
+  });
+});
+
 describe('revokeToken', () => {
   it('returns silently on 200', async () => {
     fetchMock.mockResolvedValueOnce(new Response('', { status: 200 }));

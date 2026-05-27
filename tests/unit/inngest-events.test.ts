@@ -33,6 +33,7 @@ describe('event registry — surface', () => {
     'recurrence.materialize.due',
     'gentle.default.expired',
     'purge.soft_deleted.due',
+    'calendar.sync.requested',
   ];
 
   it('declares every event from the ISSUE-080 spec', () => {

@@ -71,6 +71,7 @@ import { daySheets } from './schema/day-sheets';
 import { weekSheets } from './schema/week-sheets';
 import { goals } from './schema/goals';
 import { calendarConnections } from './schema/calendar-connections';
+import { calendarBusySlots } from './schema/calendar-busy-slots';
 import { conversations } from './schema/conversations';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -96,6 +97,7 @@ export const TENANT_TABLES = {
   weekSheets,
   goals,
   calendarConnections,
+  calendarBusySlots,
   conversations,
 } as const;
 

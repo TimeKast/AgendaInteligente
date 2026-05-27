@@ -43,10 +43,18 @@ describe('signState / verifyState', () => {
     expect(token).toContain('.');
   });
 
-  it('rejects tampered MAC (flip last byte)', async () => {
+  it('rejects tampered MAC (flip a middle base64 char)', async () => {
     const { signState, verifyState } = await import('@/lib/integrations/calendar/state');
     const token = signState(USER);
-    const tampered = token.slice(0, -1) + (token.endsWith('a') ? 'b' : 'a');
+    const dot = token.indexOf('.');
+    const macStart = dot + 1;
+    // Flip a char near the MIDDLE of the MAC b64 — guarantees the
+    // decoded bytes change. Tampering the LAST char of base64url can
+    // be a no-op when it only encodes padding bits.
+    const flipIdx = macStart + Math.floor((token.length - macStart) / 2);
+    const original = token[flipIdx];
+    const replacement = original === 'a' ? 'b' : 'a';
+    const tampered = token.slice(0, flipIdx) + replacement + token.slice(flipIdx + 1);
     expect(() => verifyState(tampered)).toThrow(/mac/);
   });
 

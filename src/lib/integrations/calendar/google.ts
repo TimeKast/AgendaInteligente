@@ -28,6 +28,7 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 const USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
 const CALENDAR_LIST_URL = 'https://www.googleapis.com/calendar/v3/users/me/calendarList';
+const FREEBUSY_URL = 'https://www.googleapis.com/calendar/v3/freeBusy';
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
 /** Scope required for read-only calendar access. */
@@ -168,6 +169,50 @@ export async function listCalendars(accessToken: string): Promise<GoogleCalendar
     throw new GoogleApiError('calendarList response missing items', res.status, body);
   }
   return items as GoogleCalendarEntry[];
+}
+
+export interface FreeBusyInterval {
+  start: string; // RFC3339 timestamp
+  end: string;
+}
+
+/**
+ * Query the freebusy API for one or more calendars. Returns the busy
+ * intervals per calendar in the requested time window.
+ *
+ * Caller pre-decrypts the access token. We don't fetch event titles
+ * here — freebusy is much cheaper than events.list and the title is
+ * fetched separately via `listEvents` only when needed for display.
+ */
+export async function freeBusy(
+  accessToken: string,
+  options: { calendarIds: string[]; timeMin: Date; timeMax: Date }
+): Promise<Record<string, FreeBusyInterval[]>> {
+  const res = await fetch(FREEBUSY_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      timeMin: options.timeMin.toISOString(),
+      timeMax: options.timeMax.toISOString(),
+      items: options.calendarIds.map((id) => ({ id })),
+    }),
+  });
+  const body = (await res.json()) as Record<string, unknown>;
+  if (!res.ok) {
+    throw new GoogleApiError(`freeBusy failed: ${res.status}`, res.status, body);
+  }
+  const calendars = body.calendars as Record<string, { busy?: FreeBusyInterval[] }> | undefined;
+  if (!calendars) {
+    throw new GoogleApiError('freeBusy response missing calendars', res.status, body);
+  }
+  const result: Record<string, FreeBusyInterval[]> = {};
+  for (const [id, entry] of Object.entries(calendars)) {
+    result[id] = entry.busy ?? [];
+  }
+  return result;
 }
 
 /**

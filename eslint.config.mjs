@@ -135,6 +135,11 @@ const eslintConfig = defineConfig([
       // access still flows through scoped helpers (`materializeUserRecurrences`).
       'src/lib/inngest/**',
       'src/app/api/inngest/**',
+      // ISSUE-091: sync.ts is a unit-of-work for the cron + manual
+      // trigger. Receives explicit userId; every read/write is scoped
+      // via eq(*.userId, userId) or via the connectionId FK on rows
+      // already proven to belong to that user.
+      'src/lib/integrations/calendar/sync.ts',
       'src/app/api/auth/**',
       'src/app/api/avatar/**',
       'src/app/api/health/**',

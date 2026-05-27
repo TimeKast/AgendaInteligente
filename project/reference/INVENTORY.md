@@ -170,6 +170,7 @@
 | /api/auth/verify | `src\app\api\auth\verify\route.ts` |
 | /api/avatar/[userId] | `src\app\api\avatar\[userId]\route.ts` |
 | /api/calendar/connections/[id]/disconnect | `src\app\api\calendar\connections\[id]\disconnect\route.ts` |
+| /api/calendar/connections/[id]/sync-now | `src\app\api\calendar\connections\[id]\sync-now\route.ts` |
 | /api/calendar/google/callback | `src\app\api\calendar\google\callback\route.ts` |
 | /api/calendar/google/connect | `src\app\api\calendar\google\connect\route.ts` |
 | /api/email/test | `src\app\api\email\test\route.ts` |
@@ -190,9 +191,9 @@
 |--------|-------|
 | Dependencies | 44 |
 | Page Routes | 48 |
-| API Routes | 18 |
+| API Routes | 19 |
 | Components & Utils | 40 |
-| **Total items** | **150** |
+| **Total items** | **151** |
 
 ---
 

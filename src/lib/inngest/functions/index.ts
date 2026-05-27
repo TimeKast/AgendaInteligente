@@ -16,6 +16,7 @@ import { dailyCheckinFanout } from './daily-checkin-fanout';
 import { weeklyFanout } from './weekly-fanout';
 import { listeningModeExpired } from './listening-mode-expired';
 import { gentleDefaultExpired } from './gentle-default-expired';
+import { calendarSyncCron, calendarSyncOnDemand } from './calendar-sync';
 
 export const inngestFunctions = [
   userSignedUp,
@@ -25,4 +26,6 @@ export const inngestFunctions = [
   weeklyFanout,
   listeningModeExpired,
   gentleDefaultExpired,
+  calendarSyncCron,
+  calendarSyncOnDemand,
 ] as const;

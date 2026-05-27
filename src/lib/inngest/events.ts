@@ -57,6 +57,12 @@ export const eventSchemas = {
   'recurrence.materialize.due': z.object({}),
   'gentle.default.expired': z.object({}),
   'purge.soft_deleted.due': z.object({}),
+
+  // ─── Calendar sync (ISSUE-091) — on-demand trigger ─────────────────
+  'calendar.sync.requested': z.object({
+    userId,
+    connectionId: z.string().uuid(),
+  }),
 } as const;
 
 /** Compile-time event-name union (derived from the registry keys). */

@@ -5,8 +5,9 @@ epic: EPIC-CALENDAR
 milestone: v1.0
 priority: P1
 story_points: 4
-status: ready
-dependencies: [ISSUE-080, ISSUE-090]
+status: completed
+completed_date: 2026-05-26
+dependencies: [ISSUE-080, ISSUE-090, ISSUE-090b]
 user_stories: [US-091]
 features: [FT-091]
 screens: []

@@ -212,6 +212,7 @@ describe('scopedDb — TENANT_TABLES registry', () => {
     expect(Object.keys(TENANT_TABLES).sort()).toEqual(
       [
         'activities',
+        'calendarBusySlots',
         'calendarConnections',
         'categories',
         'conversations',

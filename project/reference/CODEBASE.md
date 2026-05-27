@@ -11,9 +11,9 @@
 
 | File | Dependents |
 |------|------------|
-| `src\lib\db\schema\users.ts` | 14 |
+| `src\lib\db\schema\users.ts` | 15 |
 | `src\lib\email\templates\layout.ts` | 9 |
-| `src\lib\inngest\client.ts` | 8 |
+| `src\lib\inngest\client.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
@@ -35,12 +35,15 @@
 | `src\lib\auth\utils.ts` | 2 |
 | `src\lib\db\schema\index.ts` | 2 |
 | `src\lib\db\schema\projects.ts` | 2 |
+| `src\lib\db\schema\calendar-connections.ts` | 2 |
 | `src\lib\db\schema\goals.ts` | 2 |
 | `src\lib\db\schema\categories.ts` | 2 |
 | `src\lib\db\schema\activities.ts` | 2 |
 | `src\lib\db\schema\billing.ts` | 2 |
 | `src\lib\email\logo-data.ts` | 2 |
 | `src\lib\inngest\publish.ts` | 2 |
+| `src\lib\integrations\calendar\google.ts` | 2 |
+| `src\lib\integrations\calendar\refresh.ts` | 2 |
 
 ---
 
@@ -112,6 +115,7 @@
 | `src\app\api\auth\verify\route.ts` | — | — |
 | `src\app\api\avatar\[userId]\route.ts` | — | — |
 | `src\app\api\calendar\connections\[id]\disconnect\route.ts` | — | — |
+| `src\app\api\calendar\connections\[id]\sync-now\route.ts` | — | — |
 | `src\app\api\calendar\google\callback\route.ts` | — | — |
 | `src\app\api\calendar\google\connect\route.ts` | — | — |
 | `src\app\api\email\test\route.ts` | — | — |
@@ -367,7 +371,8 @@
 | `src\lib\db\schema\activities.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\projects.ts` | `src\lib\db\schema\subtasks.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\billing.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seeds\plans.ts` |
-| `src\lib\db\schema\calendar-connections.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\calendar-busy-slots.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\calendar-connections.ts` | `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\calendar-connections.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\conversations.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\day-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
@@ -381,9 +386,9 @@
 | `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
 | `src\lib\db\schema\subtasks.ts` | `src\lib\db\schema\activities.ts` | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
 | `src\lib\db\schema\week-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
-| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\conversations.ts` | — |
+| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\conversations.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
@@ -420,20 +425,22 @@
 | `src\lib\hooks\useServerTableState.ts` | `src\lib\hooks\useTableState.ts` | — |
 | `src\lib\hooks\useTableState.ts` | — | `src\lib\hooks\useServerTableState.ts` |
 | `src\lib\hooks\useUnsavedChangesGuard.ts` | — | — |
-| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\calendar-sync.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
 | `src\lib\inngest\events.ts` | — | `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\functions\calendar-sync.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\daily-checkin-fanout.ts` | `src\lib\inngest\publish.ts`, `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\gentle-default-expired.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
-| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\gentle-default-expired.ts` | — |
+| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\calendar-sync.ts` | — |
 | `src\lib\inngest\functions\listening-mode-expired.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\recurrence-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\user-signed-up.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\weekly-fanout.ts` | `src\lib\inngest\publish.ts`, `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\weeksheet-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\publish.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts` |
-| `src\lib\integrations\calendar\google.ts` | — | `src\lib\integrations\calendar\refresh.ts` |
-| `src\lib\integrations\calendar\refresh.ts` | `src\lib\integrations\calendar\tokens.ts`, `src\lib\integrations\calendar\google.ts` | — |
+| `src\lib\integrations\calendar\google.ts` | — | `src\lib\integrations\calendar\refresh.ts`, `src\lib\integrations\calendar\sync.ts` |
+| `src\lib\integrations\calendar\refresh.ts` | `src\lib\integrations\calendar\tokens.ts`, `src\lib\integrations\calendar\google.ts` | `src\lib\integrations\calendar\sync.ts`, `src\lib\integrations\calendar\sync.ts` |
 | `src\lib\integrations\calendar\state.ts` | — | — |
+| `src\lib\integrations\calendar\sync.ts` | `src\lib\integrations\calendar\google.ts`, `src\lib\integrations\calendar\refresh.ts`, `src\lib\integrations\calendar\refresh.ts` | — |
 | `src\lib\integrations\calendar\tokens.ts` | — | `src\lib\integrations\calendar\refresh.ts` |
 | `src\lib\invites\index.ts` | `src\lib\invites\token.ts` | — |
 | `src\lib\invites\token.ts` | — | `src\lib\invites\index.ts` |
@@ -471,10 +478,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 416 |
-| Total connections | 160 |
-| High-risk files (2+ deps) | 30 |
-| Orphan files (no connections) | 272 |
+| Total files analyzed | 420 |
+| Total connections | 168 |
+| High-risk files (2+ deps) | 33 |
+| Orphan files (no connections) | 273 |
 
 ---
 
