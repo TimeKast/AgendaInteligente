@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (84)
+## 📅 To Do (85)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -57,6 +57,7 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-070_fab-mic-permission.md)
 - [Sin Título](v1.0\issues\ISSUE-071_web-speech-streaming.md)
 - [Sin Título](v1.0\issues\ISSUE-072_whisper-fallback.md)
+- [Sin Título](v1.0\issues\ISSUE-072b_voice-recorder-ui.md)
 - [Sin Título](v1.0\issues\ISSUE-073_llm-parse-task.md)
 - [Sin Título](v1.0\issues\ISSUE-074_voice-capture-sheet-ui.md)
 - [Sin Título](v1.0\issues\ISSUE-080_inngest-setup.md)

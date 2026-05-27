@@ -127,6 +127,7 @@
 | `src\app\api\invites\validate\route.ts` | — | — |
 | `src\app\api\notifications\poll\route.ts` | — | — |
 | `src\app\api\push\subscribe\route.ts` | — | — |
+| `src\app\api\voice\transcribe\route.ts` | — | — |
 | `src\app\error.tsx` | — | — |
 | `src\app\layout.tsx` | `src\app\serwist.ts` | — |
 | `src\app\manifest.ts` | — | — |
@@ -448,6 +449,8 @@
 | `src\lib\integrations\calendar\state.ts` | — | — |
 | `src\lib\integrations\calendar\sync.ts` | `src\lib\integrations\calendar\google.ts`, `src\lib\integrations\calendar\refresh.ts`, `src\lib\integrations\calendar\refresh.ts` | — |
 | `src\lib\integrations\calendar\tokens.ts` | — | `src\lib\integrations\calendar\refresh.ts` |
+| `src\lib\integrations\voice\meter.ts` | — | — |
+| `src\lib\integrations\voice\whisper.ts` | — | — |
 | `src\lib\invites\index.ts` | `src\lib\invites\token.ts` | — |
 | `src\lib\invites\token.ts` | — | `src\lib\invites\index.ts` |
 | `src\lib\logger.ts` | — | — |
@@ -485,10 +488,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 427 |
+| Total files analyzed | 430 |
 | Total connections | 169 |
 | High-risk files (2+ deps) | 33 |
-| Orphan files (no connections) | 278 |
+| Orphan files (no connections) | 281 |
 
 ---
 

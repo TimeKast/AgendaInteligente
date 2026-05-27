@@ -83,6 +83,19 @@ const LIMITS = {
     windowSeconds: parseInt(process.env.RATE_LIMIT_INVITE_WINDOW_SECONDS || '60', 10),
     prefix: 'ratelimit:invite',
   },
+  voiceTranscribe: {
+    // ISSUE-072: 60 transcribe / hour / user. Bound at the user
+    // identifier (not IP) since the route is auth-required.
+    requests: parseInt(process.env.RATE_LIMIT_VOICE_TRANSCRIBE_REQUESTS || '60', 10),
+    windowSeconds: parseInt(process.env.RATE_LIMIT_VOICE_TRANSCRIBE_WINDOW_SECONDS || '3600', 10),
+    prefix: 'ratelimit:voice-transcribe',
+  },
+  aiParseTask: {
+    // ISSUE-073: 200 parse / hour / user.
+    requests: parseInt(process.env.RATE_LIMIT_AI_PARSE_REQUESTS || '200', 10),
+    windowSeconds: parseInt(process.env.RATE_LIMIT_AI_PARSE_WINDOW_SECONDS || '3600', 10),
+    prefix: 'ratelimit:ai-parse',
+  },
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
