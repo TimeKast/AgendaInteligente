@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (75)
+## 📅 To Do (76)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -35,6 +35,7 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-035_sheet-manual-edit-past.md)
 - [Sin Título](v1.0\issues\ISSUE-040_goal-schema-crud.md)
 - [Sin Título](v1.0\issues\ISSUE-041_goallink-m2m-polymorphic.md)
+- [Sin Título](v1.0\issues\ISSUE-041b_goallink-ui.md)
 - [Sin Título](v1.0\issues\ISSUE-042_goal-review-flow.md)
 - [Sin Título](v1.0\issues\ISSUE-043_goals-screen-tabs-progress.md)
 - [Sin Título](v1.0\issues\ISSUE-050_anthropic-sdk-system-prompts.md)

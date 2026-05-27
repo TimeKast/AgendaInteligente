@@ -113,6 +113,11 @@ const eslintConfig = defineConfig([
       // scopedDb('activities'); subtask CRUD goes through `db` directly
       // with explicit activity_id scoping.
       'src/lib/actions/subtask.ts',
+      // ISSUE-041: goal_links is polymorphic M2M (E-011) with no user_id
+      // column. Ownership enforced via parent goal through scopedDb('goals')
+      // AND target row through scopedDb('projects'|'activities') BEFORE any
+      // db.* call. Same isolation guarantee as subtasks.
+      'src/lib/actions/goal-link.ts',
       // ISSUE-024: recurrence materializer runs as a system task with an
       // explicit userId arg — no session context, so scopedDb can't bind.
       // Every read/write is scoped via `eq(activities.userId, userId)`.

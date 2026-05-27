@@ -34,6 +34,7 @@
 | `src\lib\auth\utils.ts` | 2 |
 | `src\lib\db\schema\index.ts` | 2 |
 | `src\lib\db\schema\projects.ts` | 2 |
+| `src\lib\db\schema\goals.ts` | 2 |
 | `src\lib\db\schema\categories.ts` | 2 |
 | `src\lib\db\schema\activities.ts` | 2 |
 | `src\lib\db\schema\billing.ts` | 2 |
@@ -319,6 +320,7 @@
 | `src\lib\actions\category.ts` | — | — |
 | `src\lib\actions\change-password.ts` | — | — |
 | `src\lib\actions\day-sheet.ts` | — | — |
+| `src\lib\actions\goal-link.ts` | — | — |
 | `src\lib\actions\goal.ts` | — | — |
 | `src\lib\actions\helpers.ts` | — | — |
 | `src\lib\actions\notifications.ts` | — | — |
@@ -356,7 +358,8 @@
 | `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\day-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\email-verifications.ts` | `src\lib\db\schema\users.ts` | — |
-| `src\lib\db\schema\goals.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
+| `src\lib\db\schema\goal-links.ts` | `src\lib\db\schema\goals.ts` | — |
+| `src\lib\db\schema\goals.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\goal-links.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\index.ts` | — | `src\lib\db\drizzle.ts`, `src\lib\db\seeds\admin.ts` |
 | `src\lib\db\schema\invites.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\notification-prefs.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
@@ -429,6 +432,7 @@
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\category.ts` | — | — |
 | `src\lib\validations\day-sheet.ts` | — | — |
+| `src\lib\validations\goal-link.ts` | — | — |
 | `src\lib\validations\goal.ts` | — | — |
 | `src\lib\validations\onboarding.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
@@ -442,10 +446,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 390 |
-| Total connections | 140 |
-| High-risk files (2+ deps) | 27 |
-| Orphan files (no connections) | 259 |
+| Total files analyzed | 393 |
+| Total connections | 141 |
+| High-risk files (2+ deps) | 28 |
+| Orphan files (no connections) | 261 |
 
 ---
 
