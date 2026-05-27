@@ -5,7 +5,8 @@ epic: EPIC-CHALLENGES
 milestone: v1.0
 priority: P1
 story_points: 4
-status: ready
+status: in_progress
+slice_a1_completed_date: 2026-05-26
 dependencies: [ISSUE-050, ISSUE-052, ISSUE-060]
 user_stories: [US-062]
 features: [FT-062]

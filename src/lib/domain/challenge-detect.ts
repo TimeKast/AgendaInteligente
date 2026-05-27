@@ -113,5 +113,92 @@ export function detectVagueLanguage(text: string, lang: ChallengeLanguage): Vagu
   return { isVague: hits.length > 0, triggerWords: hits };
 }
 
+// ─── ISSUE-061: cost-reveal challenge ─────────────────────────────────
+
+const COST_KEYWORDS_ES = [
+  'dejar de',
+  'sacrificar',
+  'menos tiempo',
+  'cambiar',
+  'soltar',
+  'renunciar',
+  'dejar',
+  'a cambio de',
+];
+const COST_KEYWORDS_EN = [
+  'give up',
+  'sacrifice',
+  'less time',
+  'trade',
+  'in exchange',
+  'drop',
+  'stop doing',
+];
+
+const COST_PATTERNS_ES = COST_KEYWORDS_ES.map(buildPattern);
+const COST_PATTERNS_EN = COST_KEYWORDS_EN.map(buildPattern);
+
+/**
+ * True iff the text DOES NOT mention a cost / trade-off. The signal
+ * for the cost-reveal agent prompt to fire (user named a goal but
+ * didn't name what they'll trade).
+ *
+ * Linked: FT-061, US-061.
+ */
+export function detectMissingCost(text: string, lang: ChallengeLanguage): boolean {
+  if (!text || typeof text !== 'string') return false;
+  const normalized = normalize(text);
+  const patterns = lang === 'es' ? COST_PATTERNS_ES : COST_PATTERNS_EN;
+  for (const p of patterns) {
+    p.lastIndex = 0;
+    if (p.test(normalized)) return false; // cost IS mentioned → no challenge
+  }
+  return true; // no cost keyword → fire challenge
+}
+
+// ─── ISSUE-062: reality-test challenge ────────────────────────────────
+
+const COMMITMENT_PATTERNS_ES: RegExp[] = [
+  /\bvoy a\s+\w+/i,
+  /\bme comprometo\b/i,
+  /\besta semana\s+(voy|hago|empiezo|termino)\b/i,
+  /\bel proximo mes\b/i,
+  /\bme propongo\b/i,
+  /\beste mes voy a\b/i,
+];
+
+const COMMITMENT_PATTERNS_EN: RegExp[] = [
+  /\bi'?m going to\b/i,
+  /\bi will\b/i,
+  /\bi'?ll\b/i,
+  /\bi commit to\b/i,
+  /\bthis week i (will|am|am going)\b/i,
+  /\bnext month i\b/i,
+];
+
+/**
+ * True iff the text contains commitment phrasing ("voy a", "i will",
+ * "me comprometo a"). Caller pipes this into the reality-test prompt
+ * which asks for probability + offers scope-down.
+ *
+ * Linked: FT-062, US-062.
+ */
+export function detectNewCommitment(text: string, lang: ChallengeLanguage): boolean {
+  if (!text || typeof text !== 'string') return false;
+  const normalized = normalize(text);
+  const patterns = lang === 'es' ? COMMITMENT_PATTERNS_ES : COMMITMENT_PATTERNS_EN;
+  for (const p of patterns) {
+    if (p.test(normalized)) return true;
+  }
+  return false;
+}
+
 /** Exported for tests + tooling. */
-export const _internals = { ES_TRIGGERS, EN_TRIGGERS };
+export const _internals = {
+  ES_TRIGGERS,
+  EN_TRIGGERS,
+  COST_KEYWORDS_ES,
+  COST_KEYWORDS_EN,
+  COMMITMENT_PATTERNS_ES,
+  COMMITMENT_PATTERNS_EN,
+};

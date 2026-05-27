@@ -6,7 +6,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { detectVagueLanguage } from '@/lib/domain/challenge-detect';
+import {
+  detectVagueLanguage,
+  detectMissingCost,
+  detectNewCommitment,
+} from '@/lib/domain/challenge-detect';
 
 describe('detectVagueLanguage — Spanish triggers', () => {
   const vague = [
@@ -107,5 +111,78 @@ describe('detectVagueLanguage — edge cases', () => {
     // doesn't distinguish context. Accept the recall/precision tradeoff:
     // false positives are cheap (the agent re-asks; user clarifies).
     expect(detectVagueLanguage('subí más', 'es').isVague).toBe(true);
+  });
+});
+
+// ─── ISSUE-061 cost-reveal ────────────────────────────────────────────
+
+describe('detectMissingCost — Spanish', () => {
+  it('returns true when the goal text omits cost', () => {
+    expect(detectMissingCost('Aprender alemán B1 antes de diciembre', 'es')).toBe(true);
+    expect(detectMissingCost('Correr una media maratón', 'es')).toBe(true);
+  });
+
+  it('returns false when text explicitly mentions a trade-off', () => {
+    expect(detectMissingCost('Aprender alemán, voy a dejar Netflix', 'es')).toBe(false);
+    expect(detectMissingCost('Quiero correr más; sacrificar fines de semana', 'es')).toBe(false);
+    expect(detectMissingCost('Cambiar tiempo de TV por estudio', 'es')).toBe(false);
+    expect(detectMissingCost('Menos tiempo en redes', 'es')).toBe(false);
+  });
+});
+
+describe('detectMissingCost — English', () => {
+  it('returns true when goal omits cost', () => {
+    expect(detectMissingCost('Run a marathon next year', 'en')).toBe(true);
+  });
+
+  it('returns false when cost is named', () => {
+    expect(detectMissingCost('Learn German, will give up Netflix', 'en')).toBe(false);
+    expect(detectMissingCost('Less time on social media', 'en')).toBe(false);
+    expect(detectMissingCost('Trade gaming for guitar practice', 'en')).toBe(false);
+  });
+
+  it('returns false on empty input', () => {
+    expect(detectMissingCost('', 'es')).toBe(false);
+    expect(detectMissingCost('', 'en')).toBe(false);
+  });
+});
+
+// ─── ISSUE-062 reality-test ──────────────────────────────────────────
+
+describe('detectNewCommitment — Spanish', () => {
+  const commitments = [
+    'voy a ir al gym 5 veces esta semana',
+    'me comprometo a leer todas las noches',
+    'esta semana hago la migración completa',
+    'el proximo mes voy a viajar menos',
+    'me propongo terminar el curso',
+  ];
+
+  it.each(commitments)('flags: %s', (text) => {
+    expect(detectNewCommitment(text, 'es')).toBe(true);
+  });
+
+  it('does NOT flag past-tense or reflective statements', () => {
+    expect(detectNewCommitment('ayer fui al gym', 'es')).toBe(false);
+    expect(detectNewCommitment('me siento cansado', 'es')).toBe(false);
+  });
+});
+
+describe('detectNewCommitment — English', () => {
+  const commitments = [
+    "I'm going to ship the feature this week",
+    'I will run every morning',
+    "I'll commit to 30 minutes of meditation",
+    'I commit to one creative hour daily',
+    'this week I am writing every day',
+    'next month I start the course',
+  ];
+
+  it.each(commitments)('flags: %s', (text) => {
+    expect(detectNewCommitment(text, 'en')).toBe(true);
+  });
+
+  it('does NOT flag past-tense', () => {
+    expect(detectNewCommitment('I went to the gym yesterday', 'en')).toBe(false);
   });
 });
