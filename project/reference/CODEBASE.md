@@ -31,6 +31,7 @@
 | `src\components\agenda\QuickAddDayPopover.tsx` | 2 |
 | `src\components\agenda\PlanSnapshotViewer.tsx` | 2 |
 | `src\components\agenda\StatusBadge.tsx` | 2 |
+| `src\lib\ai\models.ts` | 2 |
 | `src\lib\auth\utils.ts` | 2 |
 | `src\lib\db\schema\index.ts` | 2 |
 | `src\lib\db\schema\projects.ts` | 2 |
@@ -333,6 +334,10 @@
 | `src\lib\actions\send-reset-email.ts` | — | — |
 | `src\lib\actions\subtask.ts` | — | — |
 | `src\lib\actions\types.ts` | — | — |
+| `src\lib\ai\client.ts` | `src\lib\ai\models.ts`, `src\lib\ai\telemetry.ts` | — |
+| `src\lib\ai\models.ts` | — | `src\lib\ai\client.ts`, `src\lib\ai\telemetry.ts` |
+| `src\lib\ai\system-prompts\agent-base.ts` | — | — |
+| `src\lib\ai\telemetry.ts` | `src\lib\ai\models.ts` | `src\lib\ai\client.ts` |
 | `src\lib\api\client.ts` | — | — |
 | `src\lib\audit.ts` | — | — |
 | `src\lib\auth\auth.config.ts` | — | `src\lib\auth\auth.ts` |
@@ -454,10 +459,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 401 |
-| Total connections | 145 |
-| High-risk files (2+ deps) | 28 |
-| Orphan files (no connections) | 265 |
+| Total files analyzed | 405 |
+| Total connections | 148 |
+| High-risk files (2+ deps) | 29 |
+| Orphan files (no connections) | 266 |
 
 ---
 

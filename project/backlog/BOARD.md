@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (78)
+## 📅 To Do (80)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -39,6 +39,8 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-042_goal-review-flow.md)
 - [Sin Título](v1.0\issues\ISSUE-043_goals-screen-tabs-progress.md)
 - [Sin Título](v1.0\issues\ISSUE-050_anthropic-sdk-system-prompts.md)
+- [Sin Título](v1.0\issues\ISSUE-050b_anthropic-ritual-prompts.md)
+- [Sin Título](v1.0\issues\ISSUE-050c_anthropic-eval-harness.md)
 - [Sin Título](v1.0\issues\ISSUE-051_conversation-message-schema.md)
 - [Sin Título](v1.0\issues\ISSUE-052_chat-ui-sse-streaming.md)
 - [Sin Título](v1.0\issues\ISSUE-053_ai-tools-schemas.md)
