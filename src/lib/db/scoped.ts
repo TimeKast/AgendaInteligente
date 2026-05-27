@@ -73,6 +73,7 @@ import { goals } from './schema/goals';
 import { calendarConnections } from './schema/calendar-connections';
 import { calendarBusySlots } from './schema/calendar-busy-slots';
 import { conversations } from './schema/conversations';
+import { proactiveTasks } from './schema/proactive-tasks';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Tenant table registry
@@ -99,6 +100,7 @@ export const TENANT_TABLES = {
   calendarConnections,
   calendarBusySlots,
   conversations,
+  proactiveTasks,
 } as const;
 
 export type TenantTableKey = keyof typeof TENANT_TABLES;

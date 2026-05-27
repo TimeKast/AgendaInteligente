@@ -5,8 +5,11 @@ epic: EPIC-CHECKINS
 milestone: v1.0
 priority: P0
 story_points: 3
-status: ready
+status: completed
+completed_date: 2026-05-27
+completion_note: shipped by the TimeKast starter kit (pushSubscriptions table, subscribePush helper, sendPush dispatcher, /api/push/subscribe route, VAPID env helpers, service worker). Only iOS-detection UI hint remaining → ISSUE-081b.
 dependencies: [ISSUE-001, ISSUE-006]
+follow_ups: [ISSUE-081b]
 user_stories: [US-080]
 features: [FT-088, FT-089]
 screens: []

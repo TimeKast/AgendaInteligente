@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (85)
+## 📅 To Do (86)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -63,6 +63,7 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-080_inngest-setup.md)
 - [Sin Título](v1.0\issues\ISSUE-080b_per-user-checkin-scheduling.md)
 - [Sin Título](v1.0\issues\ISSUE-081_web-push-subscription.md)
+- [Sin Título](v1.0\issues\ISSUE-081b_ios-push-hint.md)
 - [Sin Título](v1.0\issues\ISSUE-082_proactive-task-anti-spam.md)
 - [Sin Título](v1.0\issues\ISSUE-083_morning-check-in-flow.md)
 - [Sin Título](v1.0\issues\ISSUE-084_midday-evening-check-ins.md)

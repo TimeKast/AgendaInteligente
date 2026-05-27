@@ -55,6 +55,7 @@ export * from './goal-links';
 export * from './calendar-connections';
 export * from './calendar-busy-slots';
 export * from './conversations';
+export * from './proactive-tasks';
 
 // =============================================================================
 // AgendaInteligente — Email verification tokens (ISSUE-004)

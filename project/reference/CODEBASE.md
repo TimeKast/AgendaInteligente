@@ -11,7 +11,7 @@
 
 | File | Dependents |
 |------|------------|
-| `src\lib\db\schema\users.ts` | 15 |
+| `src\lib\db\schema\users.ts` | 16 |
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\lib\inngest\client.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
@@ -391,12 +391,13 @@
 | `src\lib\db\schema\invites.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\notification-prefs.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\notifications.ts` | `src\lib\db\schema\users.ts` | — |
+| `src\lib\db\schema\proactive-tasks.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
 | `src\lib\db\schema\subtasks.ts` | `src\lib\db\schema\activities.ts` | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\proactive-tasks.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
 | `src\lib\db\schema\week-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
-| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\conversations.ts` | — |
+| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\proactive-tasks.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
@@ -458,6 +459,7 @@
 | `src\lib\logger.ts` | — | — |
 | `src\lib\notifications\index.ts` | — | — |
 | `src\lib\notifications\parse-user-agent.ts` | — | — |
+| `src\lib\notifications\proactive.ts` | — | — |
 | `src\lib\notifications\push.ts` | — | — |
 | `src\lib\notifications\service.ts` | — | — |
 | `src\lib\pwa\index.ts` | — | — |
@@ -490,10 +492,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 432 |
-| Total connections | 170 |
+| Total files analyzed | 434 |
+| Total connections | 172 |
 | High-risk files (2+ deps) | 33 |
-| Orphan files (no connections) | 281 |
+| Orphan files (no connections) | 282 |
 
 ---
 
