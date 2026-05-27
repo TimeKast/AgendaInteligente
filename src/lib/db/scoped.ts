@@ -69,6 +69,7 @@ import { projects } from './schema/projects';
 import { activities } from './schema/activities';
 import { daySheets } from './schema/day-sheets';
 import { weekSheets } from './schema/week-sheets';
+import { goals } from './schema/goals';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Tenant table registry
@@ -91,6 +92,7 @@ export const TENANT_TABLES = {
   activities,
   daySheets,
   weekSheets,
+  goals,
 } as const;
 
 export type TenantTableKey = keyof typeof TENANT_TABLES;
