@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (86)
+## 📅 To Do (87)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -83,6 +83,7 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-104_account-deletion-export-grace.md)
 - [Sin Título](v1.0\issues\ISSUE-130_tasks-flat-view.md)
 - [Sin Título](v1.0\issues\ISSUE-131_month-sheet-schema-and-ui.md)
+- [Sin Título](v1.0\issues\ISSUE-131b_month-sheet-ui-grid.md)
 - [Sin Título](v1.0\issues\ISSUE-132_category-detail-screen.md)
 - [Sin Título](v1.0\issues\ISSUE-133_stats-dashboard.md)
 - [Sin Título](v1.0\issues\ISSUE-134_bottom-nav-unification.md)

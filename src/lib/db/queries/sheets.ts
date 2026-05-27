@@ -18,6 +18,8 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { daySheets, type DaySheet } from '@/lib/db/schema/day-sheets';
 import { weekSheets, type WeekSheet } from '@/lib/db/schema/week-sheets';
+import { monthSheets, type MonthSheet } from '@/lib/db/schema/month-sheets';
+import { normalizeToMonthStarting } from '@/lib/domain/month-calc';
 
 /**
  * Get the existing DaySheet for (userId, dateStr) or create an empty one.
@@ -107,4 +109,35 @@ export async function tryCreateWeekSheet(
     .returning({ id: weekSheets.id });
 
   return { created: inserted.length > 0 };
+}
+
+/**
+ * Get the existing MonthSheet for (userId, monthStartingStr) or create
+ * an empty one (ISSUE-131). Mirrors `getOrCreateWeekSheet`. Input may
+ * be ANY date in the target month — we normalize to first-of-month
+ * to enforce BR-19 at the query layer (defense-in-depth alongside
+ * the DB CHECK + UNIQUE).
+ */
+export async function getOrCreateMonthSheet(
+  userId: string,
+  monthStartingInput: string
+): Promise<MonthSheet> {
+  const monthStartingStr = normalizeToMonthStarting(monthStartingInput);
+  const inserted = await db
+    .insert(monthSheets)
+    .values({ userId, monthStarting: monthStartingStr })
+    .onConflictDoNothing({ target: [monthSheets.userId, monthSheets.monthStarting] })
+    .returning();
+
+  if (inserted.length > 0) return inserted[0];
+
+  const existing = await db
+    .select()
+    .from(monthSheets)
+    .where(and(eq(monthSheets.userId, userId), eq(monthSheets.monthStarting, monthStartingStr)));
+
+  if (existing.length === 0) {
+    throw new Error(`MonthSheet vanished after upsert (${userId}, ${monthStartingStr})`);
+  }
+  return existing[0];
 }

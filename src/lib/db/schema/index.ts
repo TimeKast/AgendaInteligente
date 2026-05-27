@@ -50,6 +50,7 @@ export * from './activities';
 export * from './subtasks';
 export * from './day-sheets';
 export * from './week-sheets';
+export * from './month-sheets';
 export * from './goals';
 export * from './goal-links';
 export * from './calendar-connections';

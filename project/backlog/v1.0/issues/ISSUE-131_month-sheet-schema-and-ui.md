@@ -5,8 +5,10 @@ epic: EPIC-SHEETS
 milestone: v1.0
 priority: P1
 story_points: 8
-status: ready
+status: in_progress
+slice_a1_completed_date: 2026-05-27
 dependencies: [ISSUE-002, ISSUE-013, ISSUE-032, ISSUE-134]
+follow_ups: [ISSUE-131b]
 user_stories: [US-131]
 features: [FT-131]
 screens: [SCR-026]

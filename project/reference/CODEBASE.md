@@ -11,7 +11,7 @@
 
 | File | Dependents |
 |------|------------|
-| `src\lib\db\schema\users.ts` | 16 |
+| `src\lib\db\schema\users.ts` | 17 |
 | `src\lib\inngest\client.ts` | 12 |
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
@@ -338,6 +338,7 @@
 | `src\lib\actions\goal.ts` | — | — |
 | `src\lib\actions\helpers.ts` | — | — |
 | `src\lib\actions\intensity.ts` | — | — |
+| `src\lib\actions\month-sheet.ts` | — | — |
 | `src\lib\actions\notifications.ts` | — | — |
 | `src\lib\actions\onboarding.ts` | — | — |
 | `src\lib\actions\profile.ts` | — | — |
@@ -394,15 +395,16 @@
 | `src\lib\db\schema\goals.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\goal-links.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\index.ts` | — | `src\lib\db\drizzle.ts`, `src\lib\db\seeds\admin.ts` |
 | `src\lib\db\schema\invites.ts` | `src\lib\db\schema\users.ts` | — |
+| `src\lib\db\schema\month-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\notification-prefs.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\notifications.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\proactive-tasks.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
 | `src\lib\db\schema\subtasks.ts` | `src\lib\db\schema\activities.ts` | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\proactive-tasks.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\month-sheets.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\proactive-tasks.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
 | `src\lib\db\schema\week-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
-| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\proactive-tasks.ts` | — |
+| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\month-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\calendar-busy-slots.ts`, `src\lib\db\schema\conversations.ts`, `src\lib\db\schema\proactive-tasks.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
@@ -412,6 +414,7 @@
 | `src\lib\domain\challenge-detect.ts` | — | — |
 | `src\lib\domain\checkin-schedule.ts` | — | — |
 | `src\lib\domain\day-sheet-completion.ts` | — | — |
+| `src\lib\domain\month-calc.ts` | — | — |
 | `src\lib\domain\recurrence.ts` | — | — |
 | `src\lib\domain\week-calc.ts` | — | — |
 | `src\lib\email\index.ts` | `src\lib\email\resend.ts`, `src\lib\email\smtp.ts`, `src\lib\email\types.ts` | — |
@@ -488,6 +491,7 @@
 | `src\lib\validations\goal-link.ts` | — | — |
 | `src\lib\validations\goal.ts` | — | — |
 | `src\lib\validations\intensity.ts` | — | — |
+| `src\lib\validations\month-sheet.ts` | — | — |
 | `src\lib\validations\onboarding.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
 | `src\lib\validations\project.ts` | — | — |
@@ -500,10 +504,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 441 |
-| Total connections | 182 |
+| Total files analyzed | 445 |
+| Total connections | 184 |
 | High-risk files (2+ deps) | 34 |
-| Orphan files (no connections) | 282 |
+| Orphan files (no connections) | 285 |
 
 ---
 

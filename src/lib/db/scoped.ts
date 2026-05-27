@@ -69,6 +69,7 @@ import { projects } from './schema/projects';
 import { activities } from './schema/activities';
 import { daySheets } from './schema/day-sheets';
 import { weekSheets } from './schema/week-sheets';
+import { monthSheets } from './schema/month-sheets';
 import { goals } from './schema/goals';
 import { calendarConnections } from './schema/calendar-connections';
 import { calendarBusySlots } from './schema/calendar-busy-slots';
@@ -96,6 +97,7 @@ export const TENANT_TABLES = {
   activities,
   daySheets,
   weekSheets,
+  monthSheets,
   goals,
   calendarConnections,
   calendarBusySlots,
