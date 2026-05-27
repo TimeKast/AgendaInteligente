@@ -650,12 +650,13 @@ describe('listActivities — scope classification', () => {
     const { listActivities } = await import('@/lib/actions/activity');
     const result = await listActivities({ date: '2026-05-27' });
 
-    if (result.error) throw new Error(result.error);
-    expect(result.data.scheduled.map((r) => r.id)).toEqual(['a']);
-    expect(result.data.pool.todayUnscheduled.map((r) => r.id)).toEqual(['b']);
-    expect(result.data.pool.thisWeek.map((r) => r.id)).toEqual(['c']);
+    if ('error' in result && result.error) throw new Error(result.error);
+    const data = result.data!;
+    expect(data.scheduled.map((r) => r.id)).toEqual(['a']);
+    expect(data.pool.todayUnscheduled.map((r) => r.id)).toEqual(['b']);
+    expect(data.pool.thisWeek.map((r) => r.id)).toEqual(['c']);
     // d (far future), e (no dates), f (past only) → all backlog.
-    expect(result.data.pool.backlog.map((r) => r.id).sort()).toEqual(['d', 'e', 'f']);
+    expect(data.pool.backlog.map((r) => r.id).sort()).toEqual(['d', 'e', 'f']);
   });
 
   it('skips done activities when includeDone=false', async () => {
@@ -669,8 +670,8 @@ describe('listActivities — scope classification', () => {
     const { listActivities } = await import('@/lib/actions/activity');
     const result = await listActivities({ date: '2026-05-27', includeDone: false });
 
-    if (result.error) throw new Error(result.error);
-    expect(result.data.rows.map((r) => r.id)).toEqual(['p']);
+    if ('error' in result && result.error) throw new Error(result.error);
+    expect(result.data!.rows.map((r) => r.id)).toEqual(['p']);
   });
 
   it('excludes soft-deleted rows by default', async () => {

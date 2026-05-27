@@ -3,23 +3,38 @@
 /**
  * ChatInput — sticky bottom bar (mobile-first) with textarea, mic and send.
  *
- * Visual-only. No real submission. Send is disabled-visual to communicate
- * that the user must type first; mic logs to console.
+ * Two modes:
+ *   - No `onSubmit` prop → visual-only (prototype pages keep working).
+ *   - With `onSubmit` → wire to a real handler (LiveChat). On submit the
+ *     text gets passed up and the local state cleared. `disabled` lets
+ *     the parent block input while a stream is in flight.
  */
 
 import { useState } from 'react';
 import { Mic, ArrowRight } from 'lucide-react';
 
-export function ChatInput() {
+export interface ChatInputProps {
+  /** Called with the trimmed message when the user submits. */
+  onSubmit?: (text: string) => void;
+  /** Block input + send button while a stream is in flight. */
+  disabled?: boolean;
+}
+
+export function ChatInput({ onSubmit, disabled }: ChatInputProps = {}) {
   const [value, setValue] = useState('');
-  const canSend = value.trim().length > 0;
+  const canSend = value.trim().length > 0 && !disabled;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSend || !onSubmit) return;
+    const text = value.trim();
+    onSubmit(text);
+    setValue('');
+  }
 
   return (
     <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        // Visual-only — never submits.
-      }}
+      onSubmit={handleSubmit}
       style={{
         position: 'sticky',
         bottom: 0,
@@ -40,8 +55,15 @@ export function ChatInput() {
         rows={1}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Escribí algo..."
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit(e);
+          }
+        }}
+        placeholder="Escribe algo..."
         aria-label="Mensaje"
+        disabled={disabled}
         style={{
           resize: 'none',
           fontFamily: 'var(--ag-font-body)',

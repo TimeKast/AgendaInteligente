@@ -252,6 +252,8 @@
 | `src\components\auth\index.ts` | — | — |
 | `src\components\branding\BrandLogo.tsx` | — | — |
 | `src\components\branding\index.ts` | — | — |
+| `src\components\chat\CrisisExitPanel.tsx` | — | — |
+| `src\components\chat\LiveChat.tsx` | — | — |
 | `src\components\common\AlertDialog.tsx` | — | — |
 | `src\components\common\BreadcrumbSetter.tsx` | — | — |
 | `src\components\common\Dialog.tsx` | — | — |
@@ -508,10 +510,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 448 |
+| Total files analyzed | 450 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 286 |
+| Orphan files (no connections) | 288 |
 
 ---
 
