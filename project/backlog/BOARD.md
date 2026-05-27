@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (82)
+## 📅 To Do (83)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -50,6 +50,7 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-056_crisis-exit-protocol-CRITICAL.md)
 - [Sin Título](v1.0\issues\ISSUE-056b_crisis-exit-ui-integration.md)
 - [Sin Título](v1.0\issues\ISSUE-060_vague-language-challenge.md)
+- [Sin Título](v1.0\issues\ISSUE-060b_vague-challenge-prompt-ui.md)
 - [Sin Título](v1.0\issues\ISSUE-061_cost-reveal-challenge.md)
 - [Sin Título](v1.0\issues\ISSUE-062_reality-test-challenge.md)
 - [Sin Título](v1.0\issues\ISSUE-070_fab-mic-permission.md)

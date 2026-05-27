@@ -398,6 +398,7 @@
 | `src\lib\db\seeds\plans.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\billing.ts` | — |
 | `src\lib\db\utils\pagination.ts` | — | — |
 | `src\lib\domain\activity-transitions.ts` | — | — |
+| `src\lib\domain\challenge-detect.ts` | — | — |
 | `src\lib\domain\checkin-schedule.ts` | — | — |
 | `src\lib\domain\day-sheet-completion.ts` | — | — |
 | `src\lib\domain\recurrence.ts` | — | — |
@@ -481,10 +482,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 423 |
+| Total files analyzed | 424 |
 | Total connections | 169 |
 | High-risk files (2+ deps) | 33 |
-| Orphan files (no connections) | 274 |
+| Orphan files (no connections) | 275 |
 
 ---
 
