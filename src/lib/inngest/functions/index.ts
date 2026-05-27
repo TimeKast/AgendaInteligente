@@ -27,6 +27,7 @@ import {
   weeklyKickoffHandler,
   weeklyReviewHandler,
 } from './check-in-handlers';
+import { crisisExitTelemetry } from './crisis-exit-telemetry';
 
 export const inngestFunctions = [
   userSignedUp,
@@ -46,4 +47,5 @@ export const inngestFunctions = [
   eveningCheckInHandler,
   weeklyKickoffHandler,
   weeklyReviewHandler,
+  crisisExitTelemetry,
 ] as const;

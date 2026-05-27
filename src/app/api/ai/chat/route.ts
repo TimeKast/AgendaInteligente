@@ -45,7 +45,12 @@ import { recordTokens } from '@/lib/ai/telemetry';
 import { renderAgentBase, type IntensityMode } from '@/lib/ai/system-prompts/agent-base';
 import { getToolsForAnthropic } from '@/lib/ai/tools';
 import { dispatchAll, type ToolUseBlock } from '@/lib/ai/tools/dispatch';
-import { detectCrisisTrigger, crisisLineForTimezone } from '@/lib/ai/crisis-detection';
+import {
+  detectCrisisTrigger,
+  crisisLineForTimezone,
+  countryFromTimezone,
+} from '@/lib/ai/crisis-detection';
+import { publish } from '@/lib/inngest/publish';
 import { detectVagueLanguage } from '@/lib/domain/challenge-detect';
 import { getOrCreateConversation, appendMessage, listMessages } from '@/lib/actions/conversation';
 import { makeSseWriter, SSE_HEADERS } from '@/lib/ai/sse';
@@ -122,6 +127,15 @@ export async function POST(req: Request): Promise<Response> {
       .execute();
 
     const line = crisisLineForTimezone(userCtx.timezone);
+
+    // Anonymous telemetry — fire-and-forget. Payload deliberately excludes
+    // userId / message / matched phrase (privacy contract in events.ts).
+    publish('crisis.exit.fired', {
+      country: countryFromTimezone(userCtx.timezone),
+      intensityMode: userCtx.intensityMode as 'sharp' | 'standard' | 'gentle' | 'listening',
+      trigger: 'regex_prefilter',
+      timestamp: new Date().toISOString(),
+    }).catch((err) => logger.error('[api/ai/chat] crisis telemetry publish failed', err));
 
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {

@@ -63,6 +63,21 @@ export const eventSchemas = {
     userId,
     connectionId: z.string().uuid(),
   }),
+
+  // ─── Crisis exit telemetry (ISSUE-056b) — PRIVACY-CRITICAL ────────
+  // PRIVACY CONTRACT: this payload deliberately omits userId, message
+  // content, matched phrase, IP, or any field that could re-identify
+  // the user. Country comes from TZ inference; intensityMode is the
+  // user's setting at the moment of trigger; trigger is which layer
+  // fired (pre-filter regex vs LLM tool call). The handler logs to
+  // observability; we use it to detect false-negative trends, not to
+  // audit individuals. Adding a field here requires a privacy review.
+  'crisis.exit.fired': z.object({
+    country: z.string().min(2).max(2).nullable(),
+    intensityMode: z.enum(['sharp', 'standard', 'gentle', 'listening']),
+    trigger: z.enum(['regex_prefilter', 'llm_tool']),
+    timestamp: z.string().datetime(),
+  }),
 } as const;
 
 /** Compile-time event-name union (derived from the registry keys). */

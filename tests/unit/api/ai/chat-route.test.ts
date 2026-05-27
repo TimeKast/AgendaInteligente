@@ -66,6 +66,11 @@ vi.mock('@/lib/ai/telemetry', () => ({
   recordTokens: recordTokensMock,
 }));
 
+const publishMock = vi.fn();
+vi.mock('@/lib/inngest/publish', () => ({
+  publish: publishMock,
+}));
+
 // Fake EventEmitter-like stream. We invoke `text` handlers
 // synchronously inside `finalMessage()` to keep tests deterministic.
 // The route reads tool_use blocks from `finalMessage.content` (no
@@ -127,6 +132,7 @@ beforeEach(() => {
   listMessagesMock.mockResolvedValue({ data: { messages: [], nextCursor: null } });
   dispatchAllMock.mockResolvedValue([]);
   recordTokensMock.mockResolvedValue(undefined);
+  publishMock.mockResolvedValue(undefined);
   streamFnMock.mockReturnValue(makeFakeStream({ textDeltas: ['hola', ' qué tal'] }));
   userRowsMock.mockReturnValue([
     {
@@ -231,6 +237,26 @@ describe('POST /api/ai/chat — crisis pre-filter (AI-8 BLOCKING)', () => {
     expect(sdbUpdateMock).toHaveBeenCalledWith(
       expect.objectContaining({ crisisExitAt: expect.any(Date) })
     );
+  });
+
+  it('emits anonymous crisis.exit.fired telemetry (no userId, no message)', async () => {
+    const { POST } = await import('@/app/api/ai/chat/route');
+    await POST(makeReq({ message: 'me quiero matar' }));
+    // Drain not strictly needed — publish fires synchronously before stream.
+
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const [eventName, payload] = publishMock.mock.calls[0];
+    expect(eventName).toBe('crisis.exit.fired');
+    expect(payload).toMatchObject({
+      country: 'MX',
+      intensityMode: 'standard',
+      trigger: 'regex_prefilter',
+    });
+    expect(typeof payload.timestamp).toBe('string');
+    // Privacy contract: payload must NOT contain userId or message.
+    expect(payload).not.toHaveProperty('userId');
+    expect(payload).not.toHaveProperty('message');
+    expect(payload).not.toHaveProperty('phrase');
   });
 
   it('crisis_exit payload includes the user country crisis line', async () => {
@@ -413,7 +439,7 @@ describe('POST /api/ai/chat — multi-turn tool loop (Slice A2)', () => {
 
   it('emits tool_round_limit when MAX_TOOL_ROUNDS is hit', async () => {
     // Every round emits a tool_use → loop hits the cap.
-    const cfg = {
+    const cfg: FakeStreamConfig = {
       textDeltas: ['x'],
       toolUses: [
         {
@@ -427,7 +453,7 @@ describe('POST /api/ai/chat — multi-turn tool loop (Slice A2)', () => {
           },
         },
       ],
-    } as const;
+    };
     streamFnMock.mockReturnValue(makeFakeStream(cfg));
     dispatchAllMock.mockResolvedValue([{ type: 'tool_result', tool_use_id: 'tu', content: '{}' }]);
 

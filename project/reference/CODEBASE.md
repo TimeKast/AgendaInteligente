@@ -12,7 +12,7 @@
 | File | Dependents |
 |------|------------|
 | `src\lib\db\schema\users.ts` | 17 |
-| `src\lib\inngest\client.ts` | 13 |
+| `src\lib\inngest\client.ts` | 14 |
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\lib\ai\system-prompts\agent-base.ts` | 5 |
@@ -42,6 +42,7 @@
 | `src\lib\db\schema\activities.ts` | 2 |
 | `src\lib\db\schema\billing.ts` | 2 |
 | `src\lib\email\logo-data.ts` | 2 |
+| `src\lib\inngest\events.ts` | 2 |
 | `src\lib\inngest\publish.ts` | 2 |
 | `src\lib\integrations\calendar\google.ts` | 2 |
 | `src\lib\integrations\calendar\refresh.ts` | 2 |
@@ -443,13 +444,14 @@
 | `src\lib\hooks\useServerTableState.ts` | `src\lib\hooks\useTableState.ts` | — |
 | `src\lib\hooks\useTableState.ts` | — | `src\lib\hooks\useServerTableState.ts` |
 | `src\lib\hooks\useUnsavedChangesGuard.ts` | — | — |
-| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\calendar-sync.ts`, `src\lib\inngest\functions\check-in-handlers.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\project-kill-suggestion.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\risk-alert.ts`, `src\lib\inngest\functions\silence-detection.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
-| `src\lib\inngest\events.ts` | — | `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\client.ts` | — | `src\lib\inngest\functions\calendar-sync.ts`, `src\lib\inngest\functions\check-in-handlers.ts`, `src\lib\inngest\functions\crisis-exit-telemetry.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\project-kill-suggestion.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\risk-alert.ts`, `src\lib\inngest\functions\silence-detection.ts`, `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\publish.ts` |
+| `src\lib\inngest\events.ts` | — | `src\lib\inngest\functions\crisis-exit-telemetry.ts`, `src\lib\inngest\publish.ts` |
 | `src\lib\inngest\functions\calendar-sync.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\check-in-handlers.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
+| `src\lib\inngest\functions\crisis-exit-telemetry.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\daily-checkin-fanout.ts` | `src\lib\inngest\publish.ts`, `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\gentle-default-expired.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
-| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\calendar-sync.ts`, `src\lib\inngest\functions\silence-detection.ts`, `src\lib\inngest\functions\risk-alert.ts`, `src\lib\inngest\functions\project-kill-suggestion.ts`, `src\lib\inngest\functions\check-in-handlers.ts` | — |
+| `src\lib\inngest\functions\index.ts` | `src\lib\inngest\functions\user-signed-up.ts`, `src\lib\inngest\functions\recurrence-materialize.ts`, `src\lib\inngest\functions\weeksheet-materialize.ts`, `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts`, `src\lib\inngest\functions\listening-mode-expired.ts`, `src\lib\inngest\functions\gentle-default-expired.ts`, `src\lib\inngest\functions\calendar-sync.ts`, `src\lib\inngest\functions\silence-detection.ts`, `src\lib\inngest\functions\risk-alert.ts`, `src\lib\inngest\functions\project-kill-suggestion.ts`, `src\lib\inngest\functions\check-in-handlers.ts`, `src\lib\inngest\functions\crisis-exit-telemetry.ts` | — |
 | `src\lib\inngest\functions\listening-mode-expired.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\project-kill-suggestion.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\recurrence-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
@@ -505,9 +507,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 446 |
-| Total connections | 186 |
-| High-risk files (2+ deps) | 34 |
+| Total files analyzed | 447 |
+| Total connections | 189 |
+| High-risk files (2+ deps) | 35 |
 | Orphan files (no connections) | 285 |
 
 ---
