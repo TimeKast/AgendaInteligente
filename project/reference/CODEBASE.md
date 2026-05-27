@@ -11,7 +11,7 @@
 
 | File | Dependents |
 |------|------------|
-| `src\lib\db\schema\users.ts` | 12 |
+| `src\lib\db\schema\users.ts` | 13 |
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
@@ -355,6 +355,7 @@
 | `src\lib\db\schema\activities.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\projects.ts` | `src\lib\db\schema\subtasks.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
 | `src\lib\db\schema\billing.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts`, `src\lib\db\seeds\plans.ts` |
+| `src\lib\db\schema\calendar-connections.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\categories.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\schema\projects.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\day-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\email-verifications.ts` | `src\lib\db\schema\users.ts` | — |
@@ -367,9 +368,9 @@
 | `src\lib\db\schema\projects.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\categories.ts` | `src\lib\db\schema\activities.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\rate-limit.ts` | — | — |
 | `src\lib\db\schema\subtasks.ts` | `src\lib\db\schema\activities.ts` | — |
-| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
+| `src\lib\db\schema\users.ts` | — | `src\lib\db\schema\activities.ts`, `src\lib\db\schema\audit.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\calendar-connections.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\email-verifications.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\invites.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\notifications.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\week-sheets.ts` |
 | `src\lib\db\schema\week-sheets.ts` | `src\lib\db\schema\users.ts` | `src\lib\db\scoped.ts` |
-| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts` | — |
+| `src\lib\db\scoped.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\notification-prefs.ts`, `src\lib\db\schema\billing.ts`, `src\lib\db\schema\categories.ts`, `src\lib\db\schema\projects.ts`, `src\lib\db\schema\activities.ts`, `src\lib\db\schema\day-sheets.ts`, `src\lib\db\schema\week-sheets.ts`, `src\lib\db\schema\goals.ts`, `src\lib\db\schema\calendar-connections.ts` | — |
 | `src\lib\db\seed.ts` | `src\lib\db\seeds\index.ts`, `src\lib\db\drizzle.ts` | — |
 | `src\lib\db\seeds\admin.ts` | `src\lib\db\drizzle.ts`, `src\lib\db\schema\index.ts` | — |
 | `src\lib\db\seeds\index.ts` | — | `src\lib\db\seed.ts` |
@@ -412,6 +413,7 @@
 | `src\lib\inngest\functions\user-signed-up.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\functions\weeksheet-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\publish.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | — |
+| `src\lib\integrations\calendar\tokens.ts` | — | — |
 | `src\lib\invites\index.ts` | `src\lib\invites\token.ts` | — |
 | `src\lib\invites\token.ts` | — | `src\lib\invites\index.ts` |
 | `src\lib\logger.ts` | — | — |
@@ -446,10 +448,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 393 |
-| Total connections | 141 |
+| Total files analyzed | 395 |
+| Total connections | 143 |
 | High-risk files (2+ deps) | 28 |
-| Orphan files (no connections) | 261 |
+| Orphan files (no connections) | 262 |
 
 ---
 

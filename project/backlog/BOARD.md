@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (76)
+## 📅 To Do (78)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -63,6 +63,8 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-086_settings-notifications-ui-mute.md)
 - [Sin Título](v1.0\issues\ISSUE-087_silence-listening-risk-kill-suggestions.md)
 - [Sin Título](v1.0\issues\ISSUE-090_google-calendar-oauth-encrypted-tokens.md)
+- [Sin Título](v1.0\issues\ISSUE-090b_calendar-oauth-flow.md)
+- [Sin Título](v1.0\issues\ISSUE-090c_calendar-settings-ui.md)
 - [Sin Título](v1.0\issues\ISSUE-091_calendar-busy-slot-sync-cron.md)
 - [Sin Título](v1.0\issues\ISSUE-092_busy-slots-week-planning-warning.md)
 - [Sin Título](v1.0\issues\ISSUE-093_settings-integrations-ui.md)
