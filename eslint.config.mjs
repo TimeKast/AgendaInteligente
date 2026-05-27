@@ -135,6 +135,10 @@ const eslintConfig = defineConfig([
       // access still flows through scoped helpers (`materializeUserRecurrences`).
       'src/lib/inngest/**',
       'src/app/api/inngest/**',
+      // ISSUE-052: chat SSE route reads users.intensity_mode +
+      // preferred_language + onboarding_context + timezone for prompt
+      // rendering. Single-user lookup scoped by eq(users.id, sessionUserId).
+      'src/app/api/ai/chat/**',
       // ISSUE-091: sync.ts is a unit-of-work for the cron + manual
       // trigger. Receives explicit userId; every read/write is scoped
       // via eq(*.userId, userId) or via the connectionId FK on rows

@@ -163,6 +163,7 @@
 
 | Endpoint | File |
 |----------|------|
+| /api/ai/chat | `src\app\api\ai\chat\route.ts` |
 | /api/auth/[...nextauth] | `src\app\api\auth\[...nextauth]\route.ts` |
 | /api/auth/forgot-password | `src\app\api\auth\forgot-password\route.ts` |
 | /api/auth/register | `src\app\api\auth\register\route.ts` |
@@ -191,9 +192,9 @@
 |--------|-------|
 | Dependencies | 44 |
 | Page Routes | 48 |
-| API Routes | 19 |
+| API Routes | 20 |
 | Components & Utils | 40 |
-| **Total items** | **151** |
+| **Total items** | **152** |
 
 ---
 

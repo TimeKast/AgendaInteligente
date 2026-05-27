@@ -108,6 +108,7 @@
 | `src\app\(protected)\settings\users\loading.tsx` | — | — |
 | `src\app\(protected)\settings\users\nuevo\page.tsx` | — | — |
 | `src\app\(protected)\settings\users\page.tsx` | — | — |
+| `src\app\api\ai\chat\route.ts` | — | — |
 | `src\app\api\auth\[...nextauth]\route.ts` | — | — |
 | `src\app\api\auth\forgot-password\route.ts` | — | — |
 | `src\app\api\auth\register\route.ts` | — | — |
@@ -344,6 +345,7 @@
 | `src\lib\ai\client.ts` | `src\lib\ai\models.ts`, `src\lib\ai\telemetry.ts` | — |
 | `src\lib\ai\crisis-detection.ts` | — | — |
 | `src\lib\ai\models.ts` | — | `src\lib\ai\client.ts`, `src\lib\ai\telemetry.ts` |
+| `src\lib\ai\sse.ts` | — | — |
 | `src\lib\ai\system-prompts\agent-base.ts` | — | — |
 | `src\lib\ai\telemetry.ts` | `src\lib\ai\models.ts` | `src\lib\ai\client.ts` |
 | `src\lib\ai\tools\dispatch.ts` | `src\lib\ai\tools\index.ts` | — |
@@ -465,6 +467,7 @@
 | `src\lib\validations\activity.ts` | — | — |
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\category.ts` | — | — |
+| `src\lib\validations\chat.ts` | — | — |
 | `src\lib\validations\conversation.ts` | — | — |
 | `src\lib\validations\day-sheet.ts` | — | — |
 | `src\lib\validations\goal-link.ts` | — | — |
@@ -482,10 +485,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 424 |
+| Total files analyzed | 427 |
 | Total connections | 169 |
 | High-risk files (2+ deps) | 33 |
-| Orphan files (no connections) | 275 |
+| Orphan files (no connections) | 278 |
 
 ---
 

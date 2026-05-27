@@ -6,7 +6,7 @@
 _No issues_
 
 
-## 📅 To Do (83)
+## 📅 To Do (84)
 - [Sin Título](v1.0\issues\ISSUE-001_setup-project-deps.md)
 - [Sin Título](v1.0\issues\ISSUE-002_drizzle-schema-foundation.md)
 - [Sin Título](v1.0\issues\ISSUE-003_nextauth-google-oauth.md)
@@ -43,6 +43,7 @@ _No issues_
 - [Sin Título](v1.0\issues\ISSUE-050c_anthropic-eval-harness.md)
 - [Sin Título](v1.0\issues\ISSUE-051_conversation-message-schema.md)
 - [Sin Título](v1.0\issues\ISSUE-052_chat-ui-sse-streaming.md)
+- [Sin Título](v1.0\issues\ISSUE-052b_chat-ui-components.md)
 - [Sin Título](v1.0\issues\ISSUE-053_ai-tools-schemas.md)
 - [Sin Título](v1.0\issues\ISSUE-054_intensity-modes-settings-auto-revert.md)
 - [Sin Título](v1.0\issues\ISSUE-054b_intensity-settings-ui.md)

@@ -90,7 +90,7 @@ const setIntensityModeToolSchema = z.object({
 interface JsonSchemaProperty {
   type: 'string' | 'integer' | 'number' | 'boolean' | 'array' | 'object';
   description?: string;
-  enum?: readonly string[];
+  enum?: string[];
   pattern?: string;
   items?: JsonSchemaProperty;
   minimum?: number;
@@ -100,7 +100,7 @@ interface JsonSchemaProperty {
 interface JsonSchema {
   type: 'object';
   properties: Record<string, JsonSchemaProperty>;
-  required?: readonly string[];
+  required?: string[];
 }
 
 export interface AiTool {
