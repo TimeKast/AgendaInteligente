@@ -1,8 +1,28 @@
 /**
  * Onboarding 3/8 — Habilitar push.
+ *
+ * Wired end-to-end: the client body (`PushStepBody`) triggers the
+ * browser's notification permission prompt + subscribes via the
+ * existing `usePushSubscription` hook, then writes the result into
+ * a hidden `pushEnabled` input. The layout's "Continuar" submits to
+ * `setPushPref` which upserts notification_prefs.push_enabled and
+ * advances to the mic step.
  */
 
+import { redirect } from 'next/navigation';
 import { OnboardingLayout } from '@/components/agenda/OnboardingLayout';
+import { PushStepBody } from '@/components/agenda/PushStepBody';
+import { setPushPref } from '@/lib/actions/onboarding';
+
+async function submit(formData: FormData) {
+  'use server';
+  const pushEnabled = formData.get('pushEnabled') === 'true';
+  const result = await setPushPref({ pushEnabled });
+  if (result.error) {
+    redirect(`/onboarding/push?error=${encodeURIComponent(result.error)}`);
+  }
+  redirect('/onboarding/mic');
+}
 
 export default function OnboardingPushPage() {
   return (
@@ -10,48 +30,9 @@ export default function OnboardingPushPage() {
       step={3}
       title="Habilitar notificaciones"
       subtitle="Te avisamos a las 8, 13 y 21. Nada más."
-      continueHref="/onboarding/mic"
+      formAction={submit}
     >
-      <div
-        style={{
-          padding: 'var(--ag-space-4)',
-          borderRadius: 'var(--ag-radius-card)',
-          backgroundColor: 'var(--ag-bg-elevated)',
-          boxShadow: 'inset 0 0 0 1px var(--ag-rule)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--ag-space-3)',
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 14,
-            lineHeight: 1.55,
-            color: 'var(--ag-ink-soft)',
-          }}
-        >
-          Sin push, sólo abrís cuando te acordás. La mayoría se olvida.
-        </p>
-        <button
-          type="button"
-          style={{
-            appearance: 'none',
-            border: '1px solid var(--ag-ink-primary)',
-            background: 'transparent',
-            color: 'var(--ag-ink-primary)',
-            padding: '10px 16px',
-            borderRadius: 'var(--ag-radius-base)',
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 14,
-            cursor: 'pointer',
-            alignSelf: 'flex-start',
-          }}
-        >
-          Habilitar push
-        </button>
-      </div>
+      <PushStepBody />
     </OnboardingLayout>
   );
 }

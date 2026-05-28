@@ -1,57 +1,37 @@
 /**
  * Onboarding 4/8 — Habilitar mic.
+ *
+ * Wired end-to-end: the client body (`MicStepBody`) triggers the
+ * browser's mic permission prompt and writes the result into a
+ * hidden `micEnabled` input. The layout's "Continuar" submits to
+ * `setMicPref` which persists (no-op for now, see action JSDoc) and
+ * advances to the context step.
  */
 
+import { redirect } from 'next/navigation';
 import { OnboardingLayout } from '@/components/agenda/OnboardingLayout';
+import { MicStepBody } from '@/components/agenda/MicStepBody';
+import { setMicPref } from '@/lib/actions/onboarding';
+
+async function submit(formData: FormData) {
+  'use server';
+  const micEnabled = formData.get('micEnabled') === 'true';
+  const result = await setMicPref({ micEnabled });
+  if (result.error) {
+    redirect(`/onboarding/mic?error=${encodeURIComponent(result.error)}`);
+  }
+  redirect('/onboarding/context');
+}
 
 export default function OnboardingMicPage() {
   return (
     <OnboardingLayout
       step={4}
       title="Capturar con voz"
-      subtitle="Para registrar mientras caminás, manejás o cocinás."
-      continueHref="/onboarding/context"
+      subtitle="Para registrar mientras caminas, manejas o cocinas."
+      formAction={submit}
     >
-      <div
-        style={{
-          padding: 'var(--ag-space-4)',
-          borderRadius: 'var(--ag-radius-card)',
-          backgroundColor: 'var(--ag-bg-elevated)',
-          boxShadow: 'inset 0 0 0 1px var(--ag-rule)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--ag-space-3)',
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 14,
-            lineHeight: 1.55,
-            color: 'var(--ag-ink-soft)',
-          }}
-        >
-          Sin mic, sólo capturás escribiendo. Funciona igual.
-        </p>
-        <button
-          type="button"
-          style={{
-            appearance: 'none',
-            border: '1px solid var(--ag-ink-primary)',
-            background: 'transparent',
-            color: 'var(--ag-ink-primary)',
-            padding: '10px 16px',
-            borderRadius: 'var(--ag-radius-base)',
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 14,
-            cursor: 'pointer',
-            alignSelf: 'flex-start',
-          }}
-        >
-          Habilitar mic
-        </button>
-      </div>
+      <MicStepBody />
     </OnboardingLayout>
   );
 }

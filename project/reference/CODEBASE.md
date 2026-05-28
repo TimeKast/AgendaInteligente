@@ -1,7 +1,7 @@
 # 🗺️ CODEBASE — Dependency Map
 
 > **Auto-generated** — Run `pnpm generate:codebase` to update
-> **Last updated:** 2026-05-27
+> **Last updated:** 2026-05-28
 
 ---
 
@@ -191,6 +191,7 @@
 | `src\components\agenda\IntensityCard.tsx` | — | — |
 | `src\components\agenda\LinkedActivitiesList.tsx` | `src\components\agenda\ActivityRow.tsx` | — |
 | `src\components\agenda\LinkedProjectsList.tsx` | — | — |
+| `src\components\agenda\MicStepBody.tsx` | — | — |
 | `src\components\agenda\MonthDayCell.tsx` | — | `src\components\agenda\MonthGrid.tsx`, `src\components\agenda\MonthPlanner.tsx` |
 | `src\components\agenda\MonthGrid.tsx` | `src\components\agenda\MonthDayCell.tsx` | `src\components\agenda\MonthPlanner.tsx` |
 | `src\components\agenda\MonthNavigation.tsx` | — | — |
@@ -215,6 +216,7 @@
 | `src\components\agenda\ProjectRow.tsx` | `src\components\agenda\StatusBadge.tsx` | — |
 | `src\components\agenda\ProjectsRanking.tsx` | — | — |
 | `src\components\agenda\PushPermissionBanner.tsx` | — | — |
+| `src\components\agenda\PushStepBody.tsx` | — | — |
 | `src\components\agenda\QuickAddDayPopover.tsx` | — | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
 | `src\components\agenda\RecurrencePicker.tsx` | — | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\ActivityRow.tsx` |
 | `src\components\agenda\ScopeChip.tsx` | — | `src\components\agenda\GoalCard.tsx` |
@@ -514,10 +516,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 454 |
+| Total files analyzed | 456 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 292 |
+| Orphan files (no connections) | 294 |
 
 ---
 
