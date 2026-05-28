@@ -67,7 +67,10 @@ export function OnboardingLayout({
         flexDirection: 'column',
       }}
     >
-      {/* Top bar: progress + skip */}
+      {/* Top bar: signout (left) + progress (center) + skip (right).
+          Signout is always present — if a step gets stuck (bad session,
+          orphan account, wrong Google selection), the user can recover
+          without DevTools or URL hacking. */}
       <header
         style={{
           display: 'grid',
@@ -77,7 +80,21 @@ export function OnboardingLayout({
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--ag-space-2))',
         }}
       >
-        <div />
+        <div>
+          <Link
+            href="/api/auth/signout"
+            prefetch={false}
+            style={{
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 13,
+              color: 'var(--ag-ink-hint)',
+              textDecoration: 'none',
+              padding: 'var(--ag-space-1) var(--ag-space-2)',
+            }}
+          >
+            Salir
+          </Link>
+        </div>
         <OnboardingProgress current={step} />
         <div style={{ textAlign: 'right' }}>
           {showSkip ? (

@@ -85,7 +85,7 @@
 | `pnpm env:check` | `tsx scripts/tools/env-check.ts` |
 | `pnpm check:prod-env` | `tsx scripts/tools/check-prod-env.ts` |
 | `pnpm ai:eval` | `tsx scripts/tools/ai-eval.ts` |
-| `pnpm reset:onboarding` | `tsx scripts/tools/reset-user-onboarding.ts` |
+| `pnpm reset:onboarding` | `tsx --env-file=.env.local scripts/tools/reset-u...` |
 | `pnpm db:generate` | `drizzle-kit generate` |
 | `pnpm db:migrate` | `drizzle-kit migrate` |
 | `pnpm db:push` | `drizzle-kit push` |
