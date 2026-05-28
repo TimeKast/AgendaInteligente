@@ -29,7 +29,11 @@ const securityHeaders = [
   },
   {
     key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=()',
+    // microphone=(self) → required for voice capture (Web Speech API +
+    // Whisper fallback on the chat input). camera/geolocation stay
+    // fully blocked — we don't use them. If a future feature needs
+    // them, switch the relevant value to `(self)` here.
+    value: 'camera=(), microphone=(self), geolocation=()',
   },
 ];
 
