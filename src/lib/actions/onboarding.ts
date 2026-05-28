@@ -165,9 +165,12 @@ export async function setCalendarOptIn(
     { schema: setCalendarOptInSchema, revalidate: '/onboarding/done' },
     input,
     async (data) => {
-      // 'now' → ISSUE-090 will handle the actual OAuth flow. For now we
-      // signal to the UI that it should kick off the OAuth dance.
-      return { redirectTo: data.choice === 'now' ? '/api/connect/google' : null };
+      // 'now' → kick the user into the Google Calendar OAuth flow.
+      // The route signs a CSRF state cookie and redirects to Google's
+      // consent screen; the callback lands the connection row.
+      return {
+        redirectTo: data.choice === 'now' ? '/api/calendar/google/connect' : null,
+      };
     }
   );
 }
@@ -197,14 +200,32 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResult> 
         return; // idempotent no-op
       }
 
-      // Resolve the free plan id once, outside the transaction.
-      const freePlan = await db.select({ id: plans.id }).from(plans).where(eq(plans.slug, 'free'));
-      if (freePlan.length === 0) {
-        throw new ActionError(
-          'No se encontró el plan free. Ejecutá `pnpm db:seed` antes del primer signup.'
-        );
+      // Resolve the free plan id once, outside the transaction. Auto-seed
+      // it if missing — production envs that skipped `pnpm db:seed`
+      // shouldn't lock every new user out of onboarding. Idempotent via
+      // the unique `slug` column.
+      let freePlanRows = await db
+        .select({ id: plans.id })
+        .from(plans)
+        .where(eq(plans.slug, 'free'));
+      if (freePlanRows.length === 0) {
+        await db
+          .insert(plans)
+          .values({
+            slug: 'free',
+            name: 'Free',
+            description: 'Default plan for all users. No limits enforced in v1.',
+            features: {},
+            limits: {},
+            active: true,
+          })
+          .onConflictDoNothing({ target: plans.slug });
+        freePlanRows = await db.select({ id: plans.id }).from(plans).where(eq(plans.slug, 'free'));
       }
-      const freePlanId = freePlan[0].id;
+      if (freePlanRows.length === 0) {
+        throw new ActionError('No se pudo crear el plan free. Revisa la conexión a la DB.');
+      }
+      const freePlanId = freePlanRows[0].id;
 
       await db.transaction(async (tx) => {
         // 1. Inbox Category — name must be 'Inbox' per CHECK constraint.

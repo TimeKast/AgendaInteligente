@@ -32,17 +32,20 @@ import { calendarConnections } from '@/lib/db/schema/calendar-connections';
 import { getAppUrl } from '@/lib/env';
 
 const SETTINGS_PATH = '/settings/integrations';
+const ONBOARDING_PATH = '/onboarding/done';
 
-function redirect(reason: string, code = 302): Response {
-  const url = `${getAppUrl()}${SETTINGS_PATH}?${reason}`;
-  return new Response(null, {
-    status: code,
-    headers: {
-      Location: url,
-      // Clear the state cookie regardless of outcome.
-      'Set-Cookie': `${OAUTH_STATE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/api/calendar; Max-Age=0`,
-    },
-  });
+function makeRedirect(basePath: string) {
+  return function (reason: string, code = 302): Response {
+    const url = `${getAppUrl()}${basePath}?${reason}`;
+    return new Response(null, {
+      status: code,
+      headers: {
+        Location: url,
+        // Clear the state cookie regardless of outcome.
+        'Set-Cookie': `${OAUTH_STATE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/api/calendar; Max-Age=0`,
+      },
+    });
+  };
 }
 
 export async function GET(req: Request): Promise<Response> {
@@ -51,6 +54,13 @@ export async function GET(req: Request): Promise<Response> {
     return new Response('Unauthorized', { status: 401 });
   }
   const userId = session.user.id;
+
+  // If the user is still in onboarding, bounce them back to
+  // /onboarding/done instead of /settings/integrations — middleware
+  // would otherwise reject /settings/* and dump them at step 1.
+  const isOnboarding = !(session.user as { onboardingCompletedAt?: string | null })
+    .onboardingCompletedAt;
+  const redirect = makeRedirect(isOnboarding ? ONBOARDING_PATH : SETTINGS_PATH);
 
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
