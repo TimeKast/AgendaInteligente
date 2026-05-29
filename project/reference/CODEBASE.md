@@ -148,6 +148,7 @@
 | `src\components\admin\UserNavigator.tsx` | — | — |
 | `src\components\admin\UserTable.tsx` | `src\components\admin\InviteUserDialog.tsx` | — |
 | `src\components\agenda\AccountDeletionModal.tsx` | — | — |
+| `src\components\agenda\ActivityDetailClient.tsx` | — | — |
 | `src\components\agenda\ActivityQuickAdd.tsx` | `src\components\agenda\PriorityDots.tsx`, `src\components\agenda\RecurrencePicker.tsx` | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
 | `src\components\agenda\ActivityRow.tsx` | `src\components\agenda\DeadlineBadge.tsx`, `src\components\agenda\RecurrencePicker.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\LinkedActivitiesList.tsx`, `src\components\agenda\ProjectActivityRow.tsx`, `src\components\agenda\SortableActivityRow.tsx`, `src\components\agenda\SortableActivityRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\ActivitySection.tsx` | — | — |
@@ -231,6 +232,7 @@
 | `src\components\agenda\SubtaskRow.tsx` | — | — |
 | `src\components\agenda\SwipeableRow.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\TagChip.tsx` | — | — |
+| `src\components\agenda\TasksClient.tsx` | — | — |
 | `src\components\agenda\TodayActivitiesBoard.tsx` | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\SwipeableRow.tsx`, `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\PoolSection.tsx`, `src\components\agenda\CalendarGrid.tsx`, `src\components\agenda\ExternalEventRow.tsx`, `src\components\agenda\ActivityStatusModal.tsx`, `src\components\agenda\TodayViewToggle.tsx` | — |
 | `src\components\agenda\TodayClient.tsx` | — | — |
 | `src\components\agenda\TodayViewToggle.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
@@ -390,6 +392,7 @@
 | `src\lib\db\helpers\audit-fields.ts` | — | — |
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
+| `src\lib\db\queries\activity-detail.ts` | — | — |
 | `src\lib\db\queries\integrations.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
 | `src\lib\db\queries\today.ts` | — | — |
@@ -520,10 +523,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 460 |
+| Total files analyzed | 463 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 298 |
+| Orphan files (no connections) | 301 |
 
 ---
 
