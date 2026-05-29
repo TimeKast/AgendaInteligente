@@ -142,10 +142,16 @@ export const authConfig = {
       //   - User without onboarding_completed_at MUST stay in /onboarding/*
       //     and bounces from /today, /week, /categories, etc.
       //   - User already onboarded bounces out of /onboarding/* back to /today.
+      //   - /api/* is exempt — API routes have their own auth + may be
+      //     called legitimately during onboarding (e.g. the calendar
+      //     OAuth dance redirects through /api/calendar/google/connect
+      //     and back via /api/calendar/google/callback before the user
+      //     reaches /onboarding/done).
       const isInOnboarding = nextUrl.pathname.startsWith('/onboarding');
+      const isApiRoute = nextUrl.pathname.startsWith('/api/');
       const onboardingDone = !!auth?.user?.onboardingCompletedAt;
 
-      if (!onboardingDone && !isInOnboarding) {
+      if (!onboardingDone && !isInOnboarding && !isApiRoute) {
         return Response.redirect(new URL('/onboarding/language', nextUrl));
       }
       if (onboardingDone && isInOnboarding) {
