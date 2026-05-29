@@ -248,6 +248,7 @@
 | `src\components\agenda\WeekMonthTabs.tsx` | — | — |
 | `src\components\agenda\WeekNavigation.tsx` | — | — |
 | `src\components\agenda\WeekPoolSection.tsx` | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\DraggablePoolActivity.tsx` | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
+| `src\components\agenda\WeekSheetClient.tsx` | — | — |
 | `src\components\agenda\WeekSheetKickoffSection.tsx` | `src\components\agenda\SheetField.tsx` | — |
 | `src\components\agenda\WeekSwimlane.tsx` | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\DayRow.tsx`, `src\components\agenda\WeekDayStrip.tsx`, `src\components\agenda\DraggablePoolActivity.tsx`, `src\components\agenda\MultiDayPicker.tsx`, `src\components\agenda\QuickAddDayPopover.tsx`, `src\components\agenda\PlanSnapshotControls.tsx`, `src\components\agenda\PlanSnapshotViewer.tsx` | — |
 | `src\components\auth\AcceptInviteForm.tsx` | — | — |
@@ -358,6 +359,7 @@
 | `src\lib\actions\send-reset-email.ts` | — | — |
 | `src\lib\actions\subtask.ts` | — | — |
 | `src\lib\actions\types.ts` | — | — |
+| `src\lib\actions\week-sheet.ts` | — | — |
 | `src\lib\ai\client.ts` | `src\lib\ai\models.ts`, `src\lib\ai\telemetry.ts` | — |
 | `src\lib\ai\crisis-detection.ts` | — | — |
 | `src\lib\ai\models.ts` | — | `src\lib\ai\client.ts`, `src\lib\ai\telemetry.ts` |
@@ -515,6 +517,7 @@
 | `src\lib\validations\profile.ts` | — | — |
 | `src\lib\validations\project.ts` | — | — |
 | `src\lib\validations\subtask.ts` | — | — |
+| `src\lib\validations\week-sheet.ts` | — | — |
 | `src\middleware.ts` | — | — |
 
 ---
@@ -523,10 +526,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 463 |
+| Total files analyzed | 466 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 301 |
+| Orphan files (no connections) | 304 |
 
 ---
 
