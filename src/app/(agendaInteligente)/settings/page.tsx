@@ -1,20 +1,42 @@
 /**
- * SCR-024 — Settings hub (mobile portrait prototype)
+ * SCR-024 — Settings hub (server-loaded).
  *
- * Visual-only. Rows link to functional sub-screens (account, language,
- * appearance, integrations, billing, privacy, notifications, intensity,
- * categories). The "Cerrar sesión" button is a ghost — no real sign-out
- * action wired in this prototype.
+ * Loads session + counts (active projects, integrations connected,
+ * notification schedule) to replace the prototype's hardcoded
+ * "5 activos" / "0 conectadas" / etc. captions with real data.
  */
 
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { auth } from '@/lib/auth/auth';
+import { loadSettingsHub } from '@/lib/db/queries/settings';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { SettingsSection } from '@/components/agenda/SettingsSection';
 import { SettingRow } from '@/components/agenda/SettingRow';
+import { userInitial } from '@/lib/domain/day-calc';
 
-export default function SettingsPage() {
+const INTENSITY_LABEL: Record<string, string> = {
+  sharp: 'Sharp',
+  standard: 'Standard',
+  gentle: 'Gentle',
+  listening: 'Listening',
+};
+const LANGUAGE_LABEL: Record<string, string> = {
+  es: 'Español',
+  en: 'English',
+};
+
+export default async function SettingsPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect('/login?callbackUrl=/settings');
+  }
+  const data = await loadSettingsHub(session.user.id);
+  const initials = userInitial(data?.name ?? data?.email);
+
   return (
     <>
-      <AgendaHeader dateLabel="Settings" initials="F" />
+      <AgendaHeader dateLabel="Settings" initials={initials} />
 
       <main
         className="ag-settings-content ag-settings-content--hub"
@@ -25,7 +47,7 @@ export default function SettingsPage() {
         <SettingsSection label="Organización">
           <SettingRow
             label="Proyectos"
-            value="5 activos"
+            value={`${data?.projectsActive ?? 0} ${data?.projectsActive === 1 ? 'activo' : 'activos'}`}
             href="/projects"
             hint="Crear, archivar o cerrar."
           />
@@ -38,18 +60,18 @@ export default function SettingsPage() {
         </SettingsSection>
 
         <SettingsSection label="Cuenta">
-          <SettingRow label="Mi cuenta" value="fedelevi@hotmail.com" href="/settings/account" />
+          <SettingRow label="Mi cuenta" value={data?.email ?? ''} href="/settings/account" />
         </SettingsSection>
 
         <SettingsSection label="Check-ins">
           <SettingRow
             label="Horarios y canales"
-            value="3 activos"
+            value="3 horarios"
             href="/settings/notifications"
           />
           <SettingRow
             label="Intensity mode"
-            value="Standard"
+            value={INTENSITY_LABEL[data?.intensityMode ?? 'gentle'] ?? 'Gentle'}
             href="/settings/intensity"
             hint="Cómo el agente te interpela."
           />
@@ -58,16 +80,15 @@ export default function SettingsPage() {
         <SettingsSection label="Preferencias">
           <SettingRow
             label="Idioma & zona horaria"
-            value="Español · MX"
+            value={`${LANGUAGE_LABEL[data?.preferredLanguage ?? 'es'] ?? 'Español'} · ${data?.timezone ?? 'UTC'}`}
             href="/settings/language"
           />
           <SettingRow label="Apariencia" value="Claro" href="/settings/appearance" />
           <SettingRow
             label="Integraciones"
-            value="0 conectadas"
+            value={`${data?.integrationsConnected ?? 0} ${data?.integrationsConnected === 1 ? 'conectada' : 'conectadas'}`}
             href="/settings/integrations"
           />
-          <SettingRow label="Ver onboarding demo" href="/onboarding/language" />
         </SettingsSection>
 
         <SettingsSection label="Plan">
@@ -85,21 +106,19 @@ export default function SettingsPage() {
             paddingBlock: 'var(--ag-space-6)',
           }}
         >
-          <button
-            type="button"
+          <Link
+            href="/api/auth/signout"
+            prefetch={false}
             style={{
-              appearance: 'none',
-              background: 'transparent',
-              border: 'none',
               color: 'var(--ag-ink-hint)',
               fontFamily: 'var(--ag-font-body)',
               fontSize: 14,
-              cursor: 'pointer',
               padding: '8px 16px',
+              textDecoration: 'none',
             }}
           >
             Cerrar sesión
-          </button>
+          </Link>
         </div>
       </main>
     </>

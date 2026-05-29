@@ -41,7 +41,7 @@
  * Swipe-to-status (DD-021) solo en pool rows. Calendar-anchored no tiene swipe.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -322,6 +322,32 @@ interface TodayActivitiesBoardProps {
    * board updates its local view optimistically before invoking.
    */
   onTransitionPersist?: (id: string, toStatus: 'done' | 'skipped' | 'blocked' | 'pending') => void;
+  /**
+   * Server-loaded initial state. When provided, replaces the prototype
+   * INITIAL_SCHEDULED / INITIAL_POOL mocks with real activities. The
+   * parent (TodayClient) maps DB rows to these shapes.
+   */
+  initialScheduled?: ScheduledActivity[];
+  initialPool?: PoolActivity[];
+  /**
+   * Persistence hook for drag/move operations. Tagged-union semantics
+   * keep the board oblivious to date arithmetic — the parent (which
+   * knows the user's TZ-resolved "today") translates to the
+   * `updateActivity` shape.
+   *
+   * Optimistic rows (id starting with "optimistic:" or "new-") should
+   * be ignored by the parent — the action would fail Zod uuid().
+   */
+  onMovePersist?: (
+    id: string,
+    move:
+      | { kind: 'schedule_hour'; hour: string }
+      | { kind: 'pool_today' }
+      | { kind: 'pool_week' }
+      | { kind: 'pool_backlog' }
+      | { kind: 'quadrant'; q: 1 | 2 | 3 | 4 }
+      | { kind: 'resize'; durationMinutes: number }
+  ) => void;
 }
 
 export function TodayActivitiesBoard({
@@ -329,9 +355,14 @@ export function TodayActivitiesBoard({
   view = 'fecha',
   onCreatePersist,
   onTransitionPersist,
+  initialScheduled,
+  initialPool,
+  onMovePersist,
 }: TodayActivitiesBoardProps) {
-  const [scheduled, setScheduled] = useState<ScheduledActivity[]>(INITIAL_SCHEDULED);
-  const [pool, setPool] = useState<PoolActivity[]>(INITIAL_POOL);
+  const [scheduled, setScheduled] = useState<ScheduledActivity[]>(
+    initialScheduled ?? INITIAL_SCHEDULED
+  );
+  const [pool, setPool] = useState<PoolActivity[]>(initialPool ?? INITIAL_POOL);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [statusModal, setStatusModal] = useState<{
     id: string;
@@ -407,6 +438,14 @@ export function TodayActivitiesBoard({
       } else if (inPool) {
         setPool((prev) => prev.map((a) => (a.id === aId ? { ...a, scope: nextScope } : a)));
       }
+      onMovePersist?.(aId, {
+        kind:
+          nextScope === 'today'
+            ? 'pool_today'
+            : nextScope === 'week'
+              ? 'pool_week'
+              : 'pool_backlog',
+      });
       return;
     }
 
@@ -416,6 +455,7 @@ export function TodayActivitiesBoard({
       if (!([1, 2, 3, 4] as const).includes(q)) return;
       if (inPool) {
         setPool((prev) => prev.map((a) => (a.id === aId ? { ...a, quadrant: q } : a)));
+        onMovePersist?.(aId, { kind: 'quadrant', q });
       } else if (inScheduled) {
         // Drag from grid → quadrant: unschedule + change quadrant.
         const moved = scheduled.find((a) => a.id === aId);
@@ -435,6 +475,9 @@ export function TodayActivitiesBoard({
             progressPercent: moved.progressPercent,
           },
         ]);
+        // Two writes: unschedule (pool_today) + set quadrant.
+        onMovePersist?.(aId, { kind: 'pool_today' });
+        onMovePersist?.(aId, { kind: 'quadrant', q });
       }
       return;
     }
@@ -466,6 +509,7 @@ export function TodayActivitiesBoard({
           },
         ]);
       }
+      onMovePersist?.(aId, { kind: 'schedule_hour', hour });
     }
   }
 
@@ -505,21 +549,30 @@ export function TodayActivitiesBoard({
     onCreatePersist?.(draft);
   }
 
-  function handleResize(id: string, nextDurationMinutes: number) {
-    setScheduled((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, durationMinutes: nextDurationMinutes } : a))
-    );
-  }
+  const handleResize = useCallback(
+    (id: string, nextDurationMinutes: number) => {
+      setScheduled((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, durationMinutes: nextDurationMinutes } : a))
+      );
+      onMovePersist?.(id, { kind: 'resize', durationMinutes: nextDurationMinutes });
+    },
+    [onMovePersist]
+  );
 
-  function handleResizeStart(id: string, nextStartTime: string, nextDurationMinutes: number) {
-    setScheduled((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? { ...a, scheduledTime: nextStartTime, durationMinutes: nextDurationMinutes }
-          : a
-      )
-    );
-  }
+  const handleResizeStart = useCallback(
+    (id: string, nextStartTime: string, nextDurationMinutes: number) => {
+      setScheduled((prev) =>
+        prev.map((a) =>
+          a.id === id
+            ? { ...a, scheduledTime: nextStartTime, durationMinutes: nextDurationMinutes }
+            : a
+        )
+      );
+      onMovePersist?.(id, { kind: 'schedule_hour', hour: nextStartTime });
+      onMovePersist?.(id, { kind: 'resize', durationMinutes: nextDurationMinutes });
+    },
+    [onMovePersist]
+  );
 
   function setScheduledStatus(id: string, next: ActivityStatus) {
     setScheduled((prev) => prev.map((a) => (a.id === id ? { ...a, status: next } : a)));
@@ -639,7 +692,7 @@ export function TodayActivitiesBoard({
       );
     }
     return map;
-  }, [scheduled]);
+  }, [scheduled, handleResize, handleResizeStart]);
 
   const isDragging = activeId !== null;
 

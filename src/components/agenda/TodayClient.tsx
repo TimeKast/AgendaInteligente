@@ -28,7 +28,33 @@ import {
 import { TodayViewToggle, type TodayView } from '@/components/agenda/TodayViewToggle';
 import type { QuickAddDraft } from '@/components/agenda/ActivityQuickAdd';
 import { closeDay } from '@/lib/actions/close-day';
-import { createActivity, transitionActivity } from '@/lib/actions/activity';
+import { createActivity, transitionActivity, updateActivity } from '@/lib/actions/activity';
+
+// Re-declared locally to avoid coupling the board's prototype types
+// to the server schema. The board accepts these shapes via initial*.
+interface ScheduledActivityInput {
+  id: string;
+  title: string;
+  status: 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
+  scheduledTime: string; // HH:00
+  priority: number;
+  projectLabel: string;
+  durationMinutes: number;
+  deadline?: string;
+  progressPercent?: number;
+  quadrant: 1 | 2 | 3 | 4;
+}
+interface PoolActivityInput {
+  id: string;
+  title: string;
+  status: 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
+  scope: 'today' | 'week' | 'backlog';
+  quadrant: 1 | 2 | 3 | 4;
+  priority: number;
+  projectLabel: string;
+  deadline?: string;
+  progressPercent?: number;
+}
 
 export interface TodayClientProps {
   /** YYYY-MM-DD for the user's local "today". Server-resolved. */
@@ -39,13 +65,23 @@ export interface TodayClientProps {
   initials: string;
   /**
    * Activities surfaced in the close-day modal. The server pre-filters
-   * to today's scheduled + today's unscheduled rows (the union the user
-   * actually worked on); future scope drag-drop slice may widen this.
+   * to today's scheduled + today's unscheduled rows.
    */
   todayActivities: CloseDayActivityInput[];
+  /** Real activities scheduled at an hour today. */
+  initialScheduled: ScheduledActivityInput[];
+  /** Real activities pooled (today-unscheduled, week, backlog). */
+  initialPool: PoolActivityInput[];
 }
 
-export function TodayClient({ todayDate, dateLabel, initials, todayActivities }: TodayClientProps) {
+export function TodayClient({
+  todayDate,
+  dateLabel,
+  initials,
+  todayActivities,
+  initialScheduled,
+  initialPool,
+}: TodayClientProps) {
   const [view, setView] = useState<TodayView>('fecha');
   const [closeOpen, setCloseOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -75,6 +111,64 @@ export function TodayClient({ todayDate, dateLabel, initials, todayActivities }:
       });
       if (result.error) {
         setToast(`No se pudo guardar: ${result.error}`);
+      }
+    });
+  }
+
+  /**
+   * Drag/move persistence. Optimistic rows (id starts with "new-")
+   * are ignored — Zod uuid() would reject them. They'll reconcile on
+   * the next page revalidation.
+   */
+  function handleMovePersist(
+    id: string,
+    move:
+      | { kind: 'schedule_hour'; hour: string }
+      | { kind: 'pool_today' }
+      | { kind: 'pool_week' }
+      | { kind: 'pool_backlog' }
+      | { kind: 'quadrant'; q: 1 | 2 | 3 | 4 }
+      | { kind: 'resize'; durationMinutes: number }
+  ) {
+    if (id.startsWith('new-') || id.startsWith('optimistic:')) return;
+    // Map the tagged action to the updateActivity patch shape.
+    let patch: Record<string, unknown>;
+    switch (move.kind) {
+      case 'schedule_hour':
+        patch = {
+          scheduledDates: [todayDate],
+          // Hour comes in as "HH:00" — DB column is `time` so pad to HH:MM:SS.
+          scheduledTime: `${move.hour}:00`,
+        };
+        break;
+      case 'pool_today':
+        patch = { scheduledDates: [todayDate], scheduledTime: null };
+        break;
+      case 'pool_backlog':
+        patch = { scheduledDates: [], scheduledTime: null };
+        break;
+      case 'pool_week': {
+        // Heuristic: schedule for tomorrow so it shows up in "week" bucket
+        // (anything in today..today+6 without time = week scope).
+        const tomorrow = new Date(`${todayDate}T00:00:00.000Z`);
+        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+        patch = {
+          scheduledDates: [tomorrow.toISOString().slice(0, 10)],
+          scheduledTime: null,
+        };
+        break;
+      }
+      case 'quadrant':
+        patch = { quadrant: move.q };
+        break;
+      case 'resize':
+        patch = { durationMinutes: move.durationMinutes };
+        break;
+    }
+    startTransition(async () => {
+      const result = await updateActivity({ id, ...patch });
+      if (result.error) {
+        setToast(`No se pudo mover: ${result.error}`);
       }
     });
   }
@@ -147,8 +241,11 @@ export function TodayClient({ todayDate, dateLabel, initials, todayActivities }:
         <TodayActivitiesBoard
           view={view}
           morningSection={<DaySheetMorningSection />}
+          initialScheduled={initialScheduled}
+          initialPool={initialPool}
           onCreatePersist={handleCreatePersist}
           onTransitionPersist={handleTransitionPersist}
+          onMovePersist={handleMovePersist}
         />
 
         <button

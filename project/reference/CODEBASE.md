@@ -399,6 +399,7 @@
 | `src\lib\db\queries\activity-detail.ts` | — | — |
 | `src\lib\db\queries\catalog.ts` | — | — |
 | `src\lib\db\queries\integrations.ts` | — | — |
+| `src\lib\db\queries\settings.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
 | `src\lib\db\queries\today.ts` | — | — |
 | `src\lib\db\queries\users.ts` | — | — |
@@ -529,10 +530,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 469 |
+| Total files analyzed | 470 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 307 |
+| Orphan files (no connections) | 308 |
 
 ---
 
