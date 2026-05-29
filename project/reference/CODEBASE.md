@@ -161,6 +161,7 @@
 | `src\components\agenda\BarChart.tsx` | — | — |
 | `src\components\agenda\CalendarConnectionsList.tsx` | — | — |
 | `src\components\agenda\CalendarGrid.tsx` | `src\components\agenda\HourSlot.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\CategoriesClient.tsx` | — | — |
 | `src\components\agenda\CategoryRow.tsx` | `src\components\agenda\ColorPicker.tsx`, `src\components\agenda\IconPicker.tsx` | — |
 | `src\components\agenda\ChallengeIndicator.tsx` | — | — |
 | `src\components\agenda\ChatInput.tsx` | — | — |
@@ -216,6 +217,7 @@
 | `src\components\agenda\ProjectActivityRow.tsx` | `src\components\agenda\PriorityDots.tsx`, `src\components\agenda\ActivityRow.tsx` | — |
 | `src\components\agenda\ProjectChip.tsx` | — | — |
 | `src\components\agenda\ProjectRow.tsx` | `src\components\agenda\StatusBadge.tsx` | — |
+| `src\components\agenda\ProjectsClient.tsx` | — | — |
 | `src\components\agenda\ProjectsRanking.tsx` | — | — |
 | `src\components\agenda\PushPermissionBanner.tsx` | — | — |
 | `src\components\agenda\PushStepBody.tsx` | — | — |
@@ -395,6 +397,7 @@
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
 | `src\lib\db\queries\activity-detail.ts` | — | — |
+| `src\lib\db\queries\catalog.ts` | — | — |
 | `src\lib\db\queries\integrations.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
 | `src\lib\db\queries\today.ts` | — | — |
@@ -526,10 +529,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 466 |
+| Total files analyzed | 469 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 304 |
+| Orphan files (no connections) | 307 |
 
 ---
 

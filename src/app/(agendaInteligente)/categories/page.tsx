@@ -1,272 +1,28 @@
-'use client';
-
 /**
- * SCR-042 — Category list / management.
+ * SCR-042 — Category list (server-loaded).
  *
- * Visual-only prototype. Categories live in `useState` so drag-to-reorder
- * (DD-026) reorders the visible list. "Inbox" is a system row pinned to the
- * bottom and not draggable / not deletable.
- *
- * Interactions:
- *   - GripVertical handle → reorder via @dnd-kit/sortable (PointerSensor +
- *     KeyboardSensor for accessibility).
- *   - ⋯ menu → Rename / Change color / Delete (Delete on a non-system row
- *     opens ConfirmDeleteModal with cascade copy).
- *   - "+ Nuevo" → NewCategoryModal, on submit appends to state.
+ * Loads categories with project counts via listCategories. CategoriesClient
+ * handles the inline-create form. Drag-to-reorder + per-row ⋯ menu of the
+ * prototype defer to a follow-up — detail page (/categories/[id]) covers
+ * rename/recolor/delete for now.
  */
 
-import { useEffect, useState } from 'react';
-import {
-  DndContext,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth/auth';
+import { listCategories } from '@/lib/db/queries/catalog';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
-import { CategoryRow, type CategoryItem } from '@/components/agenda/CategoryRow';
-import {
-  NewCategoryModal,
-} from '@/components/agenda/NewCategoryModal';
-import { NewProjectModal } from '@/components/agenda/NewProjectModal';
-import { ConfirmDeleteModal } from '@/components/agenda/ConfirmDeleteModal';
+import { CategoriesClient } from '@/components/agenda/CategoriesClient';
 
-const INITIAL: CategoryItem[] = [
-  { id: 'cat-1', name: 'Personal', projectCount: 5, color: 'sage', icon: 'user' },
-  {
-    id: 'cat-2',
-    name: 'Empresa Genomma',
-    projectCount: 2,
-    color: 'steel-blue',
-    icon: 'briefcase',
-  },
-  {
-    id: 'cat-3',
-    name: 'Side project Web3',
-    projectCount: 1,
-    color: 'terracotta',
-    icon: 'zap',
-  },
-];
-
-const INBOX: CategoryItem = {
-  id: 'cat-inbox',
-  name: 'Inbox',
-  projectCount: 0,
-  color: 'taupe',
-  icon: 'folder',
-  system: true,
-};
-
-export default function CategoryListPage() {
-  const [categories, setCategories] = useState<CategoryItem[]>(INITIAL);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<CategoryItem | null>(null);
-  // Inline "+ Proyecto" affordance state — opens NewProjectModal pre-filled
-  // with the targeted category. Remount-key avoids stale form fields.
-  const [projectFor, setProjectFor] = useState<CategoryItem | null>(null);
-  const [projectKey, setProjectKey] = useState(0);
-  const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 1800);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    setCategories((items) => {
-      const oldIndex = items.findIndex((i) => i.id === active.id);
-      const newIndex = items.findIndex((i) => i.id === over.id);
-      if (oldIndex < 0 || newIndex < 0) return items;
-      return arrayMove(items, oldIndex, newIndex);
-    });
+export default async function CategoriesPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect('/login?callbackUrl=/categories');
   }
-
-  function handleConfirmDelete() {
-    if (!pendingDelete) return;
-    setCategories((items) => items.filter((c) => c.id !== pendingDelete.id));
-    setPendingDelete(null);
-  }
-
+  const rows = await listCategories(session.user.id);
   return (
     <>
-      <AgendaHeader
-        dateLabel="Categorías"
-        rightSlot={
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            style={{
-              appearance: 'none',
-              background: 'transparent',
-              border: 'none',
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 14,
-              color: 'var(--ag-ink-soft)',
-              cursor: 'pointer',
-              padding: 'var(--ag-space-2)',
-            }}
-          >
-            + Nuevo
-          </button>
-        }
-      />
-
-      <main
-        className="ag-page-wide"
-        style={{
-          paddingInline: 'var(--ag-space-4)',
-          paddingBottom: 'calc(64px + var(--ag-space-6) + env(safe-area-inset-bottom, 0px))',
-        }}
-      >
-        <p
-          style={{
-            margin: '0 0 var(--ag-space-3) 0',
-            paddingTop: 'var(--ag-space-3)',
-            fontFamily: 'var(--ag-font-display)',
-            fontStyle: 'italic',
-            fontSize: 14,
-            color: 'var(--ag-ink-hint)',
-          }}
-        >
-          Arrastrá para reordenar.
-        </p>
-
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext
-            items={categories.map((c) => c.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-              {categories.map((cat) => (
-                <CategoryRow
-                  key={cat.id}
-                  category={cat}
-                  onDelete={(id) => {
-                    const c = categories.find((x) => x.id === id);
-                    if (c) setPendingDelete(c);
-                  }}
-                  onAddProject={(id) => {
-                    const c = categories.find((x) => x.id === id);
-                    if (!c) return;
-                    setProjectKey((k) => k + 1);
-                    setProjectFor(c);
-                  }}
-                />
-              ))}
-            </ul>
-          </SortableContext>
-        </DndContext>
-
-        {/* Inbox — system row, always at the bottom, never draggable */}
-        <div
-          style={{
-            marginTop: 'var(--ag-space-2)',
-            paddingTop: 'var(--ag-space-2)',
-            borderTop: '1px solid var(--ag-rule)',
-          }}
-        >
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            <CategoryRow
-              category={INBOX}
-              onDelete={() => undefined}
-              onAddProject={() => undefined}
-            />
-          </ul>
-        </div>
-
-      </main>
-
-      <NewCategoryModal
-        open={createOpen}
-        onCancel={() => setCreateOpen(false)}
-        onCreate={(data) => {
-          setCategories((items) => [
-            ...items,
-            {
-              id: `cat-${Date.now()}`,
-              name: data.name,
-              projectCount: 0,
-              color: data.color,
-              icon: data.icon,
-            },
-          ]);
-          setCreateOpen(false);
-        }}
-      />
-
-      <NewProjectModal
-        key={projectKey}
-        open={!!projectFor}
-        categories={[...categories, INBOX].map((c) => ({ id: c.id, name: c.name }))}
-        defaultCategoryName={projectFor?.name}
-        lockCategory={!!projectFor}
-        onCancel={() => setProjectFor(null)}
-        onCreate={(payload) => {
-          const targetName = projectFor?.name ?? payload.categoryName;
-          setProjectFor(null);
-          setCategories((items) =>
-            items.map((c) =>
-              c.name === targetName ? { ...c, projectCount: c.projectCount + 1 } : c,
-            ),
-          );
-          setToast(`Proyecto creado en ${targetName}.`);
-        }}
-      />
-
-      {toast ? (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: 'fixed',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            bottom: 'calc(64px + 24px + env(safe-area-inset-bottom, 0px))',
-            zIndex: 80,
-            backgroundColor: 'var(--ag-ink-primary)',
-            color: 'var(--ag-accent-on)',
-            padding: '10px 16px',
-            borderRadius: 'var(--ag-radius-pill)',
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 14,
-            boxShadow:
-              '0 1px 2px rgba(42, 40, 38, 0.12), 0 2px 6px rgba(42, 40, 38, 0.08)',
-          }}
-        >
-          {toast}
-        </div>
-      ) : null}
-
-      <ConfirmDeleteModal
-        open={!!pendingDelete}
-        title="Borrar categoría"
-        description={
-          pendingDelete
-            ? `"${pendingDelete.name}" tiene ${pendingDelete.projectCount} ${pendingDelete.projectCount === 1 ? 'proyecto' : 'proyectos'}. Al borrar la categoría se borran también.`
-            : ''
-        }
-        caption="Podés cancelar dentro de 30 días."
-        destructiveLabel="Borrar todo"
-        onCancel={() => setPendingDelete(null)}
-        onConfirm={handleConfirmDelete}
-      />
+      <AgendaHeader dateLabel="Categorías" />
+      <CategoriesClient initial={rows} />
     </>
   );
 }
