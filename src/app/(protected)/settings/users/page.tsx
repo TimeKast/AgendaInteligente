@@ -29,7 +29,7 @@ export default async function AdminUsersPage() {
 
   // Permission check
   if (!hasPermission(session.user.role, 'users', 'list')) {
-    redirect('/dashboard');
+    redirect('/today');
   }
 
   // Fetch users

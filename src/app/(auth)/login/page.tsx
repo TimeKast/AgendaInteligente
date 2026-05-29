@@ -2,7 +2,8 @@
  * Login Page
  *
  * Public authentication page.
- * Redirects to dashboard if already authenticated.
+ * Redirects to /today if already authenticated (middleware bounces
+ * to /onboarding/* when onboarding isn't completed yet).
  */
 
 import type { Metadata } from 'next';

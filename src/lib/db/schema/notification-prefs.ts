@@ -20,6 +20,7 @@ import {
   timestamp,
   uuid,
   date,
+  text,
   index,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
@@ -71,6 +72,13 @@ export const notificationPrefs = pgTable(
 
     /** Email fallback enabled. */
     emailEnabled: boolean('email_enabled').notNull().default(false),
+
+    /**
+     * Discord webhook URL (opaque token in the URL). User pastes from
+     * Discord → Server Settings → Integrations → Webhooks. NULL = not
+     * configured. Length-checked at DB level (50-200 chars).
+     */
+    discordWebhookUrl: text('discord_webhook_url'),
 
     /** Temporary mute until this timestamp (US-087). NULL = not muted. */
     mutedUntil: timestamp('muted_until', { mode: 'date', withTimezone: true }),

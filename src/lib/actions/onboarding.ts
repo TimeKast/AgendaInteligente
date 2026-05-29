@@ -51,6 +51,7 @@ import {
   setOnboardingContextSchema,
   setScheduleSchema,
   setCalendarOptInSchema,
+  setDiscordWebhookSchema,
   finalizeOnboardingSchema,
 } from '@/lib/validations/onboarding';
 
@@ -122,7 +123,46 @@ export async function setOnboardingContext(input: unknown): Promise<ActionResult
     { schema: setOnboardingContextSchema, revalidate: '/onboarding/schedule' },
     input,
     async (data, userId) => {
-      await db.update(users).set({ onboardingContext: data.context }).where(eq(users.id, userId));
+      // Default channels to ['email'] when none selected — the user
+      // should never end up unreachable through a slip in the UI.
+      const channels = data.contactChannels.length > 0 ? data.contactChannels : ['email'];
+      await db
+        .update(users)
+        .set({
+          onboardingContext: data.context,
+          contactChannels: channels,
+        })
+        .where(eq(users.id, userId));
+    }
+  );
+}
+
+/**
+ * Persist the user's Discord webhook URL into notification_prefs.
+ * NULL clears the value. Validation in the Zod schema enforces the
+ * Discord URL shape; the action just upserts.
+ *
+ * Used by /settings/integrations (post-onboarding) and any future
+ * setup wizard step that wants to capture it earlier.
+ */
+export async function setDiscordWebhook(input: unknown): Promise<ActionResult> {
+  return await withSelf(
+    { schema: setDiscordWebhookSchema, revalidate: '/settings/integrations' },
+    input,
+    async (data, userId) => {
+      await db
+        .insert(notificationPrefs)
+        .values({
+          userId,
+          discordWebhookUrl: data.webhookUrl ?? null,
+        })
+        .onConflictDoUpdate({
+          target: notificationPrefs.userId,
+          set: {
+            discordWebhookUrl: data.webhookUrl ?? null,
+            updatedAt: new Date(),
+          },
+        });
     }
   );
 }

@@ -44,7 +44,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
   // Permission check
   if (!hasPermission(session.user.role, 'users', 'read')) {
-    redirect('/dashboard');
+    redirect('/today');
   }
 
   // Fetch user by identifier (humanId or UUID)

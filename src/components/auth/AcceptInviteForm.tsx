@@ -126,7 +126,7 @@ export function AcceptInviteForm() {
             email: data.email,
             password,
             redirect: true,
-            callbackUrl: '/dashboard',
+            callbackUrl: '/today',
           });
         }, 1500);
       } else {

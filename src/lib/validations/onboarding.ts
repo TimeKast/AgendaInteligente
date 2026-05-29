@@ -35,8 +35,36 @@ export const setMicPrefSchema = z.object({
   micEnabled: z.boolean(),
 });
 
+export const CONTACT_CHANNELS = ['email', 'discord', 'whatsapp'] as const;
+export type ContactChannel = (typeof CONTACT_CHANNELS)[number];
+
 export const setOnboardingContextSchema = z.object({
-  context: z.string().trim().min(1, 'Contanos algo').max(2000, 'Máximo 2000 caracteres'),
+  context: z.string().trim().min(1, 'Cuéntanos algo').max(2000, 'Máximo 2000 caracteres'),
+  /**
+   * Channels the user wants the agent to reach out on. Empty array →
+   * defaults to ['email'] at the action layer so the user never ends
+   * up unreachable.
+   */
+  contactChannels: z.array(z.enum(CONTACT_CHANNELS)).default([]),
+});
+
+export const setDiscordWebhookSchema = z.object({
+  /**
+   * Discord webhook URL. NULL/empty clears it. Otherwise must look
+   * like a Discord webhook (https://discord.com/api/webhooks/...).
+   */
+  webhookUrl: z
+    .string()
+    .trim()
+    .nullable()
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null))
+    .refine(
+      (v) =>
+        v === null ||
+        /^https:\/\/(?:canary\.|ptb\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(v),
+      'URL inválida — pega el webhook completo desde Discord (Server Settings → Integrations → Webhooks)'
+    ),
 });
 
 export const setScheduleSchema = z.object({
@@ -53,6 +81,7 @@ export const setCalendarOptInSchema = z.object({
 // finalize takes no payload — it's a trigger.
 export const finalizeOnboardingSchema = z.object({}).strict();
 
+export type SetDiscordWebhookInput = z.infer<typeof setDiscordWebhookSchema>;
 export type SetLanguageInput = z.infer<typeof setLanguageSchema>;
 export type SetTimezoneInput = z.infer<typeof setTimezoneSchema>;
 export type SetPushPrefInput = z.infer<typeof setPushPrefSchema>;

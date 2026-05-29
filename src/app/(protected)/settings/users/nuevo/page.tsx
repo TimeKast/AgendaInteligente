@@ -28,7 +28,7 @@ export default async function CreateUserPage() {
 
   // Permission check
   if (!hasPermission(session.user.role, 'users', 'create')) {
-    redirect('/dashboard');
+    redirect('/today');
   }
 
   return <NewUserContent currentUserRole={session.user.role} />;

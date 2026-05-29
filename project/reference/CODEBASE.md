@@ -299,7 +299,9 @@
 | `src\components\pwa\PwaUpdateToast.tsx` | — | — |
 | `src\components\pwa\index.ts` | — | — |
 | `src\components\settings\AvatarUpload.tsx` | — | `src\components\settings\ProfileForm.tsx` |
+| `src\components\settings\CalendarConnectionsListLive.tsx` | — | — |
 | `src\components\settings\ChangePasswordForm.tsx` | — | `src\components\settings\ProfileForm.tsx` |
+| `src\components\settings\DiscordWebhookForm.tsx` | — | — |
 | `src\components\settings\ProfileForm.tsx` | `src\components\settings\ChangePasswordForm.tsx`, `src\components\settings\AvatarUpload.tsx` | — |
 | `src\components\ui\alert-dialog.tsx` | — | — |
 | `src\components\ui\avatar.tsx` | — | — |
@@ -388,6 +390,7 @@
 | `src\lib\db\helpers\audit-fields.ts` | — | — |
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
+| `src\lib\db\queries\integrations.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
 | `src\lib\db\queries\today.ts` | — | — |
 | `src\lib\db\queries\users.ts` | — | — |
@@ -517,10 +520,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 457 |
+| Total files analyzed | 460 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 295 |
+| Orphan files (no connections) | 298 |
 
 ---
 

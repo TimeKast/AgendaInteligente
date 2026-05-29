@@ -169,6 +169,13 @@
       "when": 1748386800000,
       "tag": "0023_human_id_default",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1748473200000,
+      "tag": "0024_contact_channels",
+      "breakpoints": true
     }
   ]
 }

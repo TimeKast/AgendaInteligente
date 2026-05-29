@@ -8,6 +8,7 @@
  */
 
 import { pgTable, text, timestamp, uuid, integer, primaryKey } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // =============================================================================
 // Users Table
@@ -92,6 +93,17 @@ export const users = pgTable('users', {
 
   /** Free-text frustration captured at signup ("what brought you here"). */
   onboardingContext: text('onboarding_context'),
+
+  /**
+   * Channels the user wants the agent to reach out on. Multi-select.
+   * v1 supports 'email' + 'discord'; 'whatsapp' is declared but not
+   * yet wired (UI shows it as "Próximamente"). Enforced by CHECK
+   * constraint at DB level.
+   */
+  contactChannels: text('contact_channels')
+    .array()
+    .notNull()
+    .default(sql`ARRAY['email']::text[]`),
 
   /** NULL = user still in onboarding flow. */
   onboardingCompletedAt: timestamp('onboarding_completed_at', { mode: 'date', withTimezone: true }),

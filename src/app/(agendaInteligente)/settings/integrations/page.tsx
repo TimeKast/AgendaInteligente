@@ -1,26 +1,35 @@
-'use client';
-
 /**
- * SCR-033 — Settings / Integraciones
+ * SCR-033 — Settings / Integraciones (server-loaded).
  *
- * Multi-account calendar provider sections (Google + Outlook placeholder) +
- * Discord card. Visual-only; no real OAuth.
+ * Real data:
+ *   - Google Calendar connections from `calendar_connections` (multi-account).
+ *     "+ Conectar otra cuenta" → /api/calendar/google/connect.
+ *     "Desconectar" → /api/calendar/connections/[id]/disconnect.
+ *   - Discord webhook URL from `notification_prefs.discord_webhook_url`.
+ *     Inline form (no OAuth — Discord webhooks just take a pasted URL).
  *
- * Google: 1 mocked email pre-connected. "+ Conectar otra cuenta" appends.
- * Outlook: disabled "Próximamente v2" but with the same multi-connection
- *          scaffolding visible.
- * Discord: single connection + multi-server picker.
- * WhatsApp: kept as legacy IntegrationCard placeholder.
+ * Placeholders (no v1 backend yet):
+ *   - Outlook Calendar — disabled card.
+ *   - WhatsApp — disabled card.
  */
 
 import type { CSSProperties } from 'react';
-import { Calendar, MessageCircle, Mail } from 'lucide-react';
+import { redirect } from 'next/navigation';
+import { Calendar, MessageCircle, Mail, MessageSquare } from 'lucide-react';
+import { auth } from '@/lib/auth/auth';
+import { loadIntegrationsSettings } from '@/lib/db/queries/integrations';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { IntegrationCard } from '@/components/agenda/IntegrationCard';
-import { CalendarConnectionsList } from '@/components/agenda/CalendarConnectionsList';
-import { DiscordIntegrationCard } from '@/components/agenda/DiscordIntegrationCard';
+import { CalendarConnectionsListLive } from '@/components/settings/CalendarConnectionsListLive';
+import { DiscordWebhookForm } from '@/components/settings/DiscordWebhookForm';
 
-export default function IntegrationsSettingsPage() {
+export default async function IntegrationsSettingsPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect('/login?callbackUrl=/settings/integrations');
+  }
+  const data = await loadIntegrationsSettings(session.user.id);
+
   return (
     <>
       <AgendaHeader dateLabel="Integraciones" backHref="/settings" />
@@ -34,33 +43,67 @@ export default function IntegrationsSettingsPage() {
             padding: 'var(--ag-space-4)',
           }}
         >
-          <CalendarConnectionsList
+          <CalendarConnectionsListLive
             icon={<Calendar size={20} strokeWidth={1.5} />}
             providerName="Google Calendar"
-            description="Conectá una o más cuentas — Agenda lee tus eventos y sugiere bloques libres."
-            initialConnections={[
-              {
-                id: 'g-1',
-                email: 'federico@gmail.com',
-                lastSyncLabel: 'Última sync: hace 8 min · primary',
-              },
-            ]}
+            description="Conecta una o más cuentas — Agenda lee tus eventos y sugiere bloques libres."
+            connections={data.googleConnections}
+            connectHref="/api/calendar/google/connect"
           />
 
-          <CalendarConnectionsList
+          <CalendarConnectionsListLive
             icon={<Mail size={20} strokeWidth={1.5} />}
             providerName="Outlook Calendar"
             description="Misma idea que Google Calendar, para cuentas Microsoft."
-            disabled
+            connections={[]}
+            connectHref={null}
             disabledBadge="Próximamente v2"
           />
 
-          <DiscordIntegrationCard />
+          <section
+            style={{
+              padding: 'var(--ag-space-4)',
+              borderRadius: 'var(--ag-radius-card)',
+              border: '1px solid var(--ag-rule)',
+              backgroundColor: 'var(--ag-bg-elevated)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--ag-space-3)',
+            }}
+          >
+            <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
+              <MessageSquare size={20} strokeWidth={1.5} style={{ color: 'var(--ag-ink-soft)' }} />
+              <h3
+                style={{
+                  margin: 0,
+                  fontFamily: 'var(--ag-font-display)',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  color: 'var(--ag-ink-primary)',
+                }}
+              >
+                Discord
+              </h3>
+            </header>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: 'var(--ag-font-body)',
+                fontSize: 13,
+                color: 'var(--ag-ink-soft)',
+                lineHeight: 1.45,
+              }}
+            >
+              Pega un webhook de tu servidor (Server Settings → Integrations → Webhooks → New
+              Webhook → Copy Webhook URL). El agente envía check-ins ahí.
+            </p>
+            <DiscordWebhookForm initialUrl={data.discordWebhookUrl} />
+          </section>
 
           <IntegrationCard
             icon={<MessageCircle size={20} strokeWidth={1.5} />}
             name="WhatsApp"
-            description="Recibí check-ins en WhatsApp cuando no abrís la app."
+            description="Recibe check-ins en WhatsApp cuando no abres la app."
             initialState="disabled"
             disabledBadge="Próximamente v2"
           />
