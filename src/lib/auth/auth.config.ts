@@ -158,10 +158,12 @@ export const authConfig = {
         return Response.redirect(new URL('/today', nextUrl));
       }
 
-      // Route-level ACL: check if user's role can access this route
+      // Route-level ACL: check if user's role can access this route.
+      // Fallback for AgendaInteligente is /today (kit default was the
+      // generic /dashboard which isn't shipped in this project).
       const role = auth?.user?.role;
       if (role && !isRouteAllowed(nextUrl.pathname, role)) {
-        return Response.redirect(new URL('/dashboard', nextUrl));
+        return Response.redirect(new URL('/today', nextUrl));
       }
 
       return true;

@@ -41,6 +41,13 @@ interface OnboardingLayoutProps {
   skipHref?: string;
   /** Body content. */
   children: ReactNode;
+  /**
+   * When set, replaces the layout's default footer button. Use for
+   * steps that need to run client-side logic (e.g. /onboarding/done
+   * which must call session.update() after finalize so the middleware
+   * sees the fresh onboardingCompletedAt before navigating).
+   */
+  customFooter?: ReactNode;
 }
 
 export function OnboardingLayout({
@@ -53,10 +60,12 @@ export function OnboardingLayout({
   showSkip = true,
   skipHref,
   children,
+  customFooter,
 }: OnboardingLayoutProps) {
   const isFormMode = typeof formAction === 'function';
-  if (!isFormMode && !continueHref) {
-    throw new Error('OnboardingLayout requires either continueHref or formAction.');
+  const isCustomFooter = customFooter !== undefined;
+  if (!isFormMode && !continueHref && !isCustomFooter) {
+    throw new Error('OnboardingLayout requires one of: continueHref, formAction, or customFooter.');
   }
   const skipDestination = skipHref ?? continueHref ?? '/today';
   return (
@@ -114,7 +123,11 @@ export function OnboardingLayout({
         </div>
       </header>
 
-      {isFormMode ? (
+      {isCustomFooter ? (
+        <CustomBody title={title} subtitle={subtitle} step={step} footer={customFooter}>
+          {children}
+        </CustomBody>
+      ) : isFormMode ? (
         <FormBody
           title={title}
           subtitle={subtitle}
@@ -311,5 +324,47 @@ function FormBody({
         </button>
       </footer>
     </form>
+  );
+}
+
+function CustomBody({
+  step,
+  title,
+  subtitle,
+  footer,
+  children,
+}: Pick<BodyProps, 'step' | 'title' | 'subtitle' | 'children'> & { footer: ReactNode }) {
+  return (
+    <>
+      <main
+        style={{
+          flex: 1,
+          maxWidth: 480,
+          width: '100%',
+          marginInline: 'auto',
+          paddingInline: 'var(--ag-space-4)',
+          paddingTop: 'var(--ag-space-6)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--ag-space-5)',
+        }}
+      >
+        <StepHeader step={step} title={title} subtitle={subtitle} />
+        <div style={{ flex: 1 }}>{children}</div>
+      </main>
+      <footer
+        style={{
+          paddingInline: 'var(--ag-space-4)',
+          paddingTop: 'var(--ag-space-3)',
+          paddingBottom: 'calc(var(--ag-space-5) + env(safe-area-inset-bottom, 0px))',
+          backgroundColor: 'var(--ag-bg)',
+          maxWidth: 480,
+          width: '100%',
+          marginInline: 'auto',
+        }}
+      >
+        {footer}
+      </footer>
+    </>
   );
 }

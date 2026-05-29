@@ -1,34 +1,18 @@
 /**
- * Onboarding 8/8 — Done. Triggers the atomic finalize transaction on
- * "Empezar" click.
+ * Onboarding 8/8 — Done.
  *
- * After finalize succeeds the redirect to /today is handled by the
- * middleware (onboarding_completed_at is now set on the next request).
- * The action emits the Inngest `user.signed_up` event stub.
+ * Server component shell. The "Empezar" button is a client component
+ * (DoneButton) because finalize must be followed by a session.update()
+ * to refresh the JWT — otherwise the middleware sees stale
+ * onboardingCompletedAt and bounces the user back to step 1.
  */
 
-import { redirect } from 'next/navigation';
 import { OnboardingLayout } from '@/components/agenda/OnboardingLayout';
-import { finalizeOnboarding } from '@/lib/actions/onboarding';
-
-async function submit() {
-  'use server';
-  const result = await finalizeOnboarding({});
-  if (result.error) {
-    redirect(`/onboarding/done?error=${encodeURIComponent(result.error)}`);
-  }
-  redirect('/today');
-}
+import { DoneButton } from '@/components/agenda/DoneButton';
 
 export default function OnboardingDonePage() {
   return (
-    <OnboardingLayout
-      step={8}
-      title="Listo."
-      formAction={submit}
-      continueLabel="Empezar"
-      showSkip={false}
-    >
+    <OnboardingLayout step={8} title="Listo." showSkip={false} customFooter={<DoneButton />}>
       <p
         style={{
           margin: 0,

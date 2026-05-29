@@ -28,11 +28,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
 
   if (session?.user) {
-    redirect('/dashboard');
+    // AgendaInteligente lives at /today; the middleware will bounce
+    // the user into /onboarding/* if they haven't completed onboarding.
+    redirect('/today');
   }
 
   const params = await searchParams;
-  const callbackUrl = params.callbackUrl || '/dashboard';
+  const callbackUrl = params.callbackUrl || '/today';
   const error = params.error;
   const email = params.email || '';
 
