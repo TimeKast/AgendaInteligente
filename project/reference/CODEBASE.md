@@ -162,6 +162,7 @@
 | `src\components\agenda\CalendarConnectionsList.tsx` | — | — |
 | `src\components\agenda\CalendarGrid.tsx` | `src\components\agenda\HourSlot.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\CategoriesClient.tsx` | — | — |
+| `src\components\agenda\CategoryDetailClient.tsx` | — | — |
 | `src\components\agenda\CategoryRow.tsx` | `src\components\agenda\ColorPicker.tsx`, `src\components\agenda\IconPicker.tsx` | — |
 | `src\components\agenda\ChallengeIndicator.tsx` | — | — |
 | `src\components\agenda\ChatInput.tsx` | — | — |
@@ -186,7 +187,9 @@
 | `src\components\agenda\FabMic.tsx` | `src\components\agenda\VoiceCaptureSheet.tsx` | `src\components\agenda\AgendaShell.tsx` |
 | `src\components\agenda\FilterChips.tsx` | — | — |
 | `src\components\agenda\GoalCard.tsx` | `src\components\agenda\ScopeChip.tsx` | — |
+| `src\components\agenda\GoalDetailClient.tsx` | — | — |
 | `src\components\agenda\GoalReviewModal.tsx` | — | — |
+| `src\components\agenda\GoalsClient.tsx` | — | — |
 | `src\components\agenda\GoalsTabs.tsx` | — | — |
 | `src\components\agenda\HourSlot.tsx` | — | `src\components\agenda\CalendarGrid.tsx` |
 | `src\components\agenda\IconPicker.tsx` | — | `src\components\agenda\CategoryRow.tsx`, `src\components\agenda\NewCategoryModal.tsx` |
@@ -199,6 +202,7 @@
 | `src\components\agenda\MonthGrid.tsx` | `src\components\agenda\MonthDayCell.tsx` | `src\components\agenda\MonthPlanner.tsx` |
 | `src\components\agenda\MonthNavigation.tsx` | — | — |
 | `src\components\agenda\MonthPlanner.tsx` | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\MonthGrid.tsx`, `src\components\agenda\DayActivitiesSheet.tsx`, `src\components\agenda\DraggablePoolActivity.tsx`, `src\components\agenda\MonthDayCell.tsx`, `src\components\agenda\QuickAddDayPopover.tsx`, `src\components\agenda\PlanSnapshotControls.tsx`, `src\components\agenda\PlanSnapshotViewer.tsx` | — |
+| `src\components\agenda\MonthSheetClient.tsx` | — | — |
 | `src\components\agenda\MultiDayPicker.tsx` | — | `src\components\agenda\WeekSwimlane.tsx` |
 | `src\components\agenda\MutePickerModal.tsx` | — | — |
 | `src\components\agenda\NewCategoryModal.tsx` | `src\components\agenda\ColorPicker.tsx`, `src\components\agenda\IconPicker.tsx` | — |
@@ -216,6 +220,7 @@
 | `src\components\agenda\ProgressBar.tsx` | — | — |
 | `src\components\agenda\ProjectActivityRow.tsx` | `src\components\agenda\PriorityDots.tsx`, `src\components\agenda\ActivityRow.tsx` | — |
 | `src\components\agenda\ProjectChip.tsx` | — | — |
+| `src\components\agenda\ProjectDetailClient.tsx` | — | — |
 | `src\components\agenda\ProjectRow.tsx` | `src\components\agenda\StatusBadge.tsx` | — |
 | `src\components\agenda\ProjectsClient.tsx` | — | — |
 | `src\components\agenda\ProjectsRanking.tsx` | — | — |
@@ -398,7 +403,10 @@
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
 | `src\lib\db\queries\activity-detail.ts` | — | — |
 | `src\lib\db\queries\catalog.ts` | — | — |
+| `src\lib\db\queries\category-detail.ts` | — | — |
+| `src\lib\db\queries\goals.ts` | — | — |
 | `src\lib\db\queries\integrations.ts` | — | — |
+| `src\lib\db\queries\project-detail.ts` | — | — |
 | `src\lib\db\queries\settings.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
 | `src\lib\db\queries\today.ts` | — | — |
@@ -530,10 +538,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 470 |
+| Total files analyzed | 478 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 308 |
+| Orphan files (no connections) | 316 |
 
 ---
 
