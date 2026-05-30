@@ -13,7 +13,8 @@
  */
 
 import { useState, useTransition, type ReactNode } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 export interface CalendarConnectionRow {
   id: string;
@@ -57,6 +58,25 @@ export function CalendarConnectionsListLive({
         });
         if (res.ok) {
           setConnections((prev) => prev.filter((c) => c.id !== id));
+        }
+      } finally {
+        setPendingId(null);
+      }
+    });
+  }
+
+  function handleSyncNow(id: string) {
+    setPendingId(id);
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/calendar/connections/${id}/sync-now`, {
+          method: 'POST',
+        });
+        if (res.ok) {
+          toast.success('Sincronización solicitada. Vuelve en un minuto.');
+        } else {
+          const body = await res.json().catch(() => ({ error: 'unknown' }));
+          toast.error(`No se pudo sincronizar: ${body.error ?? res.status}`);
         }
       } finally {
         setPendingId(null);
@@ -163,6 +183,27 @@ export function CalendarConnectionsListLive({
               </div>
               <button
                 type="button"
+                onClick={() => handleSyncNow(c.id)}
+                disabled={isPending && pendingId === c.id}
+                aria-label="Sincronizar ahora"
+                title="Sincronizar ahora"
+                style={{
+                  appearance: 'none',
+                  border: '1px solid var(--ag-rule)',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  padding: 6,
+                  borderRadius: 'var(--ag-radius-base)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--ag-ink-soft)',
+                }}
+              >
+                <RefreshCw size={14} strokeWidth={1.5} />
+              </button>
+              <button
+                type="button"
                 onClick={() => handleDisconnect(c.id)}
                 disabled={isPending && pendingId === c.id}
                 style={{
@@ -177,7 +218,7 @@ export function CalendarConnectionsListLive({
                   color: 'var(--ag-ink-soft)',
                 }}
               >
-                {isPending && pendingId === c.id ? 'Quitando…' : 'Desconectar'}
+                {isPending && pendingId === c.id ? '…' : 'Desconectar'}
               </button>
             </li>
           ))}

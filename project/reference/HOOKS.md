@@ -2,7 +2,7 @@
 
 > **Auto-generated** — Run `pnpm generate:hooks` to update. Regenerated automatically on pre-commit.
 > **Purpose:** Canonical names and import paths for kit-shipped hooks, action wrappers, DB helpers, form kit, and UI wrappers. Skills and code generation MUST grep this file instead of inventing names.
-> **Last updated:** 2026-05-29
+> **Last updated:** 2026-05-30
 
 **Scope:** runtime value exports only (functions, components, consts, classes). Types and interfaces are intentionally excluded — signatures live in the source files.
 

@@ -30,6 +30,7 @@ import { verifyState, OAUTH_STATE_COOKIE } from '@/lib/integrations/calendar/sta
 import { scopedDb } from '@/lib/db/scoped';
 import { calendarConnections } from '@/lib/db/schema/calendar-connections';
 import { getAppUrl } from '@/lib/env';
+import { publish } from '@/lib/inngest/publish';
 
 const SETTINGS_PATH = '/settings/integrations';
 const ONBOARDING_PATH = '/onboarding/done';
@@ -171,6 +172,16 @@ export async function GET(req: Request): Promise<Response> {
     // UNIQUE conflict (BR-20) — already connected.
     return redirect('error=already_connected');
   }
+
+  // Fire-and-forget: kick off a first sync immediately so the user
+  // doesn't wait up to 15 min for the cron. Publish failure (e.g.
+  // Inngest unconfigured) is logged but doesn't block the redirect.
+  publish('calendar.sync.requested', {
+    userId,
+    connectionId: inserted[0].id,
+  }).catch((err) =>
+    logger.warn(`[calendar.callback] initial sync publish failed: ${(err as Error).message}`)
+  );
 
   return redirect('connected=1');
 }
