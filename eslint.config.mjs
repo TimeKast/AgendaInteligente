@@ -125,6 +125,12 @@ const eslintConfig = defineConfig([
       // ISSUE-054: intensity mode lives on `users` (not a tenant table).
       // Direct db.update(users) with explicit eq(users.id, userId) scoping.
       'src/lib/actions/intensity.ts',
+      // Same pattern as intensity: language + timezone live on users.
+      // Used by /settings/language. Explicit eq(users.id, userId) scope.
+      'src/lib/actions/language.ts',
+      // notification_prefs upsert + users.contact_channels in one action.
+      // Explicit eq scoping on both writes.
+      'src/lib/actions/notification-prefs.ts',
       // ISSUE-024: recurrence materializer runs as a system task with an
       // explicit userId arg — no session context, so scopedDb can't bind.
       // Every read/write is scoped via `eq(activities.userId, userId)`.

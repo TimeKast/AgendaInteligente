@@ -1,7 +1,7 @@
 # 🗺️ CODEBASE — Dependency Map
 
 > **Auto-generated** — Run `pnpm generate:codebase` to update
-> **Last updated:** 2026-05-30
+> **Last updated:** 2026-05-31
 
 ---
 
@@ -195,6 +195,8 @@
 | `src\components\agenda\IconPicker.tsx` | — | `src\components\agenda\CategoryRow.tsx`, `src\components\agenda\NewCategoryModal.tsx` |
 | `src\components\agenda\IntegrationCard.tsx` | — | — |
 | `src\components\agenda\IntensityCard.tsx` | — | — |
+| `src\components\agenda\IntensityClient.tsx` | — | — |
+| `src\components\agenda\LanguageClient.tsx` | — | — |
 | `src\components\agenda\LinkedActivitiesList.tsx` | `src\components\agenda\ActivityRow.tsx` | — |
 | `src\components\agenda\LinkedProjectsList.tsx` | — | — |
 | `src\components\agenda\MicStepBody.tsx` | — | — |
@@ -207,6 +209,7 @@
 | `src\components\agenda\MutePickerModal.tsx` | — | — |
 | `src\components\agenda\NewCategoryModal.tsx` | `src\components\agenda\ColorPicker.tsx`, `src\components\agenda\IconPicker.tsx` | — |
 | `src\components\agenda\NewProjectModal.tsx` | `src\components\agenda\StatusBadge.tsx` | — |
+| `src\components\agenda\NotificationsClient.tsx` | — | — |
 | `src\components\agenda\OnboardingLayout.tsx` | `src\components\agenda\OnboardingProgress.tsx` | — |
 | `src\components\agenda\OnboardingProgress.tsx` | — | `src\components\agenda\OnboardingLayout.tsx` |
 | `src\components\agenda\OnboardingRadioCard.tsx` | — | — |
@@ -358,7 +361,9 @@
 | `src\lib\actions\goal.ts` | — | — |
 | `src\lib\actions\helpers.ts` | — | — |
 | `src\lib\actions\intensity.ts` | — | — |
+| `src\lib\actions\language.ts` | — | — |
 | `src\lib\actions\month-sheet.ts` | — | — |
+| `src\lib\actions\notification-prefs.ts` | — | — |
 | `src\lib\actions\notifications.ts` | — | — |
 | `src\lib\actions\onboarding.ts` | — | — |
 | `src\lib\actions\profile.ts` | — | — |
@@ -410,6 +415,7 @@
 | `src\lib\db\queries\settings.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
 | `src\lib\db\queries\today.ts` | — | — |
+| `src\lib\db\queries\user-prefs.ts` | — | — |
 | `src\lib\db\queries\users.ts` | — | — |
 | `src\lib\db\schema\activities.ts` | `src\lib\db\schema\users.ts`, `src\lib\db\schema\projects.ts` | `src\lib\db\schema\subtasks.ts`, `src\lib\db\scoped.ts` |
 | `src\lib\db\schema\audit.ts` | `src\lib\db\schema\users.ts` | — |
@@ -538,10 +544,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 478 |
+| Total files analyzed | 484 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 316 |
+| Orphan files (no connections) | 322 |
 
 ---
 
