@@ -238,6 +238,7 @@
 | `src\components\agenda\SortDropdown.tsx` | — | — |
 | `src\components\agenda\SortableActivityRow.tsx` | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\ActivityRow.tsx` | — |
 | `src\components\agenda\StatCard.tsx` | — | — |
+| `src\components\agenda\StatsView.tsx` | — | — |
 | `src\components\agenda\StatusBadge.tsx` | — | `src\components\agenda\NewProjectModal.tsx`, `src\components\agenda\ProjectRow.tsx` |
 | `src\components\agenda\SubtaskRow.tsx` | — | — |
 | `src\components\agenda\SwipeableRow.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
@@ -414,6 +415,7 @@
 | `src\lib\db\queries\project-detail.ts` | — | — |
 | `src\lib\db\queries\settings.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
+| `src\lib\db\queries\stats.ts` | — | — |
 | `src\lib\db\queries\today.ts` | — | — |
 | `src\lib\db\queries\user-prefs.ts` | — | — |
 | `src\lib\db\queries\users.ts` | — | — |
@@ -544,10 +546,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 484 |
+| Total files analyzed | 486 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 322 |
+| Orphan files (no connections) | 324 |
 
 ---
 
