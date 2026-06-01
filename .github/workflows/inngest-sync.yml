@@ -1,0 +1,51 @@
+name: Inngest sync
+
+# Re-registers the Inngest functions after each Vercel deploy of main.
+#
+# Vercel doesn't expose a "deploy complete" GitHub Actions trigger, so we
+# wait a fixed window for the deploy to land then issue a PUT to the
+# SDK's serve endpoint. The Inngest SDK responds with
+#   { message: "Successfully registered", modified: <bool> }
+# when it pushed the current function list to Inngest cloud.
+#
+# Idempotent: re-running the workflow with no code change still returns
+# 200 with modified=false.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # manual trigger from the Actions tab
+
+concurrency:
+  # Only one sync at a time. Later pushes queue or cancel the in-flight.
+  group: inngest-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait for Vercel deploy to land
+        # Heuristic delay. Typical Vercel deploys for this app land in
+        # 45-90s; we wait 120s to be safe. Bump if you see "registered
+        # old bundle" symptoms.
+        run: sleep 120
+
+      - name: PUT /api/inngest on production
+        env:
+          APP_URL: ${{ vars.APP_URL || 'https://agenda-inteligente-zeta.vercel.app' }}
+        run: |
+          set -e
+          echo "Syncing $APP_URL/api/inngest …"
+          response=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X PUT \
+            -H "Content-Type: application/json" \
+            "$APP_URL/api/inngest")
+          status=$(echo "$response" | tail -1 | sed 's/HTTP_STATUS://')
+          body=$(echo "$response" | sed '$d')
+          echo "Status: $status"
+          echo "Body:   $body"
+          if [ "$status" != "200" ]; then
+            echo "::error::Inngest sync returned $status"
+            exit 1
+          fi
