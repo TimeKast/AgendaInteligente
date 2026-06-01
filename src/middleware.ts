@@ -29,10 +29,15 @@ export const middleware = auth;
 export const config = {
   // Match everything EXCEPT:
   //   - /api/auth/* (NextAuth's own handlers — they manage their own auth)
+  //   - /api/inngest (Inngest sync + invoke uses HMAC-signed payloads
+  //     in the body; NextAuth's cookie-based auth would 401 it and
+  //     functions never register)
+  //   - /api/push/subscribe (browser push registration — runs auth
+  //     inline via the route handler)
   //   - /_next/static, /_next/image (build assets)
   //   - /favicon.ico, /sw.js, /manifest.* (PWA chrome)
   //   - Common image extensions (perf — skip middleware on direct asset hits)
   matcher: [
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|sw.js|manifest|icons|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)',
+    '/((?!api/auth|api/inngest|_next/static|_next/image|favicon.ico|sw.js|manifest|icons|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)',
   ],
 };
