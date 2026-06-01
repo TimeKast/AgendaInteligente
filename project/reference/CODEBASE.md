@@ -1,7 +1,7 @@
 # 🗺️ CODEBASE — Dependency Map
 
 > **Auto-generated** — Run `pnpm generate:codebase` to update
-> **Last updated:** 2026-05-31
+> **Last updated:** 2026-06-01
 
 ---
 
@@ -128,6 +128,7 @@
 | `src\app\api\invites\accept\route.ts` | — | — |
 | `src\app\api\invites\send\route.ts` | — | — |
 | `src\app\api\invites\validate\route.ts` | — | — |
+| `src\app\api\notifications\discord\test\route.ts` | — | — |
 | `src\app\api\notifications\poll\route.ts` | — | — |
 | `src\app\api\push\subscribe\route.ts` | — | — |
 | `src\app\api\voice\transcribe\route.ts` | — | — |
@@ -509,6 +510,7 @@
 | `src\lib\invites\index.ts` | `src\lib\invites\token.ts` | — |
 | `src\lib\invites\token.ts` | — | `src\lib\invites\index.ts` |
 | `src\lib\logger.ts` | — | — |
+| `src\lib\notifications\discord.ts` | — | — |
 | `src\lib\notifications\index.ts` | — | — |
 | `src\lib\notifications\parse-user-agent.ts` | — | — |
 | `src\lib\notifications\proactive.ts` | — | — |
@@ -546,10 +548,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 486 |
+| Total files analyzed | 488 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 324 |
+| Orphan files (no connections) | 326 |
 
 ---
 

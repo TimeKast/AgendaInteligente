@@ -2,7 +2,7 @@
 
 > **Auto-generated** — Run `pnpm generate:inventory` to update
 > **Regla:** SIEMPRE consultar antes de crear algo nuevo.
-> **Last updated:** 2026-05-31
+> **Last updated:** 2026-06-01
 
 ---
 
@@ -184,6 +184,7 @@
 | /api/invites/accept | `src\app\api\invites\accept\route.ts` |
 | /api/invites/send | `src\app\api\invites\send\route.ts` |
 | /api/invites/validate | `src\app\api\invites\validate\route.ts` |
+| /api/notifications/discord/test | `src\app\api\notifications\discord\test\route.ts` |
 | /api/notifications/poll | `src\app\api\notifications\poll\route.ts` |
 | /api/push/subscribe | `src\app\api\push\subscribe\route.ts` |
 | /api/voice/transcribe | `src\app\api\voice\transcribe\route.ts` |
@@ -197,9 +198,9 @@
 |--------|-------|
 | Dependencies | 44 |
 | Page Routes | 48 |
-| API Routes | 22 |
+| API Routes | 23 |
 | Components & Utils | 43 |
-| **Total items** | **157** |
+| **Total items** | **158** |
 
 ---
 

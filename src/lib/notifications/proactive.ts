@@ -31,6 +31,7 @@ import {
   type ProactiveTaskStatus,
 } from '@/lib/db/schema/proactive-tasks';
 import { sendPush } from '@/lib/notifications/push';
+import { sendDiscord } from '@/lib/notifications/discord';
 import { logger } from '@/lib/logger';
 
 const ANTI_SPAM_24H_LIMIT = 4;
@@ -110,6 +111,7 @@ export async function enqueueAndSend(input: EnqueueInput): Promise<EnqueueResult
     .select({
       mutedUntil: notificationPrefs.mutedUntil,
       intensityMode: users.intensityMode,
+      contactChannels: users.contactChannels,
     })
     .from(notificationPrefs)
     .innerJoin(users, eq(users.id, notificationPrefs.userId))
@@ -140,6 +142,8 @@ export async function enqueueAndSend(input: EnqueueInput): Promise<EnqueueResult
     .returning({ id: proactiveTasks.id });
   const taskId = inserted[0].id;
 
+  // Web push — ungated by contact_channels (it's its own subscription
+  // toggle). Per-subscription failures are handled by the kit helper.
   try {
     await sendPush({
       userId: input.userId,
@@ -149,9 +153,21 @@ export async function enqueueAndSend(input: EnqueueInput): Promise<EnqueueResult
     });
   } catch (err) {
     logger.error('[proactive.enqueueAndSend] sendPush threw', err);
-    // We still mark as 'sent' — the kit's push helper handles per-
-    // subscription failures internally and we don't want a transient
-    // outage to mis-classify the attempt. Ops will see this in logs.
+  }
+
+  // Discord — only if the user opted into the channel AND configured
+  // a webhook URL. Send in parallel with push so neither blocks the
+  // other; failures are logged but never break the task record.
+  if ((prefs?.contactChannels ?? []).includes('discord')) {
+    try {
+      await sendDiscord(input.userId, {
+        title: input.title,
+        body: input.body,
+        url: input.url,
+      });
+    } catch (err) {
+      logger.error('[proactive.enqueueAndSend] sendDiscord threw', err);
+    }
   }
 
   await db

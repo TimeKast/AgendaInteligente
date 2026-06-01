@@ -11,6 +11,7 @@
  */
 
 import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import { setDiscordWebhook } from '@/lib/actions/onboarding';
 
 interface DiscordWebhookFormProps {
@@ -36,6 +37,26 @@ export function DiscordWebhookForm({ initialUrl }: DiscordWebhookFormProps) {
         return;
       }
       setSaved(next);
+    });
+  }
+
+  function handleTest() {
+    setError(null);
+    startTransition(async () => {
+      const res = await fetch('/api/notifications/discord/test', { method: 'POST' });
+      const body = (await res.json().catch(() => ({}))) as {
+        sent?: boolean;
+        reason?: string;
+      };
+      if (body.sent) {
+        toast.success('Mensaje de prueba enviado. Revisa tu Discord.');
+      } else {
+        toast.error(
+          body.reason === 'not_configured'
+            ? 'Pega y guarda primero un webhook URL.'
+            : 'No se pudo enviar.'
+        );
+      }
     });
   }
 
@@ -106,6 +127,26 @@ export function DiscordWebhookForm({ initialUrl }: DiscordWebhookFormProps) {
         >
           {isPending ? 'Guardando…' : isConnected && !dirty ? 'Guardado' : 'Guardar webhook'}
         </button>
+        {isConnected && !dirty && (
+          <button
+            type="button"
+            onClick={handleTest}
+            disabled={isPending}
+            style={{
+              appearance: 'none',
+              border: '1px solid var(--ag-rule)',
+              background: 'transparent',
+              cursor: 'pointer',
+              padding: '10px 16px',
+              borderRadius: 'var(--ag-radius-base)',
+              color: 'var(--ag-ink-soft)',
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 14,
+            }}
+          >
+            Probar
+          </button>
+        )}
         {isConnected && (
           <button
             type="button"
