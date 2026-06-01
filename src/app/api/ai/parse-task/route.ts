@@ -117,8 +117,14 @@ export async function POST(req: Request): Promise<Response> {
       messages: [{ role: 'user', content: parsed.data.text }],
     });
   } catch (err) {
-    logger.error('[api/ai/parse-task] anthropic call failed', err);
-    return Response.json({ error: 'upstream_failed' }, { status: 502 });
+    const reason = err instanceof Error ? err.message : String(err);
+    const status = (err as { status?: number })?.status;
+    logger.error('[api/ai/parse-task] anthropic call failed', {
+      reason,
+      status,
+      model: VOICE_PARSER_MODEL,
+    });
+    return Response.json({ error: 'upstream_failed', reason }, { status: 502 });
   }
 
   // Telemetry — never block on failure.

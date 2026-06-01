@@ -237,13 +237,16 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
         body: JSON.stringify({ text }),
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          reason?: string;
+        };
         const code = body.error ?? `HTTP ${res.status}`;
         if (code === 'rate_limit_exceeded') {
           throw new Error('Llegaste al límite de interpretaciones por hora.');
         }
         if (code === 'upstream_failed') {
-          throw new Error('Claude no respondió. Probá de nuevo.');
+          throw new Error(body.reason ? `Claude: ${body.reason}` : 'Claude no respondió.');
         }
         throw new Error(code);
       }
