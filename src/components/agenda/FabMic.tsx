@@ -7,8 +7,8 @@
  * Background: warm charcoal `--ag-accent-primary`. Icon cream.
  * Stroke 1.75 per design rules.
  *
- * Tap opens the VoiceCaptureSheet (SCR-050) — visual only, hardcoded preview
- * data, no real audio capture or backend persist.
+ * Tap opens VoiceCaptureSheet (SCR-050): real mic capture → Whisper STT
+ * → Claude voice-parser → editable preview → createActivity.
  */
 
 import { useState } from 'react';

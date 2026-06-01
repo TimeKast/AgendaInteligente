@@ -16,11 +16,11 @@
 | `src\lib\email\templates\layout.ts` | 9 |
 | `src\components\agenda\ActivityRow.tsx` | 6 |
 | `src\lib\ai\system-prompts\agent-base.ts` | 5 |
+| `src\components\agenda\PriorityDots.tsx` | 4 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
 | `src\components\agenda\ActivityQuickAdd.tsx` | 4 |
 | `src\lib\db\drizzle.ts` | 4 |
-| `src\components\agenda\PriorityDots.tsx` | 3 |
 | `src\lib\email\types.ts` | 3 |
 | `src\components\agenda\RecurrencePicker.tsx` | 2 |
 | `src\components\agenda\DeadlineBadge.tsx` | 2 |
@@ -219,7 +219,7 @@
 | `src\components\agenda\PlanSnapshotControls.tsx` | `src\components\agenda\ConfirmDeleteModal.tsx` | `src\components\agenda\DayRow.tsx`, `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\PlanSnapshotViewer.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
 | `src\components\agenda\PlanSnapshotViewer.tsx` | `src\components\agenda\PlanSnapshotControls.tsx` | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
 | `src\components\agenda\PoolSection.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
-| `src\components\agenda\PriorityDots.tsx` | — | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\ProjectActivityRow.tsx`, `src\components\agenda\VoicePreviewCard.tsx` |
+| `src\components\agenda\PriorityDots.tsx` | — | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\ProjectActivityRow.tsx`, `src\components\agenda\VoiceCaptureSheet.tsx`, `src\components\agenda\VoicePreviewCard.tsx` |
 | `src\components\agenda\ProfileHeader.tsx` | — | — |
 | `src\components\agenda\ProgressBar.tsx` | — | — |
 | `src\components\agenda\ProjectActivityRow.tsx` | `src\components\agenda\PriorityDots.tsx`, `src\components\agenda\ActivityRow.tsx` | — |
@@ -252,8 +252,8 @@
 | `src\components\agenda\UsageMeter.tsx` | — | — |
 | `src\components\agenda\UserMessage.tsx` | — | — |
 | `src\components\agenda\VerifyEmailBanner.tsx` | — | — |
-| `src\components\agenda\VoiceCaptureSheet.tsx` | `src\components\agenda\WaveformAnim.tsx`, `src\components\agenda\VoicePreviewCard.tsx` | `src\components\agenda\FabMic.tsx` |
-| `src\components\agenda\VoicePreviewCard.tsx` | `src\components\agenda\PriorityDots.tsx` | `src\components\agenda\VoiceCaptureSheet.tsx` |
+| `src\components\agenda\VoiceCaptureSheet.tsx` | `src\components\agenda\WaveformAnim.tsx`, `src\components\agenda\PriorityDots.tsx` | `src\components\agenda\FabMic.tsx` |
+| `src\components\agenda\VoicePreviewCard.tsx` | `src\components\agenda\PriorityDots.tsx` | — |
 | `src\components\agenda\WaveformAnim.tsx` | — | `src\components\agenda\VoiceCaptureSheet.tsx` |
 | `src\components\agenda\WeekDayDots.tsx` | — | — |
 | `src\components\agenda\WeekDayStrip.tsx` | — | `src\components\agenda\WeekSwimlane.tsx` |
