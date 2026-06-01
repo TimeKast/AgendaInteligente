@@ -55,7 +55,7 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { ActivityRow, type ActivityStatus } from './ActivityRow';
-import { ActivityQuickAdd, type QuickAddDraft } from './ActivityQuickAdd';
+import { ActivityQuickAdd, type QuickAddDraft, type QuickAddProject } from './ActivityQuickAdd';
 import { SwipeableRow } from './SwipeableRow';
 import { DraggableTaskRow } from './DraggableTaskRow';
 import { PoolSection } from './PoolSection';
@@ -354,6 +354,17 @@ interface TodayActivitiesBoardProps {
       | { kind: 'quadrant'; q: 1 | 2 | 3 | 4 }
       | { kind: 'resize'; durationMinutes: number }
   ) => void;
+  /**
+   * Real project list for the inline quick-add picker. Inbox-first.
+   * When omitted (crisis-demo route), the quick-add still renders but
+   * the picker shows "Sin proyectos" and submit is disabled.
+   */
+  projects?: QuickAddProject[];
+  /**
+   * YYYY-MM-DD for the user's local "today" — drives the quick-add
+   * default date. Caller (TodayClient) resolves the TZ.
+   */
+  todayDate?: string;
 }
 
 export function TodayActivitiesBoard({
@@ -365,6 +376,8 @@ export function TodayActivitiesBoard({
   initialPool,
   initialExternalEvents,
   onMovePersist,
+  projects,
+  todayDate,
 }: TodayActivitiesBoardProps) {
   const [scheduled, setScheduled] = useState<ScheduledActivity[]>(
     initialScheduled ?? INITIAL_SCHEDULED
@@ -780,7 +793,13 @@ export function TodayActivitiesBoard({
                   isDragging={isDragging}
                   empty={poolByScope.today.length === 0}
                   count={poolByScope.today.length}
-                  header={<ActivityQuickAdd onCreate={handleCreate} />}
+                  header={
+                    <ActivityQuickAdd
+                      onCreate={handleCreate}
+                      projects={projects ?? []}
+                      defaultDateISO={todayDate ?? new Date().toISOString().slice(0, 10)}
+                    />
+                  }
                 >
                   {poolByScope.today.map(renderPoolRow)}
                 </PoolSection>
@@ -816,7 +835,13 @@ export function TodayActivitiesBoard({
                   empty={poolByQuadrant[1].length === 0}
                   count={poolByQuadrant[1].length}
                   accentColor={QUADRANT_ACCENT[1]}
-                  header={<ActivityQuickAdd onCreate={handleCreate} />}
+                  header={
+                    <ActivityQuickAdd
+                      onCreate={handleCreate}
+                      projects={projects ?? []}
+                      defaultDateISO={todayDate ?? new Date().toISOString().slice(0, 10)}
+                    />
+                  }
                 >
                   {poolByQuadrant[1].map(renderPoolRow)}
                 </PoolSection>

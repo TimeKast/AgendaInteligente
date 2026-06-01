@@ -2,26 +2,37 @@
 
 /**
  * ActivityQuickAdd — SCR-051. Inline quick-add form for a new activity from
- * the Today screen.
+ * the Today / Tasks screens.
  *
  * Pattern F-1 from DESIGN §5: collapsed CTA → tap → expanded inline form
  * with title autofocus, compact row (project/date/priority), and an optional
  * "+ más detalles" disclosure.
  *
- * On submit: invokes `onCreate` with the gathered fields, clears the form,
- * keeps focus on the title input for rapid sequential adds.
+ * Project list + default date are server-loaded (real DB) — no hardcoded
+ * labels. The draft emits both a real `projectId` (UUID for persist) and a
+ * `projectLabel` (for snappy optimistic rendering by the caller).
  */
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ChevronDown, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PriorityDots } from './PriorityDots';
 import { RecurrencePicker, type RecurrenceRule } from './RecurrencePicker';
 
+export interface QuickAddProject {
+  id: string;
+  name: string;
+  isInbox: boolean;
+}
+
 export interface QuickAddDraft {
   title: string;
+  /** Real UUID — for createActivity. */
+  projectId: string;
+  /** Display label — for optimistic UI before revalidation. */
   projectLabel: string;
-  dateLabel: string;
+  /** YYYY-MM-DD scheduled date, or null = sin día (pool / backlog). */
+  dateISO: string | null;
   priority: number;
   description?: string;
   scheduledTime?: string;
@@ -33,16 +44,47 @@ export interface QuickAddDraft {
 
 interface ActivityQuickAddProps {
   onCreate: (draft: QuickAddDraft) => void;
+  /**
+   * Project picker source — must include at least the user's Inbox.
+   * Caller (server page) loads via `listProjects`.
+   */
+  projects: QuickAddProject[];
+  /**
+   * YYYY-MM-DD pre-selected when the form opens. Typically the user's
+   * local "today" — caller resolves the timezone.
+   */
+  defaultDateISO: string;
 }
 
-const PROJECTS = ['Inbox', 'Empresa Genomma', 'Personal', 'Side project'];
-const DATES = ['Hoy', 'Mañana', 'Esta semana'];
+type DateChoice = 'today' | 'tomorrow' | 'custom' | 'none';
 
-export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
+/** YYYY-MM-DD = today + days (UTC arithmetic — caller already TZ-resolved). */
+function addDaysISO(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export function ActivityQuickAdd({ onCreate, projects, defaultDateISO }: ActivityQuickAddProps) {
+  // Project source — Inbox first, then by name. The caller's `listProjects`
+  // already returns Inbox-first, but we re-stabilize defensively.
+  const sortedProjects = useMemo(() => {
+    return [...projects].sort((a, b) => {
+      if (a.isInbox && !b.isInbox) return -1;
+      if (!a.isInbox && b.isInbox) return 1;
+      return a.name.localeCompare(b.name, 'es');
+    });
+  }, [projects]);
+
+  const defaultProjectId = useMemo(() => {
+    return sortedProjects.find((p) => p.isInbox)?.id ?? sortedProjects[0]?.id ?? '';
+  }, [sortedProjects]);
+
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
-  const [project, setProject] = useState(PROJECTS[0]);
-  const [dateLabel, setDateLabel] = useState(DATES[0]);
+  const [projectId, setProjectId] = useState(defaultProjectId);
+  const [dateChoice, setDateChoice] = useState<DateChoice>('today');
+  const [customDate, setCustomDate] = useState(defaultDateISO);
   const [priority, setPriority] = useState(3);
   const [moreOpen, setMoreOpen] = useState(false);
   const [description, setDescription] = useState('');
@@ -53,8 +95,9 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
 
   function reset() {
     setTitle('');
-    setProject(PROJECTS[0]);
-    setDateLabel(DATES[0]);
+    setProjectId(defaultProjectId);
+    setDateChoice('today');
+    setCustomDate(defaultDateISO);
     setPriority(3);
     setMoreOpen(false);
     setDescription('');
@@ -68,14 +111,33 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
     setOpen(false);
   }
 
+  function resolveDateISO(): string | null {
+    switch (dateChoice) {
+      case 'today':
+        return defaultDateISO;
+      case 'tomorrow':
+        return addDaysISO(defaultDateISO, 1);
+      case 'custom':
+        return customDate || null;
+      case 'none':
+        return null;
+    }
+  }
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return;
+    if (!projectId) {
+      toast.error('No hay proyectos disponibles. Crea uno primero.');
+      return;
+    }
+    const projectLabel = sortedProjects.find((p) => p.id === projectId)?.name ?? '';
     onCreate({
       title: trimmed,
-      projectLabel: project,
-      dateLabel,
+      projectId,
+      projectLabel,
+      dateISO: resolveDateISO(),
       priority,
       description: description.trim() || undefined,
       scheduledTime: scheduledTime.trim() || undefined,
@@ -183,8 +245,13 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
           gap: 'var(--ag-space-2)',
         }}
       >
-        <CompactSelect value={project} onChange={setProject} options={PROJECTS} />
-        <CompactSelect value={dateLabel} onChange={setDateLabel} options={DATES} />
+        <ProjectSelect value={projectId} onChange={setProjectId} projects={sortedProjects} />
+        <DateSelect
+          choice={dateChoice}
+          customDate={customDate}
+          onChoiceChange={setDateChoice}
+          onCustomDateChange={setCustomDate}
+        />
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <PriorityStepper value={priority} onChange={setPriority} />
         </div>
@@ -312,10 +379,7 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
             >
               Recurrencia
             </span>
-            <RecurrencePicker
-              value={recurrenceRule}
-              onChange={setRecurrenceRule}
-            />
+            <RecurrencePicker value={recurrenceRule} onChange={setRecurrenceRule} />
           </div>
         </div>
       ) : null}
@@ -340,18 +404,19 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
         </button>
         <button
           type="submit"
-          disabled={!title.trim()}
+          disabled={!title.trim() || !projectId}
           style={{
             appearance: 'none',
-            backgroundColor: title.trim() ? 'var(--ag-ink-primary)' : 'var(--ag-bg-sunken)',
+            backgroundColor:
+              title.trim() && projectId ? 'var(--ag-ink-primary)' : 'var(--ag-bg-sunken)',
             border: 'none',
             borderRadius: 'var(--ag-radius-base)',
             padding: '8px 14px',
             fontFamily: 'var(--ag-font-body)',
             fontSize: 13,
             fontWeight: 500,
-            color: title.trim() ? 'var(--ag-accent-on)' : 'var(--ag-ink-hint)',
-            cursor: title.trim() ? 'pointer' : 'not-allowed',
+            color: title.trim() && projectId ? 'var(--ag-accent-on)' : 'var(--ag-ink-hint)',
+            cursor: title.trim() && projectId ? 'pointer' : 'not-allowed',
           }}
         >
           Crear →
@@ -361,47 +426,96 @@ export function ActivityQuickAdd({ onCreate }: ActivityQuickAddProps) {
   );
 }
 
-function CompactSelect({
+function ProjectSelect({
   value,
   onChange,
-  options,
+  projects,
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: string[];
+  projects: QuickAddProject[];
 }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      style={{
-        appearance: 'none',
-        backgroundColor: 'var(--ag-bg)',
-        border: '1px solid var(--ag-rule)',
-        borderRadius: 'var(--ag-radius-pill)',
-        padding: '4px 10px',
-        fontFamily: 'var(--ag-font-body)',
-        fontSize: 13,
-        color: 'var(--ag-ink-soft)',
-        outline: 'none',
-      }}
+      aria-label="Proyecto"
+      style={pillSelectStyle}
     >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
+      {projects.length === 0 ? (
+        <option value="" disabled>
+          Sin proyectos
+        </option>
+      ) : null}
+      {projects.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
         </option>
       ))}
     </select>
   );
 }
 
-function PriorityStepper({
-  value,
-  onChange,
+function DateSelect({
+  choice,
+  customDate,
+  onChoiceChange,
+  onCustomDateChange,
 }: {
-  value: number;
-  onChange: (n: number) => void;
+  choice: DateChoice;
+  customDate: string;
+  onChoiceChange: (c: DateChoice) => void;
+  onCustomDateChange: (d: string) => void;
 }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+      <select
+        value={choice}
+        onChange={(e) => onChoiceChange(e.target.value as DateChoice)}
+        aria-label="Fecha"
+        style={pillSelectStyle}
+      >
+        <option value="today">Hoy</option>
+        <option value="tomorrow">Mañana</option>
+        <option value="custom">Elegir fecha…</option>
+        <option value="none">Sin día</option>
+      </select>
+      {choice === 'custom' ? (
+        <input
+          type="date"
+          value={customDate}
+          onChange={(e) => onCustomDateChange(e.target.value)}
+          aria-label="Fecha personalizada"
+          style={{
+            appearance: 'none',
+            backgroundColor: 'var(--ag-bg)',
+            border: '1px solid var(--ag-rule)',
+            borderRadius: 'var(--ag-radius-pill)',
+            padding: '4px 10px',
+            fontFamily: 'var(--ag-font-mono)',
+            fontSize: 12,
+            color: 'var(--ag-ink-soft)',
+            outline: 'none',
+          }}
+        />
+      ) : null}
+    </span>
+  );
+}
+
+const pillSelectStyle: React.CSSProperties = {
+  appearance: 'none',
+  backgroundColor: 'var(--ag-bg)',
+  border: '1px solid var(--ag-rule)',
+  borderRadius: 'var(--ag-radius-pill)',
+  padding: '4px 10px',
+  fontFamily: 'var(--ag-font-body)',
+  fontSize: 13,
+  color: 'var(--ag-ink-soft)',
+  outline: 'none',
+};
+
+function PriorityStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
     <button
       type="button"

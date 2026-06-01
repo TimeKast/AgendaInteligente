@@ -20,7 +20,11 @@ import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { ActivityRow, type ActivityStatus } from '@/components/agenda/ActivityRow';
 import { FilterChips } from '@/components/agenda/FilterChips';
 import { SortDropdown } from '@/components/agenda/SortDropdown';
-import { ActivityQuickAdd, type QuickAddDraft } from '@/components/agenda/ActivityQuickAdd';
+import {
+  ActivityQuickAdd,
+  type QuickAddDraft,
+  type QuickAddProject,
+} from '@/components/agenda/ActivityQuickAdd';
 import {
   ActivityStatusModal,
   type ExtendedActivityStatus,
@@ -51,8 +55,10 @@ export interface Task {
 
 interface TasksClientProps {
   initialTasks: Task[];
-  /** YYYY-MM-DD of the user's local "today" — used when quick-add picks "Hoy". */
+  /** YYYY-MM-DD of the user's local "today" — used as quick-add default. */
   todayDate: string;
+  /** Real project list — feeds the quick-add picker. Inbox-first. */
+  projects: QuickAddProject[];
 }
 
 const OPEN_STATUSES: ActivityStatus[] = ['todo', 'in_progress', 'blocked'];
@@ -106,7 +112,7 @@ function groupByProject(tasks: Task[]): Array<{ project: string; items: Task[] }
     .sort((a, b) => a.project.localeCompare(b.project, 'es'));
 }
 
-export function TasksClient({ initialTasks, todayDate }: TasksClientProps) {
+export function TasksClient({ initialTasks, todayDate, projects }: TasksClientProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [, startTransition] = useTransition();
   const [filter, setFilter] = useState<StatusFilter>('open');
@@ -146,7 +152,7 @@ export function TasksClient({ initialTasks, todayDate }: TasksClientProps) {
   const grouped = useMemo(() => groupByProject(visible), [visible]);
 
   function handleCreate(draft: QuickAddDraft) {
-    const scheduledDate = draft.dateLabel === 'Hoy' ? todayDate : undefined;
+    const scheduledDate = draft.dateISO ?? undefined;
     const optimistic: Task = {
       id: `optimistic:${Date.now()}`,
       title: draft.title,
@@ -162,6 +168,7 @@ export function TasksClient({ initialTasks, todayDate }: TasksClientProps) {
     startTransition(async () => {
       const result = await createActivity({
         title: draft.title,
+        projectId: draft.projectId,
         priority: draft.priority,
         description: draft.description,
         scheduledTime: draft.scheduledTime ? `${draft.scheduledTime}:00` : null,
@@ -271,6 +278,8 @@ export function TasksClient({ initialTasks, todayDate }: TasksClientProps) {
         {quickAddOpen ? (
           <div style={{ paddingTop: 'var(--ag-space-3)' }}>
             <ActivityQuickAdd
+              projects={projects}
+              defaultDateISO={todayDate}
               onCreate={(draft) => {
                 handleCreate(draft);
                 setQuickAddOpen(false);

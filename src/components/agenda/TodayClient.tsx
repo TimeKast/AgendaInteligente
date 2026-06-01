@@ -26,7 +26,7 @@ import {
   type CloseDayActivityInput,
 } from '@/components/agenda/CloseDayModal';
 import { TodayViewToggle, type TodayView } from '@/components/agenda/TodayViewToggle';
-import type { QuickAddDraft } from '@/components/agenda/ActivityQuickAdd';
+import type { QuickAddDraft, QuickAddProject } from '@/components/agenda/ActivityQuickAdd';
 import { closeDay } from '@/lib/actions/close-day';
 import { createActivity, transitionActivity, updateActivity } from '@/lib/actions/activity';
 
@@ -80,6 +80,8 @@ export interface TodayClientProps {
   initialPool: PoolActivityInput[];
   /** External calendar busy slots overlapping today (Google sync). */
   externalEvents: ExternalEventInput[];
+  /** Real project list for the inline quick-add picker. Inbox-first. */
+  projects: QuickAddProject[];
 }
 
 export function TodayClient({
@@ -90,6 +92,7 @@ export function TodayClient({
   initialScheduled,
   initialPool,
   externalEvents,
+  projects,
 }: TodayClientProps) {
   const [view, setView] = useState<TodayView>('fecha');
   const [closeOpen, setCloseOpen] = useState(false);
@@ -109,11 +112,11 @@ export function TodayClient({
     startTransition(async () => {
       const result = await createActivity({
         title: draft.title,
+        projectId: draft.projectId,
         priority: draft.priority,
         description: draft.description,
         scheduledTime: draft.scheduledTime ? `${draft.scheduledTime}:00` : null,
-        // Quick-add on the Today page implies today's date.
-        scheduledDates: [todayDate],
+        scheduledDates: draft.dateISO ? [draft.dateISO] : [],
         // RecurrenceRule is already a string in the DSL the schema accepts.
         recurrenceRule: draft.recurrenceRule ?? null,
         deadline: draft.deadline ? new Date(`${draft.deadline}T23:59:59`).toISOString() : null,
@@ -256,6 +259,8 @@ export function TodayClient({
           onCreatePersist={handleCreatePersist}
           onTransitionPersist={handleTransitionPersist}
           onMovePersist={handleMovePersist}
+          projects={projects}
+          todayDate={todayDate}
         />
 
         <button

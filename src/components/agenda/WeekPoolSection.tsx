@@ -82,7 +82,11 @@ export function WeekPoolSection({ activities, onCreate }: WeekPoolSectionProps) 
         )}
       </ul>
 
-      <ActivityQuickAdd onCreate={onCreate} />
+      <ActivityQuickAdd
+        onCreate={onCreate}
+        projects={[]}
+        defaultDateISO={new Date().toISOString().slice(0, 10)}
+      />
     </section>
   );
 }
