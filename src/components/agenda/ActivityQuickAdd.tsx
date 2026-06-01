@@ -54,6 +54,33 @@ interface ActivityQuickAddProps {
    * local "today" — caller resolves the timezone.
    */
   defaultDateISO: string;
+  /**
+   * When set, the form starts expanded with these fields pre-filled and
+   * the collapsed "+ Nueva" CTA is suppressed. Used by modal flows like
+   * voice capture where the caller controls open/close.
+   */
+  initialDraft?: {
+    title?: string;
+    projectId?: string;
+    /** YYYY-MM-DD or null = sin día. */
+    dateISO?: string | null;
+    priority?: number;
+    description?: string;
+    /** HH:mm. */
+    scheduledTime?: string;
+    /** YYYY-MM-DD. */
+    deadline?: string;
+    recurrenceRule?: RecurrenceRule;
+  };
+  /**
+   * Override the Cancel button — typically the modal parent uses this to
+   * close the sheet. Defaults to internal close (collapse the form).
+   */
+  onCancel?: () => void;
+  /**
+   * Label for the submit button. Defaults to "Crear →".
+   */
+  submitLabel?: string;
 }
 
 type DateChoice = 'today' | 'tomorrow' | 'custom' | 'none';
@@ -65,7 +92,14 @@ function addDaysISO(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function ActivityQuickAdd({ onCreate, projects, defaultDateISO }: ActivityQuickAddProps) {
+export function ActivityQuickAdd({
+  onCreate,
+  projects,
+  defaultDateISO,
+  initialDraft,
+  onCancel,
+  submitLabel,
+}: ActivityQuickAddProps) {
   // Project source — Inbox first, then by name. The caller's `listProjects`
   // already returns Inbox-first, but we re-stabilize defensively.
   const sortedProjects = useMemo(() => {
@@ -80,17 +114,43 @@ export function ActivityQuickAdd({ onCreate, projects, defaultDateISO }: Activit
     return sortedProjects.find((p) => p.isInbox)?.id ?? sortedProjects[0]?.id ?? '';
   }, [sortedProjects]);
 
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [projectId, setProjectId] = useState(defaultProjectId);
-  const [dateChoice, setDateChoice] = useState<DateChoice>('today');
-  const [customDate, setCustomDate] = useState(defaultDateISO);
-  const [priority, setPriority] = useState(3);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [description, setDescription] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule>(null);
+  // Map an initialDraft's dateISO to (choice, customDate). Anything that
+  // isn't exactly today or tomorrow becomes a custom date so the picker
+  // shows the actual value.
+  const initialDateState = useMemo<{ choice: DateChoice; custom: string }>(() => {
+    if (!initialDraft || initialDraft.dateISO === undefined) {
+      return { choice: 'today', custom: defaultDateISO };
+    }
+    if (initialDraft.dateISO === null) return { choice: 'none', custom: defaultDateISO };
+    if (initialDraft.dateISO === defaultDateISO) return { choice: 'today', custom: defaultDateISO };
+    if (initialDraft.dateISO === addDaysISO(defaultDateISO, 1)) {
+      return { choice: 'tomorrow', custom: defaultDateISO };
+    }
+    return { choice: 'custom', custom: initialDraft.dateISO };
+  }, [initialDraft, defaultDateISO]);
+
+  const modal = initialDraft !== undefined;
+  const [open, setOpen] = useState(modal);
+  const [title, setTitle] = useState(initialDraft?.title ?? '');
+  const [projectId, setProjectId] = useState(initialDraft?.projectId ?? defaultProjectId);
+  const [dateChoice, setDateChoice] = useState<DateChoice>(initialDateState.choice);
+  const [customDate, setCustomDate] = useState(initialDateState.custom);
+  const [priority, setPriority] = useState(initialDraft?.priority ?? 3);
+  const [moreOpen, setMoreOpen] = useState(
+    !!(
+      initialDraft &&
+      (initialDraft.description ||
+        initialDraft.scheduledTime ||
+        initialDraft.deadline ||
+        initialDraft.recurrenceRule)
+    )
+  );
+  const [description, setDescription] = useState(initialDraft?.description ?? '');
+  const [scheduledTime, setScheduledTime] = useState(initialDraft?.scheduledTime ?? '');
+  const [deadline, setDeadline] = useState(initialDraft?.deadline ?? '');
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule>(
+    initialDraft?.recurrenceRule ?? null
+  );
   const titleRef = useRef<HTMLInputElement>(null);
 
   function reset() {
@@ -107,6 +167,10 @@ export function ActivityQuickAdd({ onCreate, projects, defaultDateISO }: Activit
   }
 
   function close() {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     reset();
     setOpen(false);
   }
@@ -144,6 +208,10 @@ export function ActivityQuickAdd({ onCreate, projects, defaultDateISO }: Activit
       deadline: deadline.trim() || undefined,
       recurrenceRule: recurrenceRule,
     });
+    if (modal) {
+      // Parent owns close + unmount — don't reset/toast/refocus locally.
+      return;
+    }
     toast('Guardado.');
     reset();
     // Focus stays on title for rapid sequential adds.
@@ -419,7 +487,7 @@ export function ActivityQuickAdd({ onCreate, projects, defaultDateISO }: Activit
             cursor: title.trim() && projectId ? 'pointer' : 'not-allowed',
           }}
         >
-          Crear →
+          {submitLabel ?? 'Crear →'}
         </button>
       </div>
     </form>

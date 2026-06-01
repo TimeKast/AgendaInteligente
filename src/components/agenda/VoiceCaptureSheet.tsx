@@ -7,7 +7,10 @@
  *   1. open → request mic permission, start MediaRecorder.
  *   2. user taps "Listo" → stop recorder, POST blob to /api/voice/transcribe.
  *   3. transcribed text → POST to /api/ai/parse-task → structured preview.
- *   4. user edits preview if needed → "Guardar" calls createActivity.
+ *   4. preview stage mounts ActivityQuickAdd pre-filled with the parser's
+ *      output so the user can edit ANY field (title, project, date, time,
+ *      priority, description, deadline, recurrence) before persisting.
+ *   5. Submit → createActivity + router.refresh() + close.
  *
  * Errors at any stage drop the user back to recording with a hint. Audio
  * is never persisted (BR-13 — Whisper route discards after transcription).
@@ -17,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { WaveformAnim } from './WaveformAnim';
-import { PriorityDots } from './PriorityDots';
+import { ActivityQuickAdd, type QuickAddDraft, type QuickAddProject } from './ActivityQuickAdd';
 import { createActivity } from '@/lib/actions/activity';
 
 interface VoiceCaptureSheetProps {
@@ -33,12 +36,11 @@ type Stage =
   | 'preview'
   | 'saving';
 
-interface Preview {
+interface ParsedPreview {
   title: string;
-  project_id_suggestion: string | null;
-  project_name_match: string | null;
-  scheduled_date: string | null;
-  scheduled_time: string | null;
+  projectId: string | null;
+  dateISO: string | null;
+  scheduledTime: string | null;
   priority: number;
   deadline: string | null;
 }
@@ -59,13 +61,24 @@ function pickMime(): string | undefined {
   return undefined;
 }
 
+/** Today as YYYY-MM-DD in the browser's local timezone. */
+function todayLocalISO(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps) {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>('requesting_permission');
   const [error, setError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [transcript, setTranscript] = useState('');
-  const [preview, setPreview] = useState<Preview | null>(null);
+  const [preview, setPreview] = useState<ParsedPreview | null>(null);
+  const [projects, setProjects] = useState<QuickAddProject[]>([]);
+  const [todayDate] = useState(todayLocalISO);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -102,15 +115,50 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
     onOpenChange(false);
   }
 
-  // Mount/unmount lifecycle — when `open` flips true, start mic. When it flips
-  // false, release everything.
+  async function startRecording() {
+    setError(null);
+    setElapsed(0);
+    chunksRef.current = [];
+    try {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        setError('Tu navegador no soporta captura de audio. Probá Chrome o Safari mobile.');
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = pickMime();
+      mimeRef.current = mime;
+      const recorder = mime
+        ? new MediaRecorder(stream, { mimeType: mime })
+        : new MediaRecorder(stream);
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorderRef.current = recorder;
+      recorder.start();
+      startTsRef.current = Date.now();
+      timerRef.current = window.setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startTsRef.current) / 1000));
+      }, 250);
+      setStage('recording');
+    } catch (err) {
+      const name = (err as { name?: string })?.name ?? '';
+      if (name === 'NotAllowedError' || name === 'SecurityError') {
+        setError('Permiso de micrófono denegado. Concedelo en la configuración del navegador.');
+      } else {
+        setError('No se pudo iniciar la grabación.');
+      }
+    }
+  }
+
+  // Mount/unmount lifecycle — when `open` flips true, start mic + load
+  // projects in parallel. When it flips false, release everything.
   useEffect(() => {
     openRef.current = open;
     if (!open) {
       cleanup();
       return;
     }
-    // Reset stage + state on each fresh open.
     setError(null);
     setElapsed(0);
     setTranscript('');
@@ -118,41 +166,23 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
     setStage('requesting_permission');
 
     let cancelled = false;
-    (async () => {
-      try {
-        if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-          setError('Tu navegador no soporta captura de audio. Probá Chrome o Safari mobile.');
-          return;
-        }
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        streamRef.current = stream;
-        const mime = pickMime();
-        mimeRef.current = mime;
-        const recorder = mime
-          ? new MediaRecorder(stream, { mimeType: mime })
-          : new MediaRecorder(stream);
-        recorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
-        };
-        recorderRef.current = recorder;
-        recorder.start();
-        startTsRef.current = Date.now();
-        timerRef.current = window.setInterval(() => {
-          setElapsed(Math.floor((Date.now() - startTsRef.current) / 1000));
-        }, 250);
-        setStage('recording');
-      } catch (err) {
-        const name = (err as { name?: string })?.name ?? '';
-        if (name === 'NotAllowedError' || name === 'SecurityError') {
-          setError('Permiso de micrófono denegado. Concedelo en la configuración del navegador.');
-        } else {
-          setError('No se pudo iniciar la grabación.');
-        }
-      }
+    void (async () => {
+      const [_recStarted] = await Promise.all([
+        startRecording(),
+        // Load the user's projects so the preview form can render the
+        // real picker. Failures are non-fatal — fall back to empty.
+        (async () => {
+          try {
+            const res = await fetch('/api/projects/picker', { method: 'GET' });
+            if (!res.ok) return;
+            const data = (await res.json()) as { projects: QuickAddProject[] };
+            if (!cancelled) setProjects(data.projects ?? []);
+          } catch {
+            /* ignore — preview will show empty picker */
+          }
+        })(),
+      ]);
+      void _recStarted; // keep the linter happy
     })();
 
     return () => {
@@ -168,7 +198,6 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
       timerRef.current = null;
     }
 
-    // Wait for the final data chunk before assembling the blob.
     const stopped = new Promise<void>((resolve) => {
       recorder.addEventListener('stop', () => resolve(), { once: true });
     });
@@ -252,13 +281,11 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
       }
       const data = (await res.json()) as { preview: Record<string, unknown> };
       const p = data.preview;
-      const next: Preview = {
+      const next: ParsedPreview = {
         title: typeof p.title === 'string' ? p.title : text,
-        project_id_suggestion:
-          typeof p.project_id_suggestion === 'string' ? p.project_id_suggestion : null,
-        project_name_match: typeof p.project_name_match === 'string' ? p.project_name_match : null,
-        scheduled_date: typeof p.scheduled_date === 'string' ? p.scheduled_date : null,
-        scheduled_time: typeof p.scheduled_time === 'string' ? p.scheduled_time : null,
+        projectId: typeof p.project_id_suggestion === 'string' ? p.project_id_suggestion : null,
+        dateISO: typeof p.scheduled_date === 'string' ? p.scheduled_date : null,
+        scheduledTime: typeof p.scheduled_time === 'string' ? p.scheduled_time : null,
         priority: typeof p.priority === 'number' ? p.priority : 3,
         deadline: typeof p.deadline === 'string' ? p.deadline : null,
       };
@@ -272,16 +299,17 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
     }
   }
 
-  async function handleSave() {
-    if (!preview) return;
+  async function handleSubmit(draft: QuickAddDraft) {
     setStage('saving');
     const result = await createActivity({
-      title: preview.title,
-      projectId: preview.project_id_suggestion ?? undefined,
-      priority: preview.priority,
-      scheduledTime: preview.scheduled_time ? `${preview.scheduled_time}:00` : null,
-      scheduledDates: preview.scheduled_date ? [preview.scheduled_date] : [],
-      deadline: preview.deadline ? new Date(`${preview.deadline}T23:59:59`).toISOString() : null,
+      title: draft.title,
+      projectId: draft.projectId,
+      priority: draft.priority,
+      description: draft.description,
+      scheduledTime: draft.scheduledTime ? `${draft.scheduledTime}:00` : null,
+      scheduledDates: draft.dateISO ? [draft.dateISO] : [],
+      recurrenceRule: draft.recurrenceRule ?? null,
+      deadline: draft.deadline ? new Date(`${draft.deadline}T23:59:59`).toISOString() : null,
     });
     if (result.error) {
       toast.error(`No se pudo guardar: ${result.error}`);
@@ -291,6 +319,15 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
     toast.success('Actividad guardada.');
     router.refresh();
     close();
+  }
+
+  function handleRetry() {
+    cleanup();
+    setPreview(null);
+    setTranscript('');
+    setError(null);
+    setStage('requesting_permission');
+    void startRecording();
   }
 
   if (!open) return null;
@@ -352,64 +389,70 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
           }}
         />
 
-        {stage === 'preview' && preview ? (
-          <PreviewView
-            preview={preview}
-            transcript={transcript}
-            onChange={setPreview}
-            onSave={handleSave}
-            onRetry={() => {
-              // Re-open: trigger the open-effect by toggling.
-              cleanup();
-              setPreview(null);
-              setTranscript('');
-              setStage('requesting_permission');
-              // Defer to next tick so the effect picks up.
-              window.setTimeout(() => {
-                if (!openRef.current) return;
-                // Manually re-run the open effect by closing+reopening logic:
-                // simplest path is to just call the start sequence inline.
-                (async () => {
-                  try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    streamRef.current = stream;
-                    const mime = pickMime();
-                    mimeRef.current = mime;
-                    const recorder = mime
-                      ? new MediaRecorder(stream, { mimeType: mime })
-                      : new MediaRecorder(stream);
-                    recorder.ondataavailable = (e) => {
-                      if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
-                    };
-                    recorderRef.current = recorder;
-                    recorder.start();
-                    startTsRef.current = Date.now();
-                    setElapsed(0);
-                    timerRef.current = window.setInterval(() => {
-                      setElapsed(Math.floor((Date.now() - startTsRef.current) / 1000));
-                    }, 250);
-                    setStage('recording');
-                  } catch {
-                    setError('No se pudo reiniciar la grabación.');
-                  }
-                })();
-              }, 0);
-            }}
-            onCancel={close}
-            saving={false}
-          />
-        ) : stage === 'saving' && preview ? (
-          <PreviewView
-            preview={preview}
-            transcript={transcript}
-            onChange={setPreview}
-            onSave={handleSave}
-            onRetry={() => {
-              /* disabled while saving */
-            }}
-            onCancel={close}
-            saving
-          />
+        {(stage === 'preview' || stage === 'saving') && preview ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-3)' }}>
+            <h2
+              style={{
+                margin: 0,
+                fontFamily: 'var(--ag-font-display)',
+                fontSize: 22,
+                fontWeight: 500,
+                color: 'var(--ag-ink-primary)',
+              }}
+            >
+              Confirmar captura
+            </h2>
+
+            {transcript ? (
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: 'var(--ag-font-display)',
+                  fontStyle: 'italic',
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: 'var(--ag-ink-hint)',
+                }}
+              >
+                “{transcript}”
+              </p>
+            ) : null}
+
+            <ActivityQuickAdd
+              projects={projects}
+              defaultDateISO={todayDate}
+              onCreate={handleSubmit}
+              onCancel={close}
+              submitLabel={stage === 'saving' ? 'Guardando…' : 'Guardar →'}
+              initialDraft={{
+                title: preview.title,
+                projectId: preview.projectId ?? undefined,
+                dateISO: preview.dateISO,
+                priority: preview.priority,
+                scheduledTime: preview.scheduledTime ?? undefined,
+                deadline: preview.deadline ?? undefined,
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={handleRetry}
+              disabled={stage === 'saving'}
+              style={{
+                appearance: 'none',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--ag-ink-hint)',
+                fontFamily: 'var(--ag-font-body)',
+                fontSize: 13,
+                cursor: stage === 'saving' ? 'not-allowed' : 'pointer',
+                alignSelf: 'center',
+                padding: 8,
+              }}
+            >
+              ← Regrabar
+            </button>
+          </div>
         ) : (
           <RecordingView
             stage={stage}
@@ -546,195 +589,6 @@ function RecordingView({
   );
 }
 
-function PreviewView({
-  preview,
-  transcript,
-  onChange,
-  onSave,
-  onRetry,
-  onCancel,
-  saving,
-}: {
-  preview: Preview;
-  transcript: string;
-  onChange: (p: Preview) => void;
-  onSave: () => void;
-  onRetry: () => void;
-  onCancel: () => void;
-  saving: boolean;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-4)' }}>
-      <h2
-        style={{
-          margin: 0,
-          fontFamily: 'var(--ag-font-display)',
-          fontSize: 22,
-          fontWeight: 500,
-          color: 'var(--ag-ink-primary)',
-        }}
-      >
-        Confirmar captura
-      </h2>
-
-      {transcript ? (
-        <p
-          style={{
-            margin: 0,
-            fontFamily: 'var(--ag-font-display)',
-            fontStyle: 'italic',
-            fontSize: 13,
-            lineHeight: 1.5,
-            color: 'var(--ag-ink-hint)',
-          }}
-        >
-          “{transcript}”
-        </p>
-      ) : null}
-
-      <Field label="Título">
-        <input
-          value={preview.title}
-          onChange={(e) => onChange({ ...preview, title: e.target.value })}
-          disabled={saving}
-          style={textInput}
-        />
-      </Field>
-
-      <Field label="Proyecto">
-        <span
-          style={{
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 15,
-            color: preview.project_name_match ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
-            paddingBlock: 6,
-            borderBottom: '1px solid var(--ag-rule)',
-            fontStyle: preview.project_name_match ? 'normal' : 'italic',
-          }}
-        >
-          {preview.project_name_match ?? 'Inbox (sin match)'}
-        </span>
-      </Field>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--ag-space-3)' }}>
-        <Field label="Fecha">
-          <input
-            type="date"
-            value={preview.scheduled_date ?? ''}
-            onChange={(e) => onChange({ ...preview, scheduled_date: e.target.value || null })}
-            disabled={saving}
-            style={textInput}
-          />
-        </Field>
-        <Field label="Hora">
-          <input
-            type="time"
-            value={preview.scheduled_time ?? ''}
-            onChange={(e) => onChange({ ...preview, scheduled_time: e.target.value || null })}
-            disabled={saving}
-            style={textInput}
-          />
-        </Field>
-      </div>
-
-      <Field label="Prioridad">
-        <button
-          type="button"
-          onClick={() =>
-            onChange({
-              ...preview,
-              priority: preview.priority === 5 ? 1 : preview.priority + 1,
-            })
-          }
-          disabled={saving}
-          aria-label={`Prioridad ${preview.priority} de 5`}
-          style={{
-            appearance: 'none',
-            background: 'transparent',
-            border: '1px solid var(--ag-rule)',
-            borderRadius: 'var(--ag-radius-pill)',
-            padding: '6px 12px',
-            cursor: saving ? 'not-allowed' : 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            alignSelf: 'flex-start',
-          }}
-        >
-          <span
-            style={{ fontFamily: 'var(--ag-font-body)', fontSize: 13, color: 'var(--ag-ink-hint)' }}
-          >
-            P{preview.priority}
-          </span>
-          <PriorityDots priority={preview.priority} />
-        </button>
-      </Field>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: 'var(--ag-space-2)',
-          flexWrap: 'wrap',
-          marginTop: 'var(--ag-space-2)',
-        }}
-      >
-        <button type="button" onClick={onCancel} disabled={saving} style={ghostBtn}>
-          Cancelar
-        </button>
-        <button type="button" onClick={onRetry} disabled={saving} style={ghostBtn}>
-          Regrabar
-        </button>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving || !preview.title.trim()}
-          style={{
-            ...primaryBtn,
-            opacity: saving || !preview.title.trim() ? 0.6 : 1,
-            cursor: saving || !preview.title.trim() ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {saving ? 'Guardando…' : 'Guardar →'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-1)' }}>
-      <span
-        style={{
-          fontFamily: 'var(--ag-font-body)',
-          fontSize: 11,
-          fontWeight: 500,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color: 'var(--ag-slate)',
-        }}
-      >
-        {label}
-      </span>
-      {children}
-    </div>
-  );
-}
-
-const textInput: React.CSSProperties = {
-  appearance: 'none',
-  background: 'transparent',
-  border: 'none',
-  borderBottom: '1px solid var(--ag-rule)',
-  padding: '6px 0',
-  fontFamily: 'var(--ag-font-body)',
-  fontSize: 15,
-  color: 'var(--ag-ink-primary)',
-  outline: 'none',
-  width: '100%',
-};
-
 const ghostBtn: React.CSSProperties = {
   appearance: 'none',
   border: '1px solid var(--ag-rule)',
@@ -746,7 +600,7 @@ const ghostBtn: React.CSSProperties = {
   fontSize: 15,
   cursor: 'pointer',
   flex: 1,
-  minWidth: 90,
+  minWidth: 100,
 };
 
 const primaryBtn: React.CSSProperties = {
@@ -761,7 +615,7 @@ const primaryBtn: React.CSSProperties = {
   fontWeight: 500,
   cursor: 'pointer',
   flex: 1,
-  minWidth: 90,
+  minWidth: 100,
 };
 
 const keyframes = `

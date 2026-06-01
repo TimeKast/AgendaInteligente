@@ -187,6 +187,7 @@
 | /api/invites/validate | `src\app\api\invites\validate\route.ts` |
 | /api/notifications/discord/test | `src\app\api\notifications\discord\test\route.ts` |
 | /api/notifications/poll | `src\app\api\notifications\poll\route.ts` |
+| /api/projects/picker | `src\app\api\projects\picker\route.ts` |
 | /api/push/subscribe | `src\app\api\push\subscribe\route.ts` |
 | /api/voice/transcribe | `src\app\api\voice\transcribe\route.ts` |
 | /serwist/[path] | `src\app\serwist\[path]\route.ts` |
@@ -199,9 +200,9 @@
 |--------|-------|
 | Dependencies | 44 |
 | Page Routes | 48 |
-| API Routes | 23 |
+| API Routes | 24 |
 | Components & Utils | 44 |
-| **Total items** | **159** |
+| **Total items** | **160** |
 
 ---
 
