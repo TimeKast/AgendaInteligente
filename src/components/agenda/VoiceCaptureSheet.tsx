@@ -198,7 +198,20 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
       const res = await fetch('/api/voice/transcribe', { method: 'POST', body: form });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `HTTP ${res.status}`);
+        const code = body.error ?? `HTTP ${res.status}`;
+        if (code === 'not_configured') {
+          throw new Error('Whisper no está configurado en el servidor (falta OPENAI_API_KEY).');
+        }
+        if (code === 'rate_limit_exceeded') {
+          throw new Error('Llegaste al límite de transcripciones por hora.');
+        }
+        if (code === 'payload_too_large') {
+          throw new Error('La grabación es muy larga. Probá con menos de 30 segundos.');
+        }
+        if (code === 'unsupported_media_type') {
+          throw new Error('Tu navegador grabó en un formato no soportado.');
+        }
+        throw new Error(code);
       }
       const data = (await res.json()) as { text: string };
       text = (data.text ?? '').trim();
@@ -225,7 +238,14 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `HTTP ${res.status}`);
+        const code = body.error ?? `HTTP ${res.status}`;
+        if (code === 'rate_limit_exceeded') {
+          throw new Error('Llegaste al límite de interpretaciones por hora.');
+        }
+        if (code === 'upstream_failed') {
+          throw new Error('Claude no respondió. Probá de nuevo.');
+        }
+        throw new Error(code);
       }
       const data = (await res.json()) as { preview: Record<string, unknown> };
       const p = data.preview;

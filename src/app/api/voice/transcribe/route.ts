@@ -18,6 +18,7 @@
 
 import { auth } from '@/lib/auth/auth';
 import { logger } from '@/lib/logger';
+import { isOpenAIConfigured } from '@/lib/env';
 import { checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
 import { transcribeAudio } from '@/lib/integrations/voice/whisper';
 import { recordVoiceUsage } from '@/lib/integrations/voice/meter';
@@ -49,6 +50,12 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const userId = session.user.id;
+
+  // Fail fast with a specific error when the Whisper key isn't set —
+  // surfaces a clear hint to the operator instead of "upstream_failed".
+  if (!isOpenAIConfigured()) {
+    return Response.json({ error: 'not_configured' }, { status: 503 });
+  }
 
   // Rate limit keyed on the user id (cross-device / cross-IP friendly).
   const rl = await checkRateLimit(userId, 'voiceTranscribe');
