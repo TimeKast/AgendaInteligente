@@ -409,6 +409,7 @@
 | `src\lib\db\helpers\can-hard-delete.ts` | — | — |
 | `src\lib\db\helpers\soft-delete.ts` | — | — |
 | `src\lib\db\queries\activity-detail.ts` | — | — |
+| `src\lib\db\queries\busy-slots.ts` | — | — |
 | `src\lib\db\queries\catalog.ts` | — | — |
 | `src\lib\db\queries\category-detail.ts` | — | — |
 | `src\lib\db\queries\goals.ts` | — | — |
@@ -548,10 +549,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 488 |
+| Total files analyzed | 489 |
 | Total connections | 189 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 326 |
+| Orphan files (no connections) | 327 |
 
 ---
 

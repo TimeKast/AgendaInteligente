@@ -55,6 +55,12 @@ interface PoolActivityInput {
   deadline?: string;
   progressPercent?: number;
 }
+interface ExternalEventInput {
+  id: string;
+  hour: string;
+  title: string;
+  timeRange: string;
+}
 
 export interface TodayClientProps {
   /** YYYY-MM-DD for the user's local "today". Server-resolved. */
@@ -72,6 +78,8 @@ export interface TodayClientProps {
   initialScheduled: ScheduledActivityInput[];
   /** Real activities pooled (today-unscheduled, week, backlog). */
   initialPool: PoolActivityInput[];
+  /** External calendar busy slots overlapping today (Google sync). */
+  externalEvents: ExternalEventInput[];
 }
 
 export function TodayClient({
@@ -81,6 +89,7 @@ export function TodayClient({
   todayActivities,
   initialScheduled,
   initialPool,
+  externalEvents,
 }: TodayClientProps) {
   const [view, setView] = useState<TodayView>('fecha');
   const [closeOpen, setCloseOpen] = useState(false);
@@ -243,6 +252,7 @@ export function TodayClient({
           morningSection={<DaySheetMorningSection />}
           initialScheduled={initialScheduled}
           initialPool={initialPool}
+          initialExternalEvents={externalEvents}
           onCreatePersist={handleCreatePersist}
           onTransitionPersist={handleTransitionPersist}
           onMovePersist={handleMovePersist}

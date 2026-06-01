@@ -16,6 +16,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { listActivities } from '@/lib/actions/activity';
 import { loadTodayUserProfile, loadProjectLabelMap } from '@/lib/db/queries/today';
+import { loadTodaysBusySlots } from '@/lib/db/queries/busy-slots';
 import { todayInTimezone, todayLabelEs, userInitial } from '@/lib/domain/day-calc';
 import { TodayClient } from '@/components/agenda/TodayClient';
 import type { CloseDayActivityInput } from '@/components/agenda/CloseDayModal';
@@ -131,9 +132,10 @@ export default async function TodayPage() {
   const dateLabel = todayLabelEs(now, profile.timezone);
   const initials = userInitial(profile.name ?? profile.email);
 
-  const [listResult, projectLabelById] = await Promise.all([
+  const [listResult, projectLabelById, externalEvents] = await Promise.all([
     listActivities({ date: todayDate, includeDone: false }),
     loadProjectLabelMap(userId),
+    loadTodaysBusySlots(userId, todayDate, profile.timezone),
   ]);
 
   let todayActivities: CloseDayActivityInput[] = [];
@@ -171,6 +173,7 @@ export default async function TodayPage() {
       todayActivities={todayActivities}
       initialScheduled={initialScheduled}
       initialPool={initialPool}
+      externalEvents={externalEvents}
     />
   );
 }

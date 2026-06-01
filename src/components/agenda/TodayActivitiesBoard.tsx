@@ -330,6 +330,12 @@ interface TodayActivitiesBoardProps {
   initialScheduled?: ScheduledActivity[];
   initialPool?: PoolActivity[];
   /**
+   * External calendar events for today (Google Calendar via the sync
+   * cron). When provided, replaces the prototype's 2 hardcoded mocks.
+   * One entry per HH:00 hour that the event covers.
+   */
+  initialExternalEvents?: ExternalEvent[];
+  /**
    * Persistence hook for drag/move operations. Tagged-union semantics
    * keep the board oblivious to date arithmetic — the parent (which
    * knows the user's TZ-resolved "today") translates to the
@@ -357,12 +363,14 @@ export function TodayActivitiesBoard({
   onTransitionPersist,
   initialScheduled,
   initialPool,
+  initialExternalEvents,
   onMovePersist,
 }: TodayActivitiesBoardProps) {
   const [scheduled, setScheduled] = useState<ScheduledActivity[]>(
     initialScheduled ?? INITIAL_SCHEDULED
   );
   const [pool, setPool] = useState<PoolActivity[]>(initialPool ?? INITIAL_POOL);
+  const externalEvents: ExternalEvent[] = initialExternalEvents ?? EXTERNAL_EVENTS;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [statusModal, setStatusModal] = useState<{
     id: string;
@@ -376,7 +384,7 @@ export function TodayActivitiesBoard({
   );
 
   const blockedHours = useMemo(() => {
-    const set = new Set(EXTERNAL_EVENTS.map((e) => e.hour));
+    const set = new Set(externalEvents.map((e) => e.hour));
     for (const a of scheduled) {
       const startHour = parseHour(a.scheduledTime);
       if (Number.isNaN(startHour)) continue;
@@ -388,7 +396,7 @@ export function TodayActivitiesBoard({
       }
     }
     return set;
-  }, [scheduled]);
+  }, [scheduled, externalEvents]);
 
   const activeActivity = useMemo(() => {
     if (!activeId) return null;
@@ -630,7 +638,7 @@ export function TodayActivitiesBoard({
         // otra activity, o un Google event) ANTES del start. minStartHour es
         // el clamp más temprano permitido.
         let prevOccupiedEnd = 6;
-        for (const e of EXTERNAL_EVENTS) {
+        for (const e of externalEvents) {
           const eh = parseHour(e.hour);
           if (Number.isNaN(eh)) continue;
           if (eh > startHour && eh < nextOccupiedHour) nextOccupiedHour = eh;
@@ -679,7 +687,7 @@ export function TodayActivitiesBoard({
         row
       );
     }
-    for (const evt of EXTERNAL_EVENTS) {
+    for (const evt of externalEvents) {
       const existing = map[evt.hour];
       const block = <ExternalEventRow key={evt.id} title={evt.title} timeRange={evt.timeRange} />;
       map[evt.hour] = existing ? (
@@ -692,7 +700,7 @@ export function TodayActivitiesBoard({
       );
     }
     return map;
-  }, [scheduled, handleResize, handleResizeStart]);
+  }, [scheduled, externalEvents, handleResize, handleResizeStart]);
 
   const isDragging = activeId !== null;
 
