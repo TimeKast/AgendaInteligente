@@ -81,7 +81,11 @@ export function ProjectsClient({ initial, categories }: Props) {
         paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
         display: 'flex',
         flexDirection: 'column',
-        gap: 'var(--ag-space-4)',
+        gap: 'var(--ag-space-5)',
+        // Cap width on huge screens — readability over edge-to-edge.
+        maxWidth: 1200,
+        marginInline: 'auto',
+        width: '100%',
       }}
     >
       {grouped.map(([categoryName, items]) => (
@@ -98,40 +102,85 @@ export function ProjectsClient({ initial, categories }: Props) {
               color: 'var(--ag-slate)',
             }}
           >
-            {categoryName || 'Sin categoría'}
+            {categoryName || 'Sin categoría'}{' '}
+            <span
+              style={{
+                fontFamily: 'var(--ag-font-display)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                letterSpacing: '0.02em',
+                textTransform: 'none',
+                color: 'var(--ag-ink-hint)',
+                marginLeft: 4,
+              }}
+            >
+              · {items.length}
+            </span>
           </h2>
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          {/* Auto-fill grid: 1 col on phones, 2-4 on wider viewports.
+              minmax(220px, 1fr) keeps cards from collapsing too narrow. */}
+          <ul
+            style={{
+              margin: 0,
+              padding: 0,
+              listStyle: 'none',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: 'var(--ag-space-2)',
+            }}
+          >
             {items.map((p) => (
               <li key={p.id}>
                 <Link
                   href={`/projects/${p.id}`}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--ag-space-3)',
+                    flexDirection: 'column',
+                    gap: 6,
                     padding: 'var(--ag-space-3)',
-                    borderBottom: '1px solid var(--ag-rule)',
+                    border: '1px solid var(--ag-rule)',
+                    borderRadius: 'var(--ag-radius-base)',
+                    backgroundColor: 'var(--ag-bg-elevated)',
                     textDecoration: 'none',
                     color: 'var(--ag-ink-primary)',
+                    minHeight: 64,
                   }}
                 >
-                  <Briefcase size={16} strokeWidth={1.5} color="var(--ag-ink-soft)" />
-                  <span
+                  <div
                     style={{
-                      flex: 1,
-                      fontFamily: 'var(--ag-font-body)',
-                      fontSize: 15,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
                     }}
                   >
-                    {p.name}
-                  </span>
+                    <Briefcase size={14} strokeWidth={1.5} color="var(--ag-ink-soft)" />
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontFamily: 'var(--ag-font-body)',
+                        fontSize: 14,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {p.name}
+                    </span>
+                  </div>
                   {p.status !== 'active' && (
                     <span
                       style={{
+                        alignSelf: 'flex-start',
                         fontFamily: 'var(--ag-font-mono)',
-                        fontSize: 11,
+                        fontSize: 10,
                         color: 'var(--ag-ink-hint)',
                         textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        padding: '2px 6px',
+                        border: '1px solid var(--ag-rule)',
+                        borderRadius: 'var(--ag-radius-pill)',
                       }}
                     >
                       {p.status}

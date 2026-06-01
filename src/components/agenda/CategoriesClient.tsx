@@ -66,10 +66,22 @@ export function CategoriesClient({ initial }: Props) {
         paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
         display: 'flex',
         flexDirection: 'column',
-        gap: 'var(--ag-space-2)',
+        gap: 'var(--ag-space-3)',
+        maxWidth: 1200,
+        marginInline: 'auto',
+        width: '100%',
       }}
     >
-      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+      <ul
+        style={{
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gap: 'var(--ag-space-2)',
+        }}
+      >
         {rows.map((c) => (
           <li key={c.id}>
             <Link
@@ -79,9 +91,12 @@ export function CategoriesClient({ initial }: Props) {
                 alignItems: 'center',
                 gap: 'var(--ag-space-3)',
                 padding: 'var(--ag-space-3)',
-                borderBottom: '1px solid var(--ag-rule)',
+                border: '1px solid var(--ag-rule)',
+                borderRadius: 'var(--ag-radius-base)',
+                backgroundColor: 'var(--ag-bg-elevated)',
                 textDecoration: 'none',
                 color: 'var(--ag-ink-primary)',
+                minHeight: 56,
               }}
             >
               {c.isInbox ? (
@@ -94,12 +109,17 @@ export function CategoriesClient({ initial }: Props) {
                     height: 12,
                     borderRadius: 4,
                     backgroundColor: c.color || 'var(--ag-ink-hint)',
+                    flexShrink: 0,
                   }}
                 />
               )}
               <span
                 style={{
                   flex: 1,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                   fontFamily: 'var(--ag-font-body)',
                   fontSize: 15,
                 }}
@@ -113,7 +133,7 @@ export function CategoriesClient({ initial }: Props) {
                   color: 'var(--ag-ink-hint)',
                 }}
               >
-                {c.projectCount} {c.projectCount === 1 ? 'proyecto' : 'proyectos'}
+                {c.projectCount}
               </span>
             </Link>
           </li>
