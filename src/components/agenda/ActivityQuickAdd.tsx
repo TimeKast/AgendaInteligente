@@ -413,12 +413,6 @@ export function ActivityQuickAdd({
           onQueryChange={setProjectQuery}
           onFocusChange={setProjectFocus}
         />
-        <DateSelect
-          choice={dateChoice}
-          customDate={customDate}
-          onChoiceChange={setDateChoice}
-          onCustomDateChange={setCustomDate}
-        />
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <PriorityStepper value={priority} onChange={setPriority} />
         </div>
@@ -482,15 +476,32 @@ export function ActivityQuickAdd({
             label="Programar"
             hint="Cuándo planeás trabajarla"
           >
-            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
-              <span style={fieldRowLabel}>Hora</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--ag-space-2)',
+                flexWrap: 'wrap',
+              }}
+            >
+              <DateSelect
+                choice={dateChoice}
+                customDate={customDate}
+                onChoiceChange={setDateChoice}
+                onCustomDateChange={setCustomDate}
+              />
               <input
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
-                style={fieldInputStyle()}
+                disabled={dateChoice === 'none'}
+                aria-label="Hora programada"
+                style={{
+                  ...fieldInputStyle(!!scheduledTime),
+                  opacity: dateChoice === 'none' ? 0.5 : 1,
+                }}
               />
-            </label>
+            </div>
           </FieldGroup>
 
           {/* ── Fecha límite — cuándo vence ───────────────────────── */}
@@ -756,30 +767,12 @@ function DateSelect({
   onCustomDateChange: (d: string) => void;
 }) {
   return (
-    <span
-      title="Programar — cuándo planeás trabajarla"
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        flexWrap: 'wrap',
-        padding: '0 6px 0 0',
-        border: '1px solid var(--ag-rule)',
-        borderRadius: 'var(--ag-radius-pill)',
-        backgroundColor: 'var(--ag-bg)',
-      }}
-    >
-      <CalendarCheck
-        size={12}
-        strokeWidth={1.6}
-        aria-hidden
-        style={{ color: 'var(--ag-ink-hint)', marginLeft: 8 }}
-      />
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
       <select
         value={choice}
         onChange={(e) => onChoiceChange(e.target.value as DateChoice)}
         aria-label="Programar para"
-        style={{ ...pillSelectStyle, border: 'none', padding: '4px 4px 4px 2px' }}
+        style={pillSelectStyle}
       >
         <option value="today">Hoy</option>
         <option value="tomorrow">Mañana</option>
@@ -881,13 +874,6 @@ function FieldGroup({
     </div>
   );
 }
-
-const fieldRowLabel: React.CSSProperties = {
-  fontFamily: 'var(--ag-font-body)',
-  fontSize: 13,
-  color: 'var(--ag-ink-hint)',
-  minWidth: 56,
-};
 
 function fieldInputStyle(hasValue: boolean = true): React.CSSProperties {
   return {
