@@ -309,7 +309,11 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
       scheduledTime: draft.scheduledTime ? `${draft.scheduledTime}:00` : null,
       scheduledDates: draft.dateISO ? [draft.dateISO] : [],
       recurrenceRule: draft.recurrenceRule ?? null,
-      deadline: draft.deadline ? new Date(`${draft.deadline}T23:59:59`).toISOString() : null,
+      deadline: draft.deadline
+        ? new Date(
+            draft.deadline.includes('T') ? `${draft.deadline}:00` : `${draft.deadline}T23:59:59`
+          ).toISOString()
+        : null,
     });
     if (result.error) {
       toast.error(`No se pudo guardar: ${result.error}`);

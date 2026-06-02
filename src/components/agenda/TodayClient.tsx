@@ -119,7 +119,11 @@ export function TodayClient({
         scheduledDates: draft.dateISO ? [draft.dateISO] : [],
         // RecurrenceRule is already a string in the DSL the schema accepts.
         recurrenceRule: draft.recurrenceRule ?? null,
-        deadline: draft.deadline ? new Date(`${draft.deadline}T23:59:59`).toISOString() : null,
+        deadline: draft.deadline
+          ? new Date(
+              draft.deadline.includes('T') ? `${draft.deadline}:00` : `${draft.deadline}T23:59:59`
+            ).toISOString()
+          : null,
       });
       if (result.error) {
         setToast(`No se pudo guardar: ${result.error}`);

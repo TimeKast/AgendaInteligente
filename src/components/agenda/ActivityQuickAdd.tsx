@@ -23,6 +23,9 @@ export interface QuickAddProject {
   id: string;
   name: string;
   isInbox: boolean;
+  /** Owning category — drives the cascade category → project picker. */
+  categoryId: string;
+  categoryName: string;
 }
 
 export interface QuickAddDraft {
@@ -114,6 +117,23 @@ export function ActivityQuickAdd({
     return sortedProjects.find((p) => p.isInbox)?.id ?? sortedProjects[0]?.id ?? '';
   }, [sortedProjects]);
 
+  /** Distinct categories derived from the project list, sorted Inbox first. */
+  const categories = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string; hasInbox: boolean }>();
+    for (const p of sortedProjects) {
+      if (!seen.has(p.categoryId)) {
+        seen.set(p.categoryId, { id: p.categoryId, name: p.categoryName, hasInbox: p.isInbox });
+      } else if (p.isInbox) {
+        seen.get(p.categoryId)!.hasInbox = true;
+      }
+    }
+    return Array.from(seen.values()).sort((a, b) => {
+      if (a.hasInbox && !b.hasInbox) return -1;
+      if (!a.hasInbox && b.hasInbox) return 1;
+      return a.name.localeCompare(b.name, 'es');
+    });
+  }, [sortedProjects]);
+
   // Map an initialDraft's dateISO to (choice, customDate). Anything that
   // isn't exactly today or tomorrow becomes a custom date so the picker
   // shows the actual value.
@@ -129,10 +149,30 @@ export function ActivityQuickAdd({
     return { choice: 'custom', custom: initialDraft.dateISO };
   }, [initialDraft, defaultDateISO]);
 
+  // Split an incoming deadline (YYYY-MM-DD or YYYY-MM-DDTHH:mm) into the
+  // two inputs the form exposes.
+  const initialDeadlineState = useMemo<{ date: string; time: string }>(() => {
+    const raw = initialDraft?.deadline ?? '';
+    if (!raw) return { date: '', time: '' };
+    if (raw.includes('T')) {
+      const [d, t] = raw.split('T');
+      return { date: d ?? '', time: (t ?? '').slice(0, 5) };
+    }
+    return { date: raw, time: '' };
+  }, [initialDraft?.deadline]);
+
   const modal = initialDraft !== undefined;
   const [open, setOpen] = useState(modal);
   const [title, setTitle] = useState(initialDraft?.title ?? '');
-  const [projectId, setProjectId] = useState(initialDraft?.projectId ?? defaultProjectId);
+  // Stored user intent — actual displayed projectId/categoryId are derived
+  // via useMemo below so they stay valid when the projects list mutates
+  // (e.g. fetched after modal mount).
+  const [pickedProjectId, setPickedProjectId] = useState<string | null>(
+    initialDraft?.projectId ?? null
+  );
+  const [pickedCategoryId, setPickedCategoryId] = useState<string | null>(null);
+  const [projectQuery, setProjectQuery] = useState('');
+  const [projectFocus, setProjectFocus] = useState(false);
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDateState.choice);
   const [customDate, setCustomDate] = useState(initialDateState.custom);
   const [priority, setPriority] = useState(initialDraft?.priority ?? 3);
@@ -147,15 +187,37 @@ export function ActivityQuickAdd({
   );
   const [description, setDescription] = useState(initialDraft?.description ?? '');
   const [scheduledTime, setScheduledTime] = useState(initialDraft?.scheduledTime ?? '');
-  const [deadline, setDeadline] = useState(initialDraft?.deadline ?? '');
+  const [deadline, setDeadline] = useState(initialDeadlineState.date);
+  const [deadlineTime, setDeadlineTime] = useState(initialDeadlineState.time);
   const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule>(
     initialDraft?.recurrenceRule ?? null
   );
   const titleRef = useRef<HTMLInputElement>(null);
 
+  // Resolved projectId — the picked one if still valid, else fall back to
+  // Inbox (or first available). Re-derives whenever projects load late.
+  const projectId = useMemo(() => {
+    if (pickedProjectId && sortedProjects.some((p) => p.id === pickedProjectId)) {
+      return pickedProjectId;
+    }
+    return defaultProjectId;
+  }, [pickedProjectId, sortedProjects, defaultProjectId]);
+
+  // Resolved categoryId — explicit pick if still valid, else derived from
+  // the resolved projectId's owning category.
+  const categoryId = useMemo(() => {
+    if (pickedCategoryId && sortedProjects.some((p) => p.categoryId === pickedCategoryId)) {
+      return pickedCategoryId;
+    }
+    return sortedProjects.find((p) => p.id === projectId)?.categoryId ?? '';
+  }, [pickedCategoryId, projectId, sortedProjects]);
+
   function reset() {
     setTitle('');
-    setProjectId(defaultProjectId);
+    setPickedProjectId(null);
+    setPickedCategoryId(null);
+    setProjectQuery('');
+    setProjectFocus(false);
     setDateChoice('today');
     setCustomDate(defaultDateISO);
     setPriority(3);
@@ -163,6 +225,7 @@ export function ActivityQuickAdd({
     setDescription('');
     setScheduledTime('');
     setDeadline('');
+    setDeadlineTime('');
     setRecurrenceRule(null);
   }
 
@@ -197,6 +260,14 @@ export function ActivityQuickAdd({
       return;
     }
     const projectLabel = sortedProjects.find((p) => p.id === projectId)?.name ?? '';
+    // Compose the deadline: date alone, or date + time when both are set.
+    const deadlineDate = deadline.trim();
+    const deadlineHm = deadlineTime.trim();
+    const deadlineOut = deadlineDate
+      ? deadlineHm
+        ? `${deadlineDate}T${deadlineHm}`
+        : deadlineDate
+      : undefined;
     onCreate({
       title: trimmed,
       projectId,
@@ -205,7 +276,7 @@ export function ActivityQuickAdd({
       priority,
       description: description.trim() || undefined,
       scheduledTime: scheduledTime.trim() || undefined,
-      deadline: deadline.trim() || undefined,
+      deadline: deadlineOut,
       recurrenceRule: recurrenceRule,
     });
     if (modal) {
@@ -313,7 +384,29 @@ export function ActivityQuickAdd({
           gap: 'var(--ag-space-2)',
         }}
       >
-        <ProjectSelect value={projectId} onChange={setProjectId} projects={sortedProjects} />
+        <CategoryProjectPicker
+          projects={sortedProjects}
+          categories={categories}
+          categoryId={categoryId}
+          projectId={projectId}
+          query={projectQuery}
+          focused={projectFocus}
+          onCategoryChange={(nextCat) => {
+            setPickedCategoryId(nextCat);
+            // Auto-pick the first (or inbox) project of the new category.
+            const inCat = sortedProjects.filter((p) => p.categoryId === nextCat);
+            const next = inCat.find((p) => p.isInbox)?.id ?? inCat[0]?.id ?? '';
+            if (next) setPickedProjectId(next);
+            setProjectQuery('');
+          }}
+          onProjectChange={(nextProj) => {
+            setPickedProjectId(nextProj);
+            setProjectQuery('');
+            setProjectFocus(false);
+          }}
+          onQueryChange={setProjectQuery}
+          onFocusChange={setProjectFocus}
+        />
         <DateSelect
           choice={dateChoice}
           customDate={customDate}
@@ -404,7 +497,7 @@ export function ActivityQuickAdd({
               }}
             />
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
             <span
               style={{
                 fontFamily: 'var(--ag-font-body)',
@@ -419,7 +512,7 @@ export function ActivityQuickAdd({
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              placeholder="Sin deadline"
+              aria-label="Fecha del deadline"
               style={{
                 appearance: 'none',
                 backgroundColor: 'transparent',
@@ -431,9 +524,30 @@ export function ActivityQuickAdd({
                 color: deadline ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
                 fontStyle: deadline ? 'normal' : 'italic',
                 outline: 'none',
+                minWidth: 0,
               }}
             />
-          </label>
+            <input
+              type="time"
+              value={deadlineTime}
+              onChange={(e) => setDeadlineTime(e.target.value)}
+              disabled={!deadline}
+              aria-label="Hora del deadline"
+              style={{
+                appearance: 'none',
+                backgroundColor: 'transparent',
+                border: '1px solid var(--ag-rule)',
+                borderRadius: 'var(--ag-radius-base)',
+                padding: '6px 10px',
+                fontFamily: 'var(--ag-font-mono)',
+                fontSize: 14,
+                color: deadlineTime ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
+                outline: 'none',
+                opacity: deadline ? 1 : 0.5,
+                minWidth: 0,
+              }}
+            />
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-2)' }}>
             <span
               style={{
@@ -494,33 +608,167 @@ export function ActivityQuickAdd({
   );
 }
 
-function ProjectSelect({
-  value,
-  onChange,
+/**
+ * Simple fuzzy score — substring/prefix/equal/sequence — sufficient for
+ * Inbox-class project lists (10–500 items). No external dep.
+ */
+function fuzzyScore(text: string, query: string): number {
+  if (!query) return 1;
+  const t = text.toLowerCase();
+  const q = query.toLowerCase();
+  if (t === q) return 100;
+  if (t.startsWith(q)) return 50;
+  if (t.includes(q)) return 25;
+  // Sequence match — every char of q appears in t in order.
+  let i = 0;
+  let j = 0;
+  while (i < t.length && j < q.length) {
+    if (t[i] === q[j]) j++;
+    i++;
+  }
+  return j === q.length ? 5 : 0;
+}
+
+function CategoryProjectPicker({
   projects,
+  categories,
+  categoryId,
+  projectId,
+  query,
+  focused,
+  onCategoryChange,
+  onProjectChange,
+  onQueryChange,
+  onFocusChange,
 }: {
-  value: string;
-  onChange: (v: string) => void;
   projects: QuickAddProject[];
+  categories: Array<{ id: string; name: string; hasInbox: boolean }>;
+  categoryId: string;
+  projectId: string;
+  query: string;
+  focused: boolean;
+  onCategoryChange: (id: string) => void;
+  onProjectChange: (id: string) => void;
+  onQueryChange: (q: string) => void;
+  onFocusChange: (b: boolean) => void;
 }) {
+  const projectsInCategory = useMemo(
+    () => projects.filter((p) => p.categoryId === categoryId),
+    [projects, categoryId]
+  );
+
+  const filtered = useMemo(() => {
+    const scored = projectsInCategory
+      .map((p) => ({ p, s: fuzzyScore(p.name, query.trim()) }))
+      .filter((x) => x.s > 0);
+    scored.sort((a, b) => b.s - a.s || a.p.name.localeCompare(b.p.name, 'es'));
+    return scored.slice(0, 8).map((x) => x.p);
+  }, [projectsInCategory, query]);
+
+  const selected = projects.find((p) => p.id === projectId);
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      aria-label="Proyecto"
-      style={pillSelectStyle}
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        flexWrap: 'wrap',
+        position: 'relative',
+      }}
     >
-      {projects.length === 0 ? (
-        <option value="" disabled>
-          Sin proyectos
-        </option>
-      ) : null}
-      {projects.map((p) => (
-        <option key={p.id} value={p.id}>
-          {p.name}
-        </option>
-      ))}
-    </select>
+      <select
+        value={categoryId}
+        onChange={(e) => onCategoryChange(e.target.value)}
+        aria-label="Categoría"
+        style={pillSelectStyle}
+      >
+        {categories.length === 0 ? (
+          <option value="" disabled>
+            Sin categorías
+          </option>
+        ) : null}
+        {categories.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+
+      <span style={{ position: 'relative' }}>
+        <input
+          type="text"
+          value={focused ? query : (selected?.name ?? '')}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onFocus={() => {
+            onFocusChange(true);
+            onQueryChange('');
+          }}
+          onBlur={() => {
+            // Delay so click on a dropdown item registers before blur closes it.
+            window.setTimeout(() => onFocusChange(false), 150);
+          }}
+          placeholder={projectsInCategory.length === 0 ? 'Sin proyectos' : 'Proyecto…'}
+          disabled={projectsInCategory.length === 0}
+          aria-label="Proyecto"
+          style={{
+            ...pillSelectStyle,
+            minWidth: 140,
+            // Visible cue when input is the "selected" display (not focused).
+            color: selected || focused ? 'var(--ag-ink-soft)' : 'var(--ag-ink-hint)',
+          }}
+        />
+        {focused && filtered.length > 0 ? (
+          <ul
+            role="listbox"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 4px)',
+              left: 0,
+              right: 0,
+              zIndex: 70,
+              listStyle: 'none',
+              margin: 0,
+              padding: 4,
+              backgroundColor: 'var(--ag-bg-elevated)',
+              border: '1px solid var(--ag-rule)',
+              borderRadius: 'var(--ag-radius-base)',
+              boxShadow: '0 4px 12px rgba(42, 40, 38, 0.12)',
+              maxHeight: 240,
+              overflowY: 'auto',
+              minWidth: 180,
+            }}
+          >
+            {filtered.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={p.id === projectId}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => onProjectChange(p.id)}
+                  style={{
+                    appearance: 'none',
+                    background: p.id === projectId ? 'var(--ag-bg-sunken)' : 'transparent',
+                    border: 'none',
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '6px 10px',
+                    borderRadius: 'var(--ag-radius-base)',
+                    fontFamily: 'var(--ag-font-body)',
+                    fontSize: 13,
+                    color: 'var(--ag-ink-primary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {p.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </span>
+    </span>
   );
 }
 

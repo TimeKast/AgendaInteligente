@@ -161,7 +161,9 @@ export function TasksClient({ initialTasks, todayDate, projects }: TasksClientPr
       priority: draft.priority,
       scheduledTime: draft.scheduledTime,
       scheduledDate,
-      deadline: draft.deadline,
+      // Strip optional time fragment for the optimistic row — Task.deadline
+      // is YYYY-MM-DD in the rendering layer. Real ISO lands on revalidate.
+      deadline: draft.deadline ? draft.deadline.slice(0, 10) : undefined,
       recurrenceRule: draft.recurrenceRule ?? null,
     };
     setTasks((items) => [optimistic, ...items]);
@@ -174,7 +176,11 @@ export function TasksClient({ initialTasks, todayDate, projects }: TasksClientPr
         scheduledTime: draft.scheduledTime ? `${draft.scheduledTime}:00` : null,
         scheduledDates: scheduledDate ? [scheduledDate] : [],
         recurrenceRule: draft.recurrenceRule ?? null,
-        deadline: draft.deadline ? new Date(`${draft.deadline}T23:59:59`).toISOString() : null,
+        deadline: draft.deadline
+          ? new Date(
+              draft.deadline.includes('T') ? `${draft.deadline}:00` : `${draft.deadline}T23:59:59`
+            ).toISOString()
+          : null,
       });
       if (result.error) {
         toast.error(`No se pudo guardar: ${result.error}`);

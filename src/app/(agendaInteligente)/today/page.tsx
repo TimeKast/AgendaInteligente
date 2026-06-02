@@ -144,6 +144,8 @@ export default async function TodayPage() {
     id: p.id,
     name: p.name,
     isInbox: p.isInbox,
+    categoryId: p.categoryId,
+    categoryName: p.categoryName,
   }));
 
   let todayActivities: CloseDayActivityInput[] = [];

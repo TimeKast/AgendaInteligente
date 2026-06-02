@@ -18,6 +18,12 @@ export async function GET(): Promise<Response> {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const rows = await listProjects(session.user.id);
-  const projects = rows.map((p) => ({ id: p.id, name: p.name, isInbox: p.isInbox }));
+  const projects = rows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    isInbox: p.isInbox,
+    categoryId: p.categoryId,
+    categoryName: p.categoryName,
+  }));
   return Response.json({ projects });
 }

@@ -43,6 +43,8 @@ export default async function TasksPage() {
     id: p.id,
     name: p.name,
     isInbox: p.isInbox,
+    categoryId: p.categoryId,
+    categoryName: p.categoryName,
   }));
 
   const initialTasks: Task[] = [];
