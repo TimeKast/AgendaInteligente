@@ -531,12 +531,14 @@
 | `src\lib\validations\admin\user-admin.ts` | — | — |
 | `src\lib\validations\category.ts` | — | — |
 | `src\lib\validations\chat.ts` | — | — |
+| `src\lib\validations\close-day.ts` | — | — |
 | `src\lib\validations\conversation.ts` | — | — |
 | `src\lib\validations\day-sheet.ts` | — | — |
 | `src\lib\validations\goal-link.ts` | — | — |
 | `src\lib\validations\goal.ts` | — | — |
 | `src\lib\validations\intensity.ts` | — | — |
 | `src\lib\validations\month-sheet.ts` | — | — |
+| `src\lib\validations\notification-prefs.ts` | — | — |
 | `src\lib\validations\onboarding.ts` | — | — |
 | `src\lib\validations\profile.ts` | — | — |
 | `src\lib\validations\project.ts` | — | — |
@@ -550,10 +552,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 490 |
+| Total files analyzed | 492 |
 | Total connections | 190 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 328 |
+| Orphan files (no connections) | 330 |
 
 ---
 

@@ -16,30 +16,13 @@
  * Linked: FT-085, US-085 (notification schedule), AI-1 contact channels.
  */
 
-import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { users } from '@/lib/db/schema/users';
 import { notificationPrefs } from '@/lib/db/schema/notification-prefs';
 import { withSelf } from '@/lib/actions/helpers';
 import type { ActionResult } from '@/lib/actions/types';
-
-const hhmm = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Hora inválida (HH:mm)');
-const dow = z.number().int().min(0).max(6);
-
-export const updateNotificationPrefsSchema = z.object({
-  morningTime: hhmm.optional(),
-  middayTime: hhmm.optional(),
-  eveningTime: hhmm.optional(),
-  weeklyKickoffDow: dow.optional(),
-  weeklyKickoffTime: hhmm.optional(),
-  weeklyReviewDow: dow.optional(),
-  weeklyReviewTime: hhmm.optional(),
-  weekendSkip: z.boolean().optional(),
-  pushEnabled: z.boolean().optional(),
-  emailEnabled: z.boolean().optional(),
-  contactChannels: z.array(z.enum(['email', 'discord', 'whatsapp'])).optional(),
-});
+import { updateNotificationPrefsSchema } from '@/lib/validations/notification-prefs';
 
 export async function updateNotificationPrefs(input: unknown): Promise<ActionResult> {
   return await withSelf(

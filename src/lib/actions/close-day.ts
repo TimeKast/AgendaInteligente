@@ -20,42 +20,11 @@
  * Linked: ISSUE-031, BR-7, BR-8, BR-17.
  */
 
-import { z } from 'zod';
 import { withSelf } from '@/lib/actions/helpers';
 import type { ActionResult } from '@/lib/actions/types';
 import { transitionActivity, updateActivity } from '@/lib/actions/activity';
 import { updateDaySheet } from '@/lib/actions/day-sheet';
-
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida (YYYY-MM-DD)');
-
-const closeDayActivitySchema = z.object({
-  id: z.string().uuid(),
-  outcome: z.enum(['done', 'partial', 'missed']),
-  /** 0-100. Only meaningful when outcome === 'partial'. */
-  partialPct: z.number().int().min(0).max(100).optional(),
-  /**
-   * Only meaningful when outcome === 'done'. True = the activity is
-   * also fully closed (no more iterations) — informational; we don't
-   * yet have a `closed` column, so this is forwarded to telemetry
-   * (future ISSUE) and ignored at the DB layer.
-   */
-  closed: z.boolean().optional(),
-});
-
-export const closeDaySchema = z.object({
-  date: isoDate,
-  activities: z.array(closeDayActivitySchema).max(200),
-  oneLine: z.string().trim().max(500).default(''),
-});
-
-export type CloseDayInput = z.infer<typeof closeDaySchema>;
-
-export interface CloseDayResult {
-  daySheetId: string;
-  transitioned: number;
-  /** Non-fatal failures per activity, surfaced to the UI but non-blocking. */
-  partialErrors: Array<{ activityId: string; error: string }>;
-}
+import { closeDaySchema, type CloseDayResult } from '@/lib/validations/close-day';
 
 export async function closeDay(input: unknown): Promise<ActionResult<CloseDayResult>> {
   return await withSelf({ schema: closeDaySchema, revalidate: '/today' }, input, async (data) => {
