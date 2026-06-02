@@ -14,12 +14,15 @@
 import { and, eq, gte, lt } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { calendarBusySlots } from '@/lib/db/schema/calendar-busy-slots';
+import { calendarConnections } from '@/lib/db/schema/calendar-connections';
 
 export interface ExternalEventForBoard {
   id: string;
   hour: string; // HH:00 in user TZ
   title: string;
   timeRange: string; // "10:00 – 11:00"
+  /** Human-readable source label, e.g. account_label or calendar_id. */
+  source: string;
 }
 
 const CALENDAR_START_HOUR = 6;
@@ -73,11 +76,15 @@ export async function loadTodaysBusySlots(
   const rows = await db
     .select({
       id: calendarBusySlots.id,
+      calendarId: calendarBusySlots.calendarId,
       startAt: calendarBusySlots.startAt,
       endAt: calendarBusySlots.endAt,
       eventTitle: calendarBusySlots.eventTitle,
+      accountLabel: calendarConnections.accountLabel,
+      externalAccountId: calendarConnections.externalAccountId,
     })
     .from(calendarBusySlots)
+    .innerJoin(calendarConnections, eq(calendarConnections.id, calendarBusySlots.connectionId))
     .where(
       and(
         eq(calendarBusySlots.userId, userId),
@@ -87,8 +94,22 @@ export async function loadTodaysBusySlots(
     );
 
   void dayStartLocal;
-  const out: ExternalEventForBoard[] = [];
+
+  // Defensive dedupe against the historical sync-duplicates bug (fixed in
+  // src/lib/integrations/calendar/sync.ts but old rows linger until the next
+  // sync). Group by (calendar_id, end_at) — the same event in different
+  // sync stages — keep the earliest startAt (the truest representation).
+  const dedup = new Map<string, (typeof rows)[number]>();
   for (const r of rows) {
+    const key = `${r.calendarId}|${r.endAt.getTime()}`;
+    const existing = dedup.get(key);
+    if (!existing || r.startAt.getTime() < existing.startAt.getTime()) {
+      dedup.set(key, r);
+    }
+  }
+
+  const out: ExternalEventForBoard[] = [];
+  for (const r of dedup.values()) {
     // Check this slot falls on `todayDate` in the user's TZ.
     const startLocalDate = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone,
@@ -106,6 +127,7 @@ export async function loadTodaysBusySlots(
 
     const title = (r.eventTitle ?? 'Bloqueado').slice(0, 60);
     const rangeStr = fmtRange(r.startAt, r.endAt, timezone);
+    const source = r.accountLabel || r.externalAccountId || r.calendarId;
 
     for (let h = startHour; h < endHourEffective; h++) {
       if (h < CALENDAR_START_HOUR || h > CALENDAR_END_HOUR) continue;
@@ -114,6 +136,7 @@ export async function loadTodaysBusySlots(
         hour: `${h.toString().padStart(2, '0')}:00`,
         title,
         timeRange: rangeStr,
+        source,
       });
     }
   }

@@ -64,6 +64,7 @@ interface ExternalEventInput {
   hour: string;
   title: string;
   timeRange: string;
+  source: string;
 }
 
 export interface TodayClientProps {

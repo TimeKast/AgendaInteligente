@@ -110,6 +110,8 @@ interface ExternalEvent {
   hour: string; // "HH:00"
   title: string;
   timeRange: string; // "10:00 – 11:00"
+  /** Calendar source label — account label or calendar id. */
+  source: string;
 }
 
 const INITIAL_SCHEDULED: ScheduledActivity[] = [
@@ -277,8 +279,20 @@ const INITIAL_POOL: PoolActivity[] = [
 ];
 
 const EXTERNAL_EVENTS: ExternalEvent[] = [
-  { id: 'gc-1', hour: '10:00', title: 'Reunión clientes', timeRange: '10:00 – 11:00' },
-  { id: 'gc-2', hour: '14:00', title: 'Llamada Juan', timeRange: '14:00 – 15:00' },
+  {
+    id: 'gc-1',
+    hour: '10:00',
+    title: 'Reunión clientes',
+    timeRange: '10:00 – 11:00',
+    source: 'Google',
+  },
+  {
+    id: 'gc-2',
+    hour: '14:00',
+    title: 'Llamada Juan',
+    timeRange: '14:00 – 15:00',
+    source: 'Google',
+  },
 ];
 
 const DROP_POOL_TODAY = 'pool:today';
@@ -710,7 +724,14 @@ export function TodayActivitiesBoard({
     }
     for (const evt of externalEvents) {
       const existing = map[evt.hour];
-      const block = <ExternalEventRow key={evt.id} title={evt.title} timeRange={evt.timeRange} />;
+      const block = (
+        <ExternalEventRow
+          key={evt.id}
+          title={evt.title}
+          timeRange={evt.timeRange}
+          source={evt.source}
+        />
+      );
       map[evt.hour] = existing ? (
         <>
           {existing}

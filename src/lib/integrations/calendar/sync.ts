@@ -23,7 +23,7 @@
  * Linked: OPS-6, FT-091, BR-22.
  */
 
-import { and, eq, gte } from 'drizzle-orm';
+import { and, eq, gt } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { calendarBusySlots } from '@/lib/db/schema/calendar-busy-slots';
 import { calendarConnections } from '@/lib/db/schema/calendar-connections';
@@ -111,12 +111,15 @@ export async function syncConnection(
     throw err;
   }
 
-  // Wipe the connection's window-and-forward rows. We never delete
-  // past entries — they might still be useful for historical audit.
+  // Wipe rows for this connection whose end is still in the future. We
+  // filter on `end_at > now` (not `start_at >= now`) so ongoing events get
+  // cleaned out too — otherwise Google's freeBusy, which clamps `start` to
+  // `max(eventStart, now)` for in-progress events, leaves a stale row each
+  // sync and duplicates pile up. Past events stay for historical audit.
   const deleted = await db
     .delete(calendarBusySlots)
     .where(
-      and(eq(calendarBusySlots.connectionId, connectionId), gte(calendarBusySlots.startAt, timeMin))
+      and(eq(calendarBusySlots.connectionId, connectionId), gt(calendarBusySlots.endAt, timeMin))
     )
     .returning({ id: calendarBusySlots.id });
 

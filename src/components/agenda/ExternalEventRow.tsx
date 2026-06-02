@@ -15,14 +15,22 @@ interface ExternalEventRowProps {
   title: string;
   /** "HH:mm – HH:mm" formatted range. */
   timeRange: string;
+  /** Calendar source label (account label or calendar id). */
+  source?: string;
 }
 
-export function ExternalEventRow({ title, timeRange }: ExternalEventRowProps) {
+export function ExternalEventRow({ title, timeRange, source }: ExternalEventRowProps) {
+  // Google freeBusy doesn't return event_title — the sync may store NULL.
+  // Fall back to the source so the row is still useful instead of just
+  // saying "Bloqueado" with no provenance.
+  const isPlaceholder = title === 'Bloqueado';
+  const displayTitle = isPlaceholder && source ? source : title;
+  const sourceSuffix = source && !isPlaceholder ? source : 'Google';
   return (
     <div
-      title="Tenés un evento Google a esa hora"
+      title={source ? `Evento de ${source}` : 'Tenés un evento Google a esa hora'}
       role="note"
-      aria-label={`Evento de Google Calendar: ${title}, ${timeRange}`}
+      aria-label={`Evento de Google Calendar: ${displayTitle}, ${timeRange}`}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -56,7 +64,7 @@ export function ExternalEventRow({ title, timeRange }: ExternalEventRowProps) {
             whiteSpace: 'nowrap',
           }}
         >
-          {title}
+          {displayTitle}
         </span>
         <span
           style={{
@@ -64,9 +72,12 @@ export function ExternalEventRow({ title, timeRange }: ExternalEventRowProps) {
             fontSize: 11,
             color: 'var(--ag-ink-hint)',
             letterSpacing: '0.02em',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
-          {timeRange} · Google
+          {timeRange} · {sourceSuffix}
         </span>
       </div>
     </div>
