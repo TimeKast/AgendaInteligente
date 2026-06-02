@@ -14,7 +14,7 @@
  */
 
 import { useMemo, useRef, useState } from 'react';
-import { ChevronDown, Plus, X } from 'lucide-react';
+import { AlarmClock, CalendarCheck, ChevronDown, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PriorityDots } from './PriorityDots';
 import { RecurrencePicker, type RecurrenceRule } from './RecurrencePicker';
@@ -187,15 +187,10 @@ export function ActivityQuickAdd({
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDateState.choice);
   const [customDate, setCustomDate] = useState(initialDateState.custom);
   const [priority, setPriority] = useState(initialDraft?.priority ?? 3);
-  const [moreOpen, setMoreOpen] = useState(
-    !!(
-      initialDraft &&
-      (initialDraft.description ||
-        initialDraft.scheduledTime ||
-        initialDraft.deadline ||
-        initialDraft.recurrenceRule)
-    )
-  );
+  // Details start expanded so every field — including the deadline that's
+  // conceptually distinct from the scheduled date — is visible without a
+  // discovery click. The user can still collapse if they want a tight view.
+  const [moreOpen, setMoreOpen] = useState(true);
   const [description, setDescription] = useState(initialDraft?.description ?? '');
   const [scheduledTime, setScheduledTime] = useState(initialDraft?.scheduledTime ?? '');
   const [deadline, setDeadline] = useState(initialDeadlineState.date);
@@ -456,7 +451,7 @@ export function ActivityQuickAdd({
               transition: `transform var(--ag-duration-base) var(--ag-ease)`,
             }}
           />
-          {moreOpen ? 'Menos detalles' : '+ más detalles'}
+          {moreOpen ? 'Ocultar detalles' : 'Mostrar detalles'}
         </button>
       </div>
 
@@ -480,85 +475,51 @@ export function ActivityQuickAdd({
               resize: 'vertical',
             }}
           />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
-            <span
-              style={{
-                fontFamily: 'var(--ag-font-body)',
-                fontSize: 13,
-                color: 'var(--ag-ink-hint)',
-                minWidth: 80,
-              }}
-            >
-              Hora
-            </span>
-            <input
-              type="time"
-              value={scheduledTime}
-              onChange={(e) => setScheduledTime(e.target.value)}
-              style={{
-                appearance: 'none',
-                backgroundColor: 'transparent',
-                border: '1px solid var(--ag-rule)',
-                borderRadius: 'var(--ag-radius-base)',
-                padding: '6px 10px',
-                fontFamily: 'var(--ag-font-mono)',
-                fontSize: 14,
-                color: 'var(--ag-ink-primary)',
-                outline: 'none',
-              }}
-            />
-          </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
-            <span
-              style={{
-                fontFamily: 'var(--ag-font-body)',
-                fontSize: 13,
-                color: 'var(--ag-ink-hint)',
-                minWidth: 80,
-              }}
-            >
-              Deadline
-            </span>
-            <input
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              aria-label="Fecha del deadline"
-              style={{
-                appearance: 'none',
-                backgroundColor: 'transparent',
-                border: '1px solid var(--ag-rule)',
-                borderRadius: 'var(--ag-radius-base)',
-                padding: '6px 10px',
-                fontFamily: 'var(--ag-font-mono)',
-                fontSize: 14,
-                color: deadline ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
-                fontStyle: deadline ? 'normal' : 'italic',
-                outline: 'none',
-                minWidth: 0,
-              }}
-            />
-            <input
-              type="time"
-              value={deadlineTime}
-              onChange={(e) => setDeadlineTime(e.target.value)}
-              disabled={!deadline}
-              aria-label="Hora del deadline"
-              style={{
-                appearance: 'none',
-                backgroundColor: 'transparent',
-                border: '1px solid var(--ag-rule)',
-                borderRadius: 'var(--ag-radius-base)',
-                padding: '6px 10px',
-                fontFamily: 'var(--ag-font-mono)',
-                fontSize: 14,
-                color: deadlineTime ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
-                outline: 'none',
-                opacity: deadline ? 1 : 0.5,
-                minWidth: 0,
-              }}
-            />
-          </div>
+
+          {/* ── Programar — cuándo planeás trabajarla ─────────────── */}
+          <FieldGroup
+            icon={<CalendarCheck size={14} strokeWidth={1.6} aria-hidden />}
+            label="Programar"
+            hint="Cuándo planeás trabajarla"
+          >
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
+              <span style={fieldRowLabel}>Hora</span>
+              <input
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                style={fieldInputStyle()}
+              />
+            </label>
+          </FieldGroup>
+
+          {/* ── Fecha límite — cuándo vence ───────────────────────── */}
+          <FieldGroup
+            icon={<AlarmClock size={14} strokeWidth={1.6} aria-hidden />}
+            label="Fecha límite"
+            hint="Cuándo debe estar terminada"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--ag-space-2)' }}>
+              <input
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                aria-label="Fecha límite"
+                style={fieldInputStyle(!!deadline)}
+              />
+              <input
+                type="time"
+                value={deadlineTime}
+                onChange={(e) => setDeadlineTime(e.target.value)}
+                disabled={!deadline}
+                aria-label="Hora de la fecha límite"
+                style={{
+                  ...fieldInputStyle(!!deadlineTime),
+                  opacity: deadline ? 1 : 0.5,
+                }}
+              />
+            </div>
+          </FieldGroup>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-2)' }}>
             <span
               style={{
@@ -795,12 +756,30 @@ function DateSelect({
   onCustomDateChange: (d: string) => void;
 }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+    <span
+      title="Programar — cuándo planeás trabajarla"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        flexWrap: 'wrap',
+        padding: '0 6px 0 0',
+        border: '1px solid var(--ag-rule)',
+        borderRadius: 'var(--ag-radius-pill)',
+        backgroundColor: 'var(--ag-bg)',
+      }}
+    >
+      <CalendarCheck
+        size={12}
+        strokeWidth={1.6}
+        aria-hidden
+        style={{ color: 'var(--ag-ink-hint)', marginLeft: 8 }}
+      />
       <select
         value={choice}
         onChange={(e) => onChoiceChange(e.target.value as DateChoice)}
-        aria-label="Fecha"
-        style={pillSelectStyle}
+        aria-label="Programar para"
+        style={{ ...pillSelectStyle, border: 'none', padding: '4px 4px 4px 2px' }}
       >
         <option value="today">Hoy</option>
         <option value="tomorrow">Mañana</option>
@@ -841,6 +820,90 @@ const pillSelectStyle: React.CSSProperties = {
   color: 'var(--ag-ink-soft)',
   outline: 'none',
 };
+
+/**
+ * FieldGroup — visual section inside the details with an icon + label
+ * header + hint caption. Used to disambiguate the two scheduling concepts
+ * (Programar vs Fecha límite) so the user can tell them apart at a glance.
+ */
+function FieldGroup({
+  icon,
+  label,
+  hint,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--ag-space-2)',
+        padding: 'var(--ag-space-2) var(--ag-space-3)',
+        border: '1px solid var(--ag-rule)',
+        borderRadius: 'var(--ag-radius-base)',
+        backgroundColor: 'color-mix(in oklab, var(--ag-bg), transparent 40%)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <span style={{ color: 'var(--ag-ink-hint)', display: 'inline-flex' }}>{icon}</span>
+        <span
+          style={{
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--ag-slate)',
+          }}
+        >
+          {label}
+        </span>
+        {hint ? (
+          <span
+            style={{
+              fontFamily: 'var(--ag-font-display)',
+              fontStyle: 'italic',
+              fontSize: 12,
+              color: 'var(--ag-ink-hint)',
+              marginLeft: 'auto',
+            }}
+          >
+            {hint}
+          </span>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const fieldRowLabel: React.CSSProperties = {
+  fontFamily: 'var(--ag-font-body)',
+  fontSize: 13,
+  color: 'var(--ag-ink-hint)',
+  minWidth: 56,
+};
+
+function fieldInputStyle(hasValue: boolean = true): React.CSSProperties {
+  return {
+    appearance: 'none',
+    backgroundColor: 'transparent',
+    border: '1px solid var(--ag-rule)',
+    borderRadius: 'var(--ag-radius-base)',
+    padding: '6px 10px',
+    fontFamily: 'var(--ag-font-mono)',
+    fontSize: 14,
+    color: hasValue ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
+    fontStyle: hasValue ? 'normal' : 'italic',
+    outline: 'none',
+    minWidth: 0,
+  };
+}
 
 function PriorityStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
