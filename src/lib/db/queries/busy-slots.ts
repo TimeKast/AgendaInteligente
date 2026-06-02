@@ -27,16 +27,25 @@ export interface ExternalEventForBoard {
 
 const CALENDAR_START_HOUR = 6;
 const CALENDAR_END_HOUR = 22;
+const SLOT_MINUTES = 30;
+const CALENDAR_END_MIN = CALENDAR_END_HOUR * 60 + 30; // include 22:30
 
-function fmtHourInTz(d: Date, tz: string): string {
-  const hh = new Intl.DateTimeFormat('en-GB', {
+/** Return minutes-since-midnight for `d` interpreted in `tz`. */
+function minutesInTz(d: Date, tz: string): number {
+  const hm = new Intl.DateTimeFormat('en-GB', {
     timeZone: tz,
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   }).format(d);
-  // Intl returns "HH:mm" — clamp minutes to :00 for the bucket.
-  return hh.slice(0, 2) + ':00';
+  const [hh, mm] = hm.split(':').map(Number);
+  return hh * 60 + mm;
+}
+
+function formatSlot(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 }
 
 function fmtRange(start: Date, end: Date, tz: string): string {
@@ -119,21 +128,22 @@ export async function loadTodaysBusySlots(
     }).format(r.startAt);
     if (startLocalDate !== todayDate) continue;
 
-    const startHour = parseInt(fmtHourInTz(r.startAt, timezone).slice(0, 2), 10);
-    const endHour = parseInt(fmtHourInTz(r.endAt, timezone).slice(0, 2), 10);
-    // Inclusive start hour, exclusive end hour. If the event ends EXACTLY
-    // at HH:00, that hour isn't blocked. If it ends at HH:30, block up to HH.
-    const endHourEffective = r.endAt.getTime() % (60 * 60 * 1000) === 0 ? endHour : endHour + 1;
+    // Snap start DOWN, end UP to a multiple of SLOT_MINUTES so a 9:30→10:30
+    // event yields exactly the {09:30, 10:00} slots — not {09:00, 10:00}.
+    const startMin = minutesInTz(r.startAt, timezone);
+    const endMin = minutesInTz(r.endAt, timezone);
+    const bucketStart = Math.floor(startMin / SLOT_MINUTES) * SLOT_MINUTES;
+    const bucketEnd = Math.ceil(endMin / SLOT_MINUTES) * SLOT_MINUTES;
 
     const title = (r.eventTitle ?? 'Bloqueado').slice(0, 60);
     const rangeStr = fmtRange(r.startAt, r.endAt, timezone);
     const source = r.accountLabel || r.externalAccountId || r.calendarId;
 
-    for (let h = startHour; h < endHourEffective; h++) {
-      if (h < CALENDAR_START_HOUR || h > CALENDAR_END_HOUR) continue;
+    for (let m = bucketStart; m < bucketEnd; m += SLOT_MINUTES) {
+      if (m < CALENDAR_START_HOUR * 60 || m > CALENDAR_END_MIN) continue;
       out.push({
-        id: `${r.id}-${h}`,
-        hour: `${h.toString().padStart(2, '0')}:00`,
+        id: `${r.id}-${m}`,
+        hour: formatSlot(m),
         title,
         timeRange: rangeStr,
         source,

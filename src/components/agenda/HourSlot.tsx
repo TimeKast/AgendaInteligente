@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * HourSlot — one row of the calendar grid representing a single hour
- * (e.g. "08:00"). Renders:
+ * HourSlot — one 30-minute row of the calendar grid (e.g. "08:00" or
+ * "08:30"). Renders:
  *   - A monospaced time label on the LEFT (fixed 56px column).
  *   - A drop-target slot area on the RIGHT that:
  *       · receives drops via @dnd-kit `useDroppable` (id = `hour:HH:mm`)
@@ -12,9 +12,8 @@
  *         is empty
  *
  * Visual:
- *   - 1px warm-ecru horizontal rule baseline (the calendar look).
+ *   - 1px warm-ecru horizontal rule baseline; lighter on the :30 row.
  *   - On hover during drag: subtle bg-elevated tint.
- *   - Min height 48px so even empty slots are obviously click/drop targets.
  */
 
 import type { ReactNode } from 'react';
@@ -36,8 +35,11 @@ export function HourSlot({ time, isDragging, blocked = false, children }: HourSl
     disabled: blocked,
   });
 
-  const hasChildren =
-    Array.isArray(children) ? children.filter(Boolean).length > 0 : Boolean(children);
+  const isHalfHour = time.endsWith(':30');
+
+  const hasChildren = Array.isArray(children)
+    ? children.filter(Boolean).length > 0
+    : Boolean(children);
 
   return (
     <div
@@ -46,16 +48,17 @@ export function HourSlot({ time, isDragging, blocked = false, children }: HourSl
         display: 'grid',
         gridTemplateColumns: '56px 1fr',
         alignItems: 'stretch',
-        // Fixed 1-hour height — resize math (durationMinutes / 60 * height)
-        // depends on the slot being a strict multiple of 1 hour. Tall
-        // activities overflow into the next slots via position:absolute.
+        // Fixed 30-min height — resize math (durationMinutes / 60 * HOUR_HEIGHT)
+        // still holds because HOUR_HEIGHT = 2 * SLOT_HEIGHT. Tall activities
+        // overflow into the next slots via position:absolute.
         // NOTE: we intentionally do NOT set `position: relative` on the outer
         // slot — that would create a stacking context that would clip the
-        // overflow visually behind subsequent slots. The inner content column
-        // (below) is the positioned ancestor instead.
-        height: 'var(--ag-hour-height, 60px)',
+        // overflow visually behind subsequent slots.
+        height: 'var(--ag-slot-height, 30px)',
         overflow: 'visible',
-        borderTop: '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
+        borderTop: isHalfHour
+          ? '1px dashed color-mix(in oklab, var(--ag-rule), transparent 75%)'
+          : '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
         backgroundColor:
           isOver && isDragging && !blocked
             ? 'color-mix(in oklab, var(--ag-bg-elevated), transparent 30%)'
@@ -65,11 +68,13 @@ export function HourSlot({ time, isDragging, blocked = false, children }: HourSl
     >
       <div
         style={{
-          padding: '6px 8px 0 0',
+          padding: '3px 8px 0 0',
           textAlign: 'right',
           fontFamily: 'var(--ag-font-mono)',
           fontSize: 11,
-          color: 'var(--ag-ink-hint)',
+          color: isHalfHour
+            ? 'color-mix(in oklab, var(--ag-ink-hint), transparent 50%)'
+            : 'var(--ag-ink-hint)',
           letterSpacing: '0.02em',
           userSelect: 'none',
         }}

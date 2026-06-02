@@ -2,31 +2,34 @@
 
 /**
  * CalendarGrid — vertical list of HourSlot rows from `startHour` to `endHour`
- * (inclusive, 1-hour granularity). Renders an uppercase "AGENDA" caption
- * label at the top.
+ * in 30-minute granularity (each hour is split into :00 and :30 sub-slots).
  *
- * The caller supplies the contents of each hour via `slotsByHour` (a Record
- * keyed by "HH:00" → ReactNode list) and a set of `blockedHours` (hours that
- * have an external Google event blocking the slot).
+ * The caller supplies the contents of each slot via `slotsBySlot` (a Record
+ * keyed by "HH:00"/"HH:30" → ReactNode list) and a set of `blockedSlots`
+ * (slots blocked by external calendar events or multi-slot tasks).
  */
 
 import type { CSSProperties, ReactNode } from 'react';
 import { HourSlot } from './HourSlot';
 
-/** Fixed pixel height of a 1-hour calendar slot. SSOT for resize math. */
-export const HOUR_HEIGHT_PX = 60;
+/** Fixed pixel height of a 30-minute calendar slot. SSOT for resize math. */
+export const SLOT_HEIGHT_PX = 30;
+/** Derived: pixel height of a full hour. Kept for resize math compat. */
+export const HOUR_HEIGHT_PX = SLOT_HEIGHT_PX * 2;
+/** Minutes per slot — change-once to flip granularity. */
+export const SLOT_MINUTES = 30;
 
 interface CalendarGridProps {
   /** "HH" integer 0-23 — first hour shown (default 6). */
   startHour?: number;
   /** "HH" integer 0-23 — last hour shown inclusive (default 22). */
   endHour?: number;
-  /** True while ANY drag is in flight (forwarded to each HourSlot). */
+  /** True while ANY drag is in flight (forwarded to each slot row). */
   isDragging: boolean;
-  /** Per-hour children: keys are "HH:00" strings, values are ReactNodes. */
-  slotsByHour: Record<string, ReactNode>;
-  /** Hours where drops are disabled (blocked by external events). */
-  blockedHours?: Set<string>;
+  /** Per-slot children: keys are "HH:00"/"HH:30" strings, values are ReactNodes. */
+  slotsBySlot: Record<string, ReactNode>;
+  /** Slots where drops are disabled (blocked by external events). */
+  blockedSlots?: Set<string>;
 }
 
 function pad(n: number) {
@@ -37,17 +40,20 @@ export function CalendarGrid({
   startHour = 6,
   endHour = 22,
   isDragging,
-  slotsByHour,
-  blockedHours,
+  slotsBySlot,
+  blockedSlots,
 }: CalendarGridProps) {
-  const hours: string[] = [];
+  const slots: string[] = [];
   for (let h = startHour; h <= endHour; h++) {
-    hours.push(`${pad(h)}:00`);
+    slots.push(`${pad(h)}:00`);
+    // Add the half-hour mark for every hour up to (but not past) endHour.
+    if (h < endHour) slots.push(`${pad(h)}:30`);
   }
 
-  // Expose HOUR_HEIGHT to descendant slots/rows via CSS variable. Resize
-  // logic reads the same constant from JS (HOUR_HEIGHT_PX) — single source.
+  // Expose SLOT_HEIGHT (and the legacy HOUR_HEIGHT) via CSS variables.
+  // Resize logic reads HOUR_HEIGHT_PX from JS — single source for math.
   const gridStyle: CSSProperties = {
+    ['--ag-slot-height' as string]: `${SLOT_HEIGHT_PX}px`,
     ['--ag-hour-height' as string]: `${HOUR_HEIGHT_PX}px`,
   };
 
@@ -68,14 +74,14 @@ export function CalendarGrid({
         Agenda
       </p>
       <div>
-        {hours.map((time) => (
+        {slots.map((time) => (
           <HourSlot
             key={time}
             time={time}
             isDragging={isDragging}
-            blocked={blockedHours?.has(time) ?? false}
+            blocked={blockedSlots?.has(time) ?? false}
           >
-            {slotsByHour[time] ?? null}
+            {slotsBySlot[time] ?? null}
           </HourSlot>
         ))}
       </div>

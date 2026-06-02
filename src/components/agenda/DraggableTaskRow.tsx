@@ -78,12 +78,12 @@ interface DraggableTaskRowProps {
   minStartHour?: number;
 }
 
-/** Minimum committed duration after snapping (kept whole hours for prototype). */
-const MIN_DURATION_MIN = 60;
-/** Snap increment in minutes — whole hours per the spec. */
-const SNAP_INCREMENT_MIN = 60;
-/** Below this duration the floor visual would be ugly; same as MIN for now. */
-const MIN_PREVIEW_DURATION_MIN = 30;
+/** Minimum committed duration after snapping (one 30-min slot). */
+const MIN_DURATION_MIN = 30;
+/** Snap increment in minutes — 30-min granularity to match the calendar grid. */
+const SNAP_INCREMENT_MIN = 30;
+/** Below this preview duration the visual would be ugly. */
+const MIN_PREVIEW_DURATION_MIN = 15;
 
 function formatDuration(min: number): string {
   const h = Math.floor(min / 60);
@@ -152,7 +152,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
       };
       setLiveDuration(committedDuration);
     },
-    [committedDuration, committedStartMin, isResizable],
+    [committedDuration, committedStartMin, isResizable]
   );
 
   const handleTopPointerDown = useCallback(
@@ -171,7 +171,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
       setLiveDuration(committedDuration);
       setLiveStartMin(committedStartMin);
     },
-    [committedDuration, committedStartMin, isResizable],
+    [committedDuration, committedStartMin, isResizable]
   );
 
   const handlePointerMove = useCallback(
@@ -186,7 +186,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
         // Bottom: extiende/encoge duration directamente.
         const next = Math.min(
           maxDuration,
-          Math.max(MIN_PREVIEW_DURATION_MIN, s.startDuration + deltaMin),
+          Math.max(MIN_PREVIEW_DURATION_MIN, s.startDuration + deltaMin)
         );
         setLiveDuration(next);
       } else {
@@ -204,7 +204,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
         setLiveDuration(nextDuration);
       }
     },
-    [maxDuration, minStartMin],
+    [maxDuration, minStartMin]
   );
 
   const finishResize = useCallback(
@@ -222,10 +222,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
         const preview = liveDuration ?? s.startDuration;
         const snapped = Math.min(
           maxDuration,
-          Math.max(
-            MIN_DURATION_MIN,
-            Math.round(preview / SNAP_INCREMENT_MIN) * SNAP_INCREMENT_MIN,
-          ),
+          Math.max(MIN_DURATION_MIN, Math.round(preview / SNAP_INCREMENT_MIN) * SNAP_INCREMENT_MIN)
         );
         resizeStateRef.current = null;
         setLiveDuration(null);
@@ -253,7 +250,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
         }
       }
     },
-    [liveDuration, liveStartMin, maxDuration, minStartMin, props],
+    [liveDuration, liveStartMin, maxDuration, minStartMin, props]
   );
 
   // Safety: if the component unmounts mid-gesture, clear the ref.
@@ -272,9 +269,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   // para el detection (era bug: TodayActivitiesBoard no pasaba scheduledTime
   // → anchored siempre false → handles nunca renderizaban).
   const anchored = isResizable;
-  const heightPx = anchored
-    ? (displayDuration / 60) * HOUR_HEIGHT_PX
-    : undefined;
+  const heightPx = anchored ? (displayDuration / 60) * HOUR_HEIGHT_PX : undefined;
   // Top drag offset: cuando el start se mueve durante un top-resize, el card
   // se renderiza visualmente más arriba que su hour slot original. Usamos top
   // negativo basado en la diferencia minutos × pixels-por-minuto.
@@ -296,12 +291,9 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
         borderRadius: 'var(--ag-radius-base)',
         zIndex: liveDuration !== null ? 3 : 2,
         overflow: 'hidden',
-        boxShadow: liveDuration !== null
-          ? '0 4px 12px rgba(42, 40, 38, 0.12)'
-          : undefined,
-        transition: liveDuration !== null
-          ? 'none'
-          : 'height var(--ag-duration-base) var(--ag-ease)',
+        boxShadow: liveDuration !== null ? '0 4px 12px rgba(42, 40, 38, 0.12)' : undefined,
+        transition:
+          liveDuration !== null ? 'none' : 'height var(--ag-duration-base) var(--ag-ease)',
       }
     : {
         transform: CSS.Translate.toString(transform),
@@ -310,31 +302,37 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
         position: 'relative',
       };
 
-  const handle = props.draggable === false ? null : (
-    <button
-      type="button"
-      aria-label={`Arrastrá ${props.title}`}
-      {...attributes}
-      {...listeners}
-      style={{
-        appearance: 'none',
-        background: 'transparent',
-        border: 'none',
-        color: 'var(--ag-ink-hint)',
-        cursor: 'grab',
-        touchAction: 'none',
-        padding: 4,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <GripVertical size={16} strokeWidth={1.5} aria-hidden />
-    </button>
-  );
+  const handle =
+    props.draggable === false ? null : (
+      <button
+        type="button"
+        aria-label={`Arrastrá ${props.title}`}
+        {...attributes}
+        {...listeners}
+        style={{
+          appearance: 'none',
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--ag-ink-hint)',
+          cursor: 'grab',
+          touchAction: 'none',
+          padding: 4,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <GripVertical size={16} strokeWidth={1.5} aria-hidden />
+      </button>
+    );
 
-  const { onOpenStatus, durationMinutes: _d, onResize: _r, maxDurationMinutes: _m, ...rowProps } =
-    props;
+  const {
+    onOpenStatus,
+    durationMinutes: _d,
+    onResize: _r,
+    maxDurationMinutes: _m,
+    ...rowProps
+  } = props;
 
   // Cuando anchored, el ActivityRow vive DENTRO de un wrapper interno que
   // reserva 10px arriba y 12px abajo para los resize handles. Esto IMPIDE
@@ -378,11 +376,7 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   );
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={anchored ? 'ag-anchored-row' : undefined}
-    >
+    <div ref={setNodeRef} style={style} className={anchored ? 'ag-anchored-row' : undefined}>
       {anchored ? (
         <>
           {/* Content wrapper — clipea el Link de ActivityRow para que NO llegue

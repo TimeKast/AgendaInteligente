@@ -301,6 +301,8 @@ const DROP_POOL_BACKLOG = 'pool:backlog';
 const DROP_Q_PREFIX = 'quad:';
 const HOUR_DROP_PREFIX = 'hour:';
 const CALENDAR_END_HOUR = 22;
+const SLOT_MINUTES = 30;
+const CALENDAR_END_MIN = CALENDAR_END_HOUR * 60;
 
 const POOL_DROP_TARGETS = new Set([DROP_POOL_TODAY, DROP_POOL_WEEK, DROP_POOL_BACKLOG]);
 
@@ -318,10 +320,18 @@ const QUADRANT_LABEL: Record<Quadrant, string> = {
   4: 'Q4 · Neutro',
 };
 
-/** Parse "HH:00" → integer hour. Returns NaN if invalid. */
-function parseHour(time: string): number {
+/** Parse "HH:mm" → minutes since midnight. Returns NaN if invalid. */
+function parseSlot(time: string): number {
   const m = /^(\d{1,2}):(\d{2})$/.exec(time);
-  return m ? Number(m[1]) : NaN;
+  if (!m) return NaN;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+/** Format minutes since midnight → "HH:mm". */
+function formatSlot(min: number): string {
+  const h = Math.floor(min / 60);
+  const mm = min % 60;
+  return `${h.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}`;
 }
 
 interface TodayActivitiesBoardProps {
@@ -418,16 +428,18 @@ export function TodayActivitiesBoard({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const blockedHours = useMemo(() => {
+  const blockedSlots = useMemo(() => {
+    // External events already arrive bucketed to 30-min slots.
     const set = new Set(externalEvents.map((e) => e.hour));
     for (const a of scheduled) {
-      const startHour = parseHour(a.scheduledTime);
-      if (Number.isNaN(startHour)) continue;
-      const spanHours = Math.ceil(a.durationMinutes / 60);
-      for (let h = startHour + 1; h < startHour + spanHours; h++) {
-        if (h <= CALENDAR_END_HOUR) {
-          set.add(`${h.toString().padStart(2, '0')}:00`);
-        }
+      const startMin = parseSlot(a.scheduledTime);
+      if (Number.isNaN(startMin)) continue;
+      // Round up to a multiple of SLOT_MINUTES so a 45-min task still blocks
+      // 2 slots (the start + the overflow).
+      const spanSlots = Math.ceil(a.durationMinutes / SLOT_MINUTES);
+      for (let i = 1; i < spanSlots; i++) {
+        const slotMin = startMin + i * SLOT_MINUTES;
+        if (slotMin <= CALENDAR_END_MIN) set.add(formatSlot(slotMin));
       }
     }
     return set;
@@ -528,7 +540,7 @@ export function TodayActivitiesBoard({
     // --- Drop on an hour slot ---
     if (overId.startsWith(HOUR_DROP_PREFIX)) {
       const hour = overId.slice(HOUR_DROP_PREFIX.length);
-      if (blockedHours.has(hour)) return;
+      if (blockedSlots.has(hour)) return;
 
       if (inScheduled) {
         setScheduled((prev) => prev.map((a) => (a.id === aId ? { ...a, scheduledTime: hour } : a)));
@@ -660,39 +672,42 @@ export function TodayActivitiesBoard({
     return map;
   }, [pool]);
 
-  const slotsByHour = useMemo(() => {
+  const slotsBySlot = useMemo(() => {
     const map: Record<string, React.ReactNode> = {};
     for (const a of scheduled) {
-      const startHour = parseHour(a.scheduledTime);
+      const startMin = parseSlot(a.scheduledTime);
       let maxDurationMinutes = 240;
       let minStartHour = 6;
-      if (!Number.isNaN(startHour)) {
-        // Para el bottom handle: hora más temprana ocupada DESPUÉS del start
-        let nextOccupiedHour = CALENDAR_END_HOUR;
-        // Para el top handle: hora más reciente ocupada (incluyendo end de
-        // otra activity, o un Google event) ANTES del start. minStartHour es
-        // el clamp más temprano permitido.
-        let prevOccupiedEnd = 6;
+      let bucketKey = a.scheduledTime;
+      if (!Number.isNaN(startMin)) {
+        // Anchor to the bucket the scheduledTime falls into (HH:00 / HH:30).
+        bucketKey = formatSlot(Math.floor(startMin / SLOT_MINUTES) * SLOT_MINUTES);
+
+        // Bottom handle: earliest start-of-something AFTER our start.
+        // Top handle: latest end-of-something BEFORE our start.
+        let nextOccupiedMin = CALENDAR_END_MIN + 60;
+        let prevOccupiedEndMin = 6 * 60;
         for (const e of externalEvents) {
-          const eh = parseHour(e.hour);
-          if (Number.isNaN(eh)) continue;
-          if (eh > startHour && eh < nextOccupiedHour) nextOccupiedHour = eh;
-          // Google events asumimos 1h, así que su end = eh + 1
-          const eEnd = eh + 1;
-          if (eEnd <= startHour && eEnd > prevOccupiedEnd) prevOccupiedEnd = eEnd;
+          const eMin = parseSlot(e.hour);
+          if (Number.isNaN(eMin)) continue;
+          if (eMin > startMin && eMin < nextOccupiedMin) nextOccupiedMin = eMin;
+          // External event rows are 30-min slot buckets; end = start + SLOT_MINUTES.
+          const eEnd = eMin + SLOT_MINUTES;
+          if (eEnd <= startMin && eEnd > prevOccupiedEndMin) prevOccupiedEndMin = eEnd;
         }
         for (const other of scheduled) {
           if (other.id === a.id) continue;
-          const oh = parseHour(other.scheduledTime);
-          if (Number.isNaN(oh)) continue;
-          if (oh > startHour && oh < nextOccupiedHour) nextOccupiedHour = oh;
-          const oEnd = oh + Math.ceil(other.durationMinutes / 60);
-          if (oEnd <= startHour && oEnd > prevOccupiedEnd) prevOccupiedEnd = oEnd;
+          const oMin = parseSlot(other.scheduledTime);
+          if (Number.isNaN(oMin)) continue;
+          if (oMin > startMin && oMin < nextOccupiedMin) nextOccupiedMin = oMin;
+          const oEnd = oMin + other.durationMinutes;
+          if (oEnd <= startMin && oEnd > prevOccupiedEndMin) prevOccupiedEndMin = oEnd;
         }
-        maxDurationMinutes = Math.max(60, (nextOccupiedHour - startHour) * 60);
-        minStartHour = prevOccupiedEnd;
+        maxDurationMinutes = Math.max(SLOT_MINUTES, nextOccupiedMin - startMin);
+        // DraggableTaskRow multiplies minStartHour × 60 → accepts fractional.
+        minStartHour = prevOccupiedEndMin / 60;
       }
-      const existing = map[a.scheduledTime];
+      const existing = map[bucketKey];
       const row = (
         <DraggableTaskRow
           key={a.id}
@@ -713,7 +728,7 @@ export function TodayActivitiesBoard({
           progressPercent={a.progressPercent}
         />
       );
-      map[a.scheduledTime] = existing ? (
+      map[bucketKey] = existing ? (
         <>
           {existing}
           {row}
@@ -921,8 +936,8 @@ export function TodayActivitiesBoard({
               startHour={6}
               endHour={22}
               isDragging={isDragging}
-              slotsByHour={slotsByHour}
-              blockedHours={blockedHours}
+              slotsBySlot={slotsBySlot}
+              blockedSlots={blockedSlots}
             />
           </div>
         </div>
@@ -963,12 +978,15 @@ export function TodayActivitiesBoard({
 }
 
 /**
- * Round an arbitrary "HH:mm" string down to the nearest hour ("HH:00") so
- * quick-add's free-form time input collapses cleanly onto our 1-hour grid.
+ * Round an arbitrary "HH:mm" string down to the nearest 30-min slot ("HH:00"
+ * or "HH:30") so quick-add's free-form time input collapses cleanly onto our
+ * half-hour grid.
  */
 function normalizeHour(time: string): string {
-  const m = /^(\d{1,2})(?::\d{2})?$/.exec(time.trim());
+  const m = /^(\d{1,2})(?::(\d{2}))?$/.exec(time.trim());
   if (!m) return time;
   const hh = Math.max(0, Math.min(23, Number(m[1])));
-  return `${hh.toString().padStart(2, '0')}:00`;
+  const mm = m[2] ? Number(m[2]) : 0;
+  const snapped = mm >= 30 ? 30 : 0;
+  return `${hh.toString().padStart(2, '0')}:${snapped.toString().padStart(2, '0')}`;
 }
