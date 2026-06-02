@@ -65,6 +65,8 @@ interface ExternalEventInput {
   title: string;
   timeRange: string;
   source: string;
+  spanSlots: number;
+  coveredSlots: string[];
 }
 
 export interface TodayClientProps {

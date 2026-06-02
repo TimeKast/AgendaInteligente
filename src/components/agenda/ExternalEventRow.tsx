@@ -11,21 +11,38 @@
 
 import { Calendar } from 'lucide-react';
 
+import { SLOT_HEIGHT_PX } from './CalendarGrid';
+
 interface ExternalEventRowProps {
   title: string;
   /** "HH:mm – HH:mm" formatted range. */
   timeRange: string;
   /** Calendar source label (account label or calendar id). */
   source?: string;
+  /**
+   * Number of 30-min slots the event covers. When ≥ 2, the row is
+   * absolutely positioned and grows down to span the right number of
+   * slots — so a 9:30-10:30 meeting renders as ONE block, not two.
+   */
+  spanSlots?: number;
 }
 
-export function ExternalEventRow({ title, timeRange, source }: ExternalEventRowProps) {
+export function ExternalEventRow({
+  title,
+  timeRange,
+  source,
+  spanSlots = 1,
+}: ExternalEventRowProps) {
   // Google freeBusy doesn't return event_title — the sync may store NULL.
   // Fall back to the source so the row is still useful instead of just
   // saying "Bloqueado" with no provenance.
   const isPlaceholder = title === 'Bloqueado';
   const displayTitle = isPlaceholder && source ? source : title;
   const sourceSuffix = source && !isPlaceholder ? source : 'Google';
+  // When the event covers multiple 30-min slots, anchor the block at the top
+  // of its host slot and grow down — one visual block per event.
+  const spans = Math.max(1, spanSlots);
+  const isMulti = spans > 1;
   return (
     <div
       title={source ? `Evento de ${source}` : 'Tenés un evento Google a esa hora'}
@@ -44,6 +61,19 @@ export function ExternalEventRow({ title, timeRange, source }: ExternalEventRowP
         backgroundColor: 'color-mix(in oklab, var(--ag-bg-elevated), transparent 60%)',
         border: '1px solid color-mix(in oklab, var(--ag-rule), transparent 30%)',
         cursor: 'help',
+        ...(isMulti
+          ? {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              // Height = span × SLOT_HEIGHT − a small inset so adjacent rows
+              // don't visually fuse together.
+              height: spans * SLOT_HEIGHT_PX - 4,
+              zIndex: 1,
+              overflow: 'hidden',
+            }
+          : {}),
       }}
     >
       <Calendar

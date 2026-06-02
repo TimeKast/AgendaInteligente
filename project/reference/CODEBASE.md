@@ -21,12 +21,12 @@
 | `src\components\agenda\PlanSnapshotControls.tsx` | 4 |
 | `src\lib\db\drizzle.ts` | 4 |
 | `src\components\agenda\PriorityDots.tsx` | 3 |
+| `src\components\agenda\CalendarGrid.tsx` | 3 |
 | `src\lib\email\types.ts` | 3 |
 | `src\components\agenda\RecurrencePicker.tsx` | 2 |
 | `src\components\agenda\DeadlineBadge.tsx` | 2 |
 | `src\components\agenda\ColorPicker.tsx` | 2 |
 | `src\components\agenda\IconPicker.tsx` | 2 |
-| `src\components\agenda\CalendarGrid.tsx` | 2 |
 | `src\components\agenda\MonthDayCell.tsx` | 2 |
 | `src\components\agenda\WeekPoolSection.tsx` | 2 |
 | `src\components\agenda\QuickAddDayPopover.tsx` | 2 |
@@ -162,7 +162,7 @@
 | `src\components\agenda\AppearanceController.tsx` | — | — |
 | `src\components\agenda\BarChart.tsx` | — | — |
 | `src\components\agenda\CalendarConnectionsList.tsx` | — | — |
-| `src\components\agenda\CalendarGrid.tsx` | `src\components\agenda\HourSlot.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\CalendarGrid.tsx` | `src\components\agenda\HourSlot.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\ExternalEventRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\CategoriesClient.tsx` | — | — |
 | `src\components\agenda\CategoryDetailClient.tsx` | — | — |
 | `src\components\agenda\CategoryRow.tsx` | `src\components\agenda\ColorPicker.tsx`, `src\components\agenda\IconPicker.tsx` | — |
@@ -185,7 +185,7 @@
 | `src\components\agenda\DoneButton.tsx` | — | — |
 | `src\components\agenda\DraggablePoolActivity.tsx` | `src\components\agenda\DeadlineBadge.tsx` | `src\components\agenda\DayRow.tsx`, `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
 | `src\components\agenda\DraggableTaskRow.tsx` | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\CalendarGrid.tsx` | `src\components\agenda\TodayActivitiesBoard.tsx` |
-| `src\components\agenda\ExternalEventRow.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
+| `src\components\agenda\ExternalEventRow.tsx` | `src\components\agenda\CalendarGrid.tsx` | `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\FabMic.tsx` | `src\components\agenda\VoiceCaptureSheet.tsx` | `src\components\agenda\AgendaShell.tsx` |
 | `src\components\agenda\FilterChips.tsx` | — | — |
 | `src\components\agenda\GoalCard.tsx` | `src\components\agenda\ScopeChip.tsx` | — |
@@ -551,7 +551,7 @@
 | Metric | Value |
 |--------|-------|
 | Total files analyzed | 490 |
-| Total connections | 189 |
+| Total connections | 190 |
 | High-risk files (2+ deps) | 35 |
 | Orphan files (no connections) | 328 |
 

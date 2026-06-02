@@ -107,11 +107,16 @@ interface ScheduledActivity {
 
 interface ExternalEvent {
   id: string;
-  hour: string; // "HH:00"
+  /** Anchor slot, e.g. "09:30". */
+  hour: string;
   title: string;
   timeRange: string; // "10:00 – 11:00"
   /** Calendar source label — account label or calendar id. */
   source: string;
+  /** 30-min slots the event covers (≥ 1). Drives vertical span. */
+  spanSlots: number;
+  /** Every slot blocked, anchor included. */
+  coveredSlots: string[];
 }
 
 const INITIAL_SCHEDULED: ScheduledActivity[] = [
@@ -285,6 +290,8 @@ const EXTERNAL_EVENTS: ExternalEvent[] = [
     title: 'Reunión clientes',
     timeRange: '10:00 – 11:00',
     source: 'Google',
+    spanSlots: 2,
+    coveredSlots: ['10:00', '10:30'],
   },
   {
     id: 'gc-2',
@@ -292,6 +299,8 @@ const EXTERNAL_EVENTS: ExternalEvent[] = [
     title: 'Llamada Juan',
     timeRange: '14:00 – 15:00',
     source: 'Google',
+    spanSlots: 2,
+    coveredSlots: ['14:00', '14:30'],
   },
 ];
 
@@ -429,8 +438,11 @@ export function TodayActivitiesBoard({
   );
 
   const blockedSlots = useMemo(() => {
-    // External events already arrive bucketed to 30-min slots.
-    const set = new Set(externalEvents.map((e) => e.hour));
+    // External events expose every covered 30-min slot via coveredSlots.
+    const set = new Set<string>();
+    for (const e of externalEvents) {
+      for (const s of e.coveredSlots) set.add(s);
+    }
     for (const a of scheduled) {
       const startMin = parseSlot(a.scheduledTime);
       if (Number.isNaN(startMin)) continue;
@@ -745,6 +757,7 @@ export function TodayActivitiesBoard({
           title={evt.title}
           timeRange={evt.timeRange}
           source={evt.source}
+          spanSlots={evt.spanSlots}
         />
       );
       map[evt.hour] = existing ? (

@@ -18,11 +18,16 @@ import { calendarConnections } from '@/lib/db/schema/calendar-connections';
 
 export interface ExternalEventForBoard {
   id: string;
-  hour: string; // HH:00 in user TZ
+  /** Anchor slot ("HH:00"/"HH:30") — where the ExternalEventRow renders. */
+  hour: string;
   title: string;
   timeRange: string; // "10:00 – 11:00"
   /** Human-readable source label, e.g. account_label or calendar_id. */
   source: string;
+  /** Number of 30-min slots the event covers (≥ 1). Drives vertical span. */
+  spanSlots: number;
+  /** Every 30-min slot the event blocks — anchor included. */
+  coveredSlots: string[];
 }
 
 const CALENDAR_START_HOUR = 6;
@@ -139,16 +144,25 @@ export async function loadTodaysBusySlots(
     const rangeStr = fmtRange(r.startAt, r.endAt, timezone);
     const source = r.accountLabel || r.externalAccountId || r.calendarId;
 
+    // Collect every slot the event covers — anchored on the first one.
+    // The board renders ONE ExternalEventRow at `hour` with height
+    // proportional to `spanSlots`; the rest go into `coveredSlots` so
+    // they're marked blocked without rendering a duplicate row.
+    const covered: string[] = [];
     for (let m = bucketStart; m < bucketEnd; m += SLOT_MINUTES) {
       if (m < CALENDAR_START_HOUR * 60 || m > CALENDAR_END_MIN) continue;
-      out.push({
-        id: `${r.id}-${m}`,
-        hour: formatSlot(m),
-        title,
-        timeRange: rangeStr,
-        source,
-      });
+      covered.push(formatSlot(m));
     }
+    if (covered.length === 0) continue;
+    out.push({
+      id: r.id,
+      hour: covered[0],
+      title,
+      timeRange: rangeStr,
+      source,
+      spanSlots: covered.length,
+      coveredSlots: covered,
+    });
   }
   return out;
 }
