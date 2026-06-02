@@ -20,7 +20,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { WaveformAnim } from './WaveformAnim';
-import { ActivityQuickAdd, type QuickAddDraft, type QuickAddProject } from './ActivityQuickAdd';
+import {
+  ActivityQuickAdd,
+  type QuickAddDraft,
+  type QuickAddProject,
+  type QuickAddCategory,
+} from './ActivityQuickAdd';
 import { createActivity } from '@/lib/actions/activity';
 
 interface VoiceCaptureSheetProps {
@@ -78,6 +83,7 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
   const [transcript, setTranscript] = useState('');
   const [preview, setPreview] = useState<ParsedPreview | null>(null);
   const [projects, setProjects] = useState<QuickAddProject[]>([]);
+  const [categories, setCategories] = useState<QuickAddCategory[]>([]);
   const [todayDate] = useState(todayLocalISO);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -175,8 +181,14 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
           try {
             const res = await fetch('/api/projects/picker', { method: 'GET' });
             if (!res.ok) return;
-            const data = (await res.json()) as { projects: QuickAddProject[] };
-            if (!cancelled) setProjects(data.projects ?? []);
+            const data = (await res.json()) as {
+              projects: QuickAddProject[];
+              categories: QuickAddCategory[];
+            };
+            if (!cancelled) {
+              setProjects(data.projects ?? []);
+              setCategories(data.categories ?? []);
+            }
           } catch {
             /* ignore — preview will show empty picker */
           }
@@ -424,6 +436,7 @@ export function VoiceCaptureSheet({ open, onOpenChange }: VoiceCaptureSheetProps
 
             <ActivityQuickAdd
               projects={projects}
+              categories={categories}
               defaultDateISO={todayDate}
               onCreate={handleSubmit}
               onCancel={close}

@@ -55,7 +55,12 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { ActivityRow, type ActivityStatus } from './ActivityRow';
-import { ActivityQuickAdd, type QuickAddDraft, type QuickAddProject } from './ActivityQuickAdd';
+import {
+  ActivityQuickAdd,
+  type QuickAddDraft,
+  type QuickAddProject,
+  type QuickAddCategory,
+} from './ActivityQuickAdd';
 import { SwipeableRow } from './SwipeableRow';
 import { DraggableTaskRow } from './DraggableTaskRow';
 import { PoolSection } from './PoolSection';
@@ -360,6 +365,8 @@ interface TodayActivitiesBoardProps {
    * the picker shows "Sin proyectos" and submit is disabled.
    */
   projects?: QuickAddProject[];
+  /** Full category catalog. Optional for the same reason as `projects`. */
+  categories?: QuickAddCategory[];
   /**
    * YYYY-MM-DD for the user's local "today" — drives the quick-add
    * default date. Caller (TodayClient) resolves the TZ.
@@ -377,6 +384,7 @@ export function TodayActivitiesBoard({
   initialExternalEvents,
   onMovePersist,
   projects,
+  categories,
   todayDate,
 }: TodayActivitiesBoardProps) {
   const [scheduled, setScheduled] = useState<ScheduledActivity[]>(
@@ -797,6 +805,7 @@ export function TodayActivitiesBoard({
                     <ActivityQuickAdd
                       onCreate={handleCreate}
                       projects={projects ?? []}
+                      categories={categories ?? []}
                       defaultDateISO={todayDate ?? new Date().toISOString().slice(0, 10)}
                     />
                   }
@@ -839,6 +848,7 @@ export function TodayActivitiesBoard({
                     <ActivityQuickAdd
                       onCreate={handleCreate}
                       projects={projects ?? []}
+                      categories={categories ?? []}
                       defaultDateISO={todayDate ?? new Date().toISOString().slice(0, 10)}
                     />
                   }

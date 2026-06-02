@@ -28,6 +28,12 @@ export interface QuickAddProject {
   categoryName: string;
 }
 
+export interface QuickAddCategory {
+  id: string;
+  name: string;
+  isInbox: boolean;
+}
+
 export interface QuickAddDraft {
   title: string;
   /** Real UUID — for createActivity. */
@@ -53,10 +59,21 @@ interface ActivityQuickAddProps {
    */
   projects: QuickAddProject[];
   /**
+   * Full category catalog — Inbox first. Shown even when a category has
+   * no projects yet (the project sub-picker just shows "Sin proyectos"
+   * in that case).
+   */
+  categories: QuickAddCategory[];
+  /**
    * YYYY-MM-DD pre-selected when the form opens. Typically the user's
    * local "today" — caller resolves the timezone.
    */
   defaultDateISO: string;
+  /**
+   * Force the form to start expanded — for inline mounts (e.g. /tasks
+   * header button) so the user doesn't have to tap "+ Nueva" twice.
+   */
+  defaultOpen?: boolean;
   /**
    * When set, the form starts expanded with these fields pre-filled and
    * the collapsed "+ Nueva" CTA is suppressed. Used by modal flows like
@@ -98,7 +115,9 @@ function addDaysISO(iso: string, days: number): string {
 export function ActivityQuickAdd({
   onCreate,
   projects,
+  categories: catalogCategories,
   defaultDateISO,
+  defaultOpen,
   initialDraft,
   onCancel,
   submitLabel,
@@ -117,22 +136,14 @@ export function ActivityQuickAdd({
     return sortedProjects.find((p) => p.isInbox)?.id ?? sortedProjects[0]?.id ?? '';
   }, [sortedProjects]);
 
-  /** Distinct categories derived from the project list, sorted Inbox first. */
+  /** Full catalog sorted Inbox-first, then alpha. Driven by `categories` prop. */
   const categories = useMemo(() => {
-    const seen = new Map<string, { id: string; name: string; hasInbox: boolean }>();
-    for (const p of sortedProjects) {
-      if (!seen.has(p.categoryId)) {
-        seen.set(p.categoryId, { id: p.categoryId, name: p.categoryName, hasInbox: p.isInbox });
-      } else if (p.isInbox) {
-        seen.get(p.categoryId)!.hasInbox = true;
-      }
-    }
-    return Array.from(seen.values()).sort((a, b) => {
-      if (a.hasInbox && !b.hasInbox) return -1;
-      if (!a.hasInbox && b.hasInbox) return 1;
+    return [...catalogCategories].sort((a, b) => {
+      if (a.isInbox && !b.isInbox) return -1;
+      if (!a.isInbox && b.isInbox) return 1;
       return a.name.localeCompare(b.name, 'es');
     });
-  }, [sortedProjects]);
+  }, [catalogCategories]);
 
   // Map an initialDraft's dateISO to (choice, customDate). Anything that
   // isn't exactly today or tomorrow becomes a custom date so the picker
@@ -162,7 +173,7 @@ export function ActivityQuickAdd({
   }, [initialDraft?.deadline]);
 
   const modal = initialDraft !== undefined;
-  const [open, setOpen] = useState(modal);
+  const [open, setOpen] = useState(modal || !!defaultOpen);
   const [title, setTitle] = useState(initialDraft?.title ?? '');
   // Stored user intent — actual displayed projectId/categoryId are derived
   // via useMemo below so they stay valid when the projects list mutates
@@ -642,7 +653,7 @@ function CategoryProjectPicker({
   onFocusChange,
 }: {
   projects: QuickAddProject[];
-  categories: Array<{ id: string; name: string; hasInbox: boolean }>;
+  categories: QuickAddCategory[];
   categoryId: string;
   projectId: string;
   query: string;

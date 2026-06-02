@@ -16,7 +16,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { listActivities } from '@/lib/actions/activity';
 import { loadTodayUserProfile, loadProjectLabelMap } from '@/lib/db/queries/today';
-import { listProjects } from '@/lib/db/queries/catalog';
+import { listProjects, listCategories } from '@/lib/db/queries/catalog';
 import { loadTodaysBusySlots } from '@/lib/db/queries/busy-slots';
 import { todayInTimezone, todayLabelEs, userInitial } from '@/lib/domain/day-calc';
 import { TodayClient } from '@/components/agenda/TodayClient';
@@ -133,12 +133,14 @@ export default async function TodayPage() {
   const dateLabel = todayLabelEs(now, profile.timezone);
   const initials = userInitial(profile.name ?? profile.email);
 
-  const [listResult, projectLabelById, externalEvents, projectRows] = await Promise.all([
-    listActivities({ date: todayDate, includeDone: false }),
-    loadProjectLabelMap(userId),
-    loadTodaysBusySlots(userId, todayDate, profile.timezone),
-    listProjects(userId),
-  ]);
+  const [listResult, projectLabelById, externalEvents, projectRows, categoryRows] =
+    await Promise.all([
+      listActivities({ date: todayDate, includeDone: false }),
+      loadProjectLabelMap(userId),
+      loadTodaysBusySlots(userId, todayDate, profile.timezone),
+      listProjects(userId),
+      listCategories(userId),
+    ]);
 
   const projects = projectRows.map((p) => ({
     id: p.id,
@@ -146,6 +148,11 @@ export default async function TodayPage() {
     isInbox: p.isInbox,
     categoryId: p.categoryId,
     categoryName: p.categoryName,
+  }));
+  const categories = categoryRows.map((c) => ({
+    id: c.id,
+    name: c.name,
+    isInbox: c.isInbox,
   }));
 
   let todayActivities: CloseDayActivityInput[] = [];
@@ -185,6 +192,7 @@ export default async function TodayPage() {
       initialPool={initialPool}
       externalEvents={externalEvents}
       projects={projects}
+      categories={categories}
     />
   );
 }

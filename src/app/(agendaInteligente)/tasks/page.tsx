@@ -13,7 +13,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { listActivities } from '@/lib/actions/activity';
 import { loadTodayUserProfile, loadProjectLabelMap } from '@/lib/db/queries/today';
-import { listProjects } from '@/lib/db/queries/catalog';
+import { listProjects, listCategories } from '@/lib/db/queries/catalog';
 import { todayInTimezone } from '@/lib/domain/day-calc';
 import { TasksClient } from '@/components/agenda/TasksClient';
 import type { Task } from '@/components/agenda/TasksClient';
@@ -33,10 +33,11 @@ export default async function TasksPage() {
   };
   const todayDate = todayInTimezone(new Date(), profile.timezone);
 
-  const [listResult, projectLabelById, projectRows] = await Promise.all([
+  const [listResult, projectLabelById, projectRows, categoryRows] = await Promise.all([
     listActivities({ date: todayDate, includeDone: true }),
     loadProjectLabelMap(userId),
     listProjects(userId),
+    listCategories(userId),
   ]);
 
   const projects = projectRows.map((p) => ({
@@ -45,6 +46,11 @@ export default async function TasksPage() {
     isInbox: p.isInbox,
     categoryId: p.categoryId,
     categoryName: p.categoryName,
+  }));
+  const categories = categoryRows.map((c) => ({
+    id: c.id,
+    name: c.name,
+    isInbox: c.isInbox,
   }));
 
   const initialTasks: Task[] = [];
@@ -68,5 +74,12 @@ export default async function TasksPage() {
     }
   }
 
-  return <TasksClient initialTasks={initialTasks} todayDate={todayDate} projects={projects} />;
+  return (
+    <TasksClient
+      initialTasks={initialTasks}
+      todayDate={todayDate}
+      projects={projects}
+      categories={categories}
+    />
+  );
 }

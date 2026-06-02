@@ -26,7 +26,11 @@ import {
   type CloseDayActivityInput,
 } from '@/components/agenda/CloseDayModal';
 import { TodayViewToggle, type TodayView } from '@/components/agenda/TodayViewToggle';
-import type { QuickAddDraft, QuickAddProject } from '@/components/agenda/ActivityQuickAdd';
+import type {
+  QuickAddDraft,
+  QuickAddProject,
+  QuickAddCategory,
+} from '@/components/agenda/ActivityQuickAdd';
 import { closeDay } from '@/lib/actions/close-day';
 import { createActivity, transitionActivity, updateActivity } from '@/lib/actions/activity';
 
@@ -82,6 +86,8 @@ export interface TodayClientProps {
   externalEvents: ExternalEventInput[];
   /** Real project list for the inline quick-add picker. Inbox-first. */
   projects: QuickAddProject[];
+  /** Full category catalog. */
+  categories: QuickAddCategory[];
 }
 
 export function TodayClient({
@@ -93,6 +99,7 @@ export function TodayClient({
   initialPool,
   externalEvents,
   projects,
+  categories,
 }: TodayClientProps) {
   const [view, setView] = useState<TodayView>('fecha');
   const [closeOpen, setCloseOpen] = useState(false);
@@ -264,6 +271,7 @@ export function TodayClient({
           onTransitionPersist={handleTransitionPersist}
           onMovePersist={handleMovePersist}
           projects={projects}
+          categories={categories}
           todayDate={todayDate}
         />
 

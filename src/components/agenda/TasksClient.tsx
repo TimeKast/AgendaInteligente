@@ -24,6 +24,7 @@ import {
   ActivityQuickAdd,
   type QuickAddDraft,
   type QuickAddProject,
+  type QuickAddCategory,
 } from '@/components/agenda/ActivityQuickAdd';
 import {
   ActivityStatusModal,
@@ -59,6 +60,8 @@ interface TasksClientProps {
   todayDate: string;
   /** Real project list — feeds the quick-add picker. Inbox-first. */
   projects: QuickAddProject[];
+  /** Full category catalog — Inbox first. */
+  categories: QuickAddCategory[];
 }
 
 const OPEN_STATUSES: ActivityStatus[] = ['todo', 'in_progress', 'blocked'];
@@ -112,7 +115,7 @@ function groupByProject(tasks: Task[]): Array<{ project: string; items: Task[] }
     .sort((a, b) => a.project.localeCompare(b.project, 'es'));
 }
 
-export function TasksClient({ initialTasks, todayDate, projects }: TasksClientProps) {
+export function TasksClient({ initialTasks, todayDate, projects, categories }: TasksClientProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [, startTransition] = useTransition();
   const [filter, setFilter] = useState<StatusFilter>('open');
@@ -285,7 +288,10 @@ export function TasksClient({ initialTasks, todayDate, projects }: TasksClientPr
           <div style={{ paddingTop: 'var(--ag-space-3)' }}>
             <ActivityQuickAdd
               projects={projects}
+              categories={categories}
               defaultDateISO={todayDate}
+              defaultOpen
+              onCancel={() => setQuickAddOpen(false)}
               onCreate={(draft) => {
                 handleCreate(draft);
                 setQuickAddOpen(false);
