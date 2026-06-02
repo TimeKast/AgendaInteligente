@@ -324,7 +324,7 @@ export function TasksClient({ initialTasks, todayDate, projects, categories }: T
               value={filter}
               onChange={setFilter}
               options={[
-                { id: 'open', label: `Abiertas (${counts.open})` },
+                { id: 'open', label: `Por hacer (${counts.open})` },
                 { id: 'done', label: `Hechas (${counts.done})` },
                 { id: 'skipped', label: `Saltadas (${counts.skipped})` },
                 { id: 'blocked', label: `Bloqueadas (${counts.blocked})` },
