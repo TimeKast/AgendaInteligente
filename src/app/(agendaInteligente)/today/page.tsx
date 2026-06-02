@@ -36,6 +36,7 @@ interface ScheduledInput {
   deadline?: string;
   progressPercent?: number;
   quadrant: Quadrant;
+  description?: string | null;
 }
 interface PoolInput {
   id: string;
@@ -47,6 +48,7 @@ interface PoolInput {
   projectLabel: string;
   deadline?: string;
   progressPercent?: number;
+  description?: string | null;
 }
 
 /** Map a 5-state DB status → the board's 5-state UI status. Same labels for now. */
@@ -69,6 +71,7 @@ function toScheduled(
     deadline: Date | null;
     progressPercent: number | null;
     projectId: string;
+    description: string | null;
   },
   projectLabel: string
 ): ScheduledInput {
@@ -83,6 +86,7 @@ function toScheduled(
     deadline: a.deadline ? a.deadline.toISOString().slice(0, 10) : undefined,
     progressPercent: a.progressPercent ?? undefined,
     quadrant: (a.quadrant as Quadrant) ?? 2,
+    description: a.description ?? null,
   };
 }
 
@@ -96,6 +100,7 @@ function toPool(
     deadline: Date | null;
     progressPercent: number | null;
     projectId: string;
+    description: string | null;
   },
   projectLabel: string,
   scope: 'today' | 'week' | 'backlog'
@@ -110,6 +115,7 @@ function toPool(
     projectLabel,
     deadline: a.deadline ? a.deadline.toISOString().slice(0, 10) : undefined,
     progressPercent: a.progressPercent ?? undefined,
+    description: a.description ?? null,
   };
 }
 

@@ -89,6 +89,7 @@ interface PoolActivity {
   projectLabel: string;
   deadline?: string;
   progressPercent?: number;
+  description?: string | null;
 }
 
 interface ScheduledActivity {
@@ -103,6 +104,7 @@ interface ScheduledActivity {
   deadline?: string;
   progressPercent?: number;
   quadrant: Quadrant;
+  description?: string | null;
 }
 
 interface ExternalEvent {
@@ -738,6 +740,7 @@ export function TodayActivitiesBoard({
           scheduledTime={a.scheduledTime}
           deadline={a.deadline}
           progressPercent={a.progressPercent}
+          description={a.description ?? null}
         />
       );
       map[bucketKey] = existing ? (
@@ -820,6 +823,7 @@ export function TodayActivitiesBoard({
               onOpenStatus={() => openStatus(a)}
               deadline={a.deadline}
               progressPercent={a.progressPercent}
+              description={a.description ?? null}
             />
           </div>
         </div>

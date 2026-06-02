@@ -43,6 +43,8 @@ interface DraggableTaskRowProps {
   draggable?: boolean;
   /** Optional ISO YYYY-MM-DD deadline (rendered inline by ActivityRow). */
   deadline?: string;
+  /** Optional description — passed through to ActivityRow's hover tooltip. */
+  description?: string | null;
   /** Optional progress 0..100 (renders bottom-edge bar via ActivityRow). */
   progressPercent?: number;
   /**

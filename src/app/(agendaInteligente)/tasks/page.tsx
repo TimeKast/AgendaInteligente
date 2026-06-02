@@ -70,6 +70,7 @@ export default async function TasksPage() {
         deadline: a.deadline ? a.deadline.toISOString().slice(0, 10) : undefined,
         progressPercent: a.progressPercent ?? undefined,
         recurrenceRule: a.recurrenceRule ?? null,
+        description: a.description ?? null,
       });
     }
   }

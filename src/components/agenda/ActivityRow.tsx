@@ -161,6 +161,11 @@ interface ActivityRowProps {
    * non-null, a small Repeat icon renders inline after the title.
    */
   recurrenceRule?: string | null;
+  /**
+   * Optional description — surfaced as a native `title` tooltip so the user
+   * can preview the detail on hover/long-press without leaving the row.
+   */
+  description?: string | null;
 }
 
 function Checkbox({ status }: { status: ActivityStatus }) {
@@ -257,15 +262,33 @@ export function ActivityRow({
   deadline,
   progressPercent,
   recurrenceRule,
+  description,
 }: ActivityRowProps) {
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
   const isSkipped = status === 'skipped';
   const showProgress = !isDone && (progressPercent ?? 0) > 0;
 
+  // Hide the checkbox for the default 'todo' status — title is what matters,
+  // and the implicit "no marker = por hacer" reads cleanly. Non-default
+  // states still render their indicator (✓, half-fill, –, ⚠).
+  const showCheckbox = status !== 'todo';
+
+  // Compose a hover tooltip with the bits that don't fit inline. Falls
+  // back to just the title when there's no extra detail.
+  const tooltip = [
+    title,
+    description?.trim() || null,
+    deadline ? `Vence: ${deadline}` : null,
+    scheduledTime ? `Programada: ${scheduledTime}` : null,
+    projectLabel ? `Proyecto: ${projectLabel}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
   const rowInner = (
     <>
-      <Checkbox status={status} />
+      {showCheckbox ? <Checkbox status={status} /> : null}
 
       {/* Title + time stacked, occupying flexible middle column */}
       <div
@@ -407,6 +430,7 @@ export function ActivityRow({
         {href ? (
           <Link
             href={href}
+            title={tooltip}
             style={{
               ...rowStyle,
               borderBottom: 'none',
@@ -415,7 +439,9 @@ export function ActivityRow({
             {rowInner}
           </Link>
         ) : (
-          <div style={{ ...rowStyle, borderBottom: 'none' }}>{rowInner}</div>
+          <div title={tooltip} style={{ ...rowStyle, borderBottom: 'none' }}>
+            {rowInner}
+          </div>
         )}
         {trailingSlot ?? null}
         {progressBar}
@@ -426,11 +452,13 @@ export function ActivityRow({
   return (
     <li className="ag-activity-row" style={{ listStyle: 'none', position: 'relative' }}>
       {href ? (
-        <Link href={href} style={rowStyle}>
+        <Link href={href} title={tooltip} style={rowStyle}>
           {rowInner}
         </Link>
       ) : (
-        <div style={rowStyle}>{rowInner}</div>
+        <div title={tooltip} style={rowStyle}>
+          {rowInner}
+        </div>
       )}
       {progressBar}
     </li>

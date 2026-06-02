@@ -47,6 +47,7 @@ interface ScheduledActivityInput {
   deadline?: string;
   progressPercent?: number;
   quadrant: 1 | 2 | 3 | 4;
+  description?: string | null;
 }
 interface PoolActivityInput {
   id: string;
@@ -58,6 +59,7 @@ interface PoolActivityInput {
   projectLabel: string;
   deadline?: string;
   progressPercent?: number;
+  description?: string | null;
 }
 interface ExternalEventInput {
   id: string;

@@ -52,6 +52,8 @@ export interface Task {
   progressPercent?: number;
   /** Simplified recurrence DSL — see RecurrencePicker. */
   recurrenceRule?: string | null;
+  /** Optional free-form description — surfaced via row hover tooltip. */
+  description?: string | null;
 }
 
 interface TasksClientProps {
@@ -580,6 +582,7 @@ function TaskListItem({ task, onOpenStatus }: { task: Task; onOpenStatus: () => 
         deadline={task.deadline}
         progressPercent={task.progressPercent}
         recurrenceRule={task.recurrenceRule ?? null}
+        description={task.description ?? null}
         trailingSlot={
           <button
             type="button"
