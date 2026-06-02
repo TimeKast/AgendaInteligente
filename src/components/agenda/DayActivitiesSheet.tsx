@@ -154,7 +154,7 @@ export function DayActivitiesSheet({
                   }}
                 >
                   <span
-                    aria-label={isDone ? 'Hecho' : 'Pendiente'}
+                    aria-label={isDone ? 'Hecha' : 'Por hacer'}
                     style={{
                       display: 'inline-block',
                       width: 14,

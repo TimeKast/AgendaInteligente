@@ -65,8 +65,7 @@ export function DraggablePoolActivity({
 
   const isDone = activity.status === 'done';
   const isInProgress = activity.status === 'in_progress';
-  const showProgress =
-    !isDone && (activity.progressPercent ?? 0) > 0;
+  const showProgress = !isDone && (activity.progressPercent ?? 0) > 0;
 
   const wrapperStyle: React.CSSProperties = {
     position: 'relative',
@@ -83,8 +82,8 @@ export function DraggablePoolActivity({
     gridTemplateColumns: trailingSlot
       ? 'auto auto 1fr auto auto auto'
       : activity.deadline
-      ? 'auto auto 1fr auto auto'
-      : 'auto auto 1fr auto',
+        ? 'auto auto 1fr auto auto'
+        : 'auto auto 1fr auto',
     alignItems: 'center',
     gap: 'var(--ag-space-2)',
     padding: '6px 8px',
@@ -106,7 +105,7 @@ export function DraggablePoolActivity({
           <GripVertical size={14} strokeWidth={1.5} />
         </span>
         <span
-          aria-label={isDone ? 'Hecho' : 'Pendiente'}
+          aria-label={isDone ? 'Hecha' : 'Por hacer'}
           style={{
             display: 'inline-block',
             width: 14,

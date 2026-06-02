@@ -31,7 +31,7 @@ interface ActivityStatusModalProps {
 }
 
 const STATUS_OPTIONS: Array<{ id: ExtendedActivityStatus; label: string }> = [
-  { id: 'todo', label: 'Pendiente' },
+  { id: 'todo', label: 'Por hacer' },
   { id: 'in_progress', label: 'En progreso' },
   { id: 'done', label: 'Hecha' },
   { id: 'skipped', label: 'Saltada' },

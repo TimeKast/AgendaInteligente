@@ -49,8 +49,7 @@ function Checkbox({ status }: { status: ActivityStatus }) {
           width: 18,
           height: 18,
           borderRadius: 'var(--ag-radius-xs)',
-          background:
-            'linear-gradient(135deg, var(--ag-ink-primary) 0 50%, transparent 50% 100%)',
+          background: 'linear-gradient(135deg, var(--ag-ink-primary) 0 50%, transparent 50% 100%)',
           boxShadow: 'inset 0 0 0 1px var(--ag-ink-soft)',
           flexShrink: 0,
         }}
@@ -59,7 +58,7 @@ function Checkbox({ status }: { status: ActivityStatus }) {
   }
   return (
     <span
-      aria-label="Pendiente"
+      aria-label="Por hacer"
       style={{
         width: 18,
         height: 18,

@@ -178,7 +178,7 @@ function Checkbox({ status }: { status: ActivityStatus }) {
   if (status === 'done') {
     return (
       <span
-        aria-label="Hecho"
+        aria-label="Hecha"
         style={{
           ...base,
           backgroundColor: 'var(--ag-ink-primary)',
@@ -208,7 +208,7 @@ function Checkbox({ status }: { status: ActivityStatus }) {
   if (status === 'skipped') {
     return (
       <span
-        aria-label="Saltado"
+        aria-label="Saltada"
         style={{
           ...base,
           color: 'var(--ag-ink-hint)',
@@ -222,7 +222,7 @@ function Checkbox({ status }: { status: ActivityStatus }) {
   if (status === 'blocked') {
     return (
       <span
-        aria-label="Bloqueado"
+        aria-label="Bloqueada"
         style={{
           ...base,
           color: 'var(--ag-warning)',
@@ -235,7 +235,7 @@ function Checkbox({ status }: { status: ActivityStatus }) {
 
   return (
     <span
-      aria-label="Pendiente"
+      aria-label="Por hacer"
       style={{
         ...base,
         backgroundColor: 'transparent',
@@ -399,8 +399,7 @@ export function ActivityRow({
           gridTemplateColumns: cols,
           alignItems: 'center',
           gap: 'var(--ag-space-2)',
-          borderBottom:
-            '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
+          borderBottom: '1px solid color-mix(in oklab, var(--ag-rule), transparent 50%)',
           position: 'relative',
         }}
       >

@@ -43,7 +43,7 @@ interface Props {
 
 const STATUS_OPTIONS: Array<{ value: 'done' | 'skipped' | 'blocked' | 'pending'; label: string }> =
   [
-    { value: 'pending', label: 'Pendiente' },
+    { value: 'pending', label: 'Por hacer' },
     { value: 'done', label: 'Hecha' },
     { value: 'skipped', label: 'Saltada' },
     { value: 'blocked', label: 'Bloqueada' },
