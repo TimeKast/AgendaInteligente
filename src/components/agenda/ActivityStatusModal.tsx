@@ -31,11 +31,11 @@ interface ActivityStatusModalProps {
 }
 
 const STATUS_OPTIONS: Array<{ id: ExtendedActivityStatus; label: string }> = [
-  { id: 'todo', label: 'Pending' },
-  { id: 'in_progress', label: 'In progress' },
-  { id: 'done', label: 'Done' },
-  { id: 'skipped', label: 'Skipped' },
-  { id: 'blocked', label: 'Blocked' },
+  { id: 'todo', label: 'Pendiente' },
+  { id: 'in_progress', label: 'En progreso' },
+  { id: 'done', label: 'Hecha' },
+  { id: 'skipped', label: 'Saltada' },
+  { id: 'blocked', label: 'Bloqueada' },
 ];
 
 const REASON_CATEGORIES: StatusReason['category'][] = [
@@ -62,9 +62,9 @@ export function ActivityStatusModal({
     // Reset modal state when it re-opens. Same pattern as NewCategoryModal.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus(currentStatus);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setReasonCat('tiempo');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setReasonNote('');
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel();

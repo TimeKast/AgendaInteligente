@@ -64,7 +64,10 @@ interface TasksClientProps {
   categories: QuickAddCategory[];
 }
 
-const OPEN_STATUSES: ActivityStatus[] = ['todo', 'in_progress', 'blocked'];
+// Disjoint slices so counts add up: open + done + skipped + blocked === all.
+// A blocked task is NOT "abierta" — it's waiting on something external and
+// gets its own bucket.
+const OPEN_STATUSES: ActivityStatus[] = ['todo', 'in_progress'];
 
 function matchesFilter(task: Task, filter: StatusFilter): boolean {
   switch (filter) {
@@ -322,8 +325,8 @@ export function TasksClient({ initialTasks, todayDate, projects, categories }: T
               onChange={setFilter}
               options={[
                 { id: 'open', label: `Abiertas (${counts.open})` },
-                { id: 'done', label: `Done (${counts.done})` },
-                { id: 'skipped', label: `Skipped (${counts.skipped})` },
+                { id: 'done', label: `Hechas (${counts.done})` },
+                { id: 'skipped', label: `Saltadas (${counts.skipped})` },
                 { id: 'blocked', label: `Bloqueadas (${counts.blocked})` },
                 { id: 'all', label: `Todas (${counts.all})` },
               ]}
