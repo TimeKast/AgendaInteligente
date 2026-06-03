@@ -37,15 +37,16 @@ type Preset =
   | 'yearly'
   | 'custom';
 
+// Only presets the recurrence parser (`src/lib/domain/recurrence.ts`) can
+// roundtrip are listed. `biweekly`, `yearly`, and `custom` are scaffolded
+// in the type/UI plumbing but the parser doesn't accept them — they
+// stayed hidden until the DSL grows.
 const PRESETS: Array<{ id: Preset; label: string }> = [
   { id: 'none', label: 'Sin recurrencia' },
   { id: 'daily', label: 'Diaria' },
   { id: 'weekdays', label: 'Cada día de la semana (L-V)' },
   { id: 'weekly', label: 'Semanal' },
-  { id: 'biweekly', label: 'Quincenal (cada 2 semanas)' },
   { id: 'monthly', label: 'Mensual' },
-  { id: 'yearly', label: 'Anual' },
-  { id: 'custom', label: 'Personalizado' },
 ];
 
 const ISO_DAYS: Array<{ code: string; label: string }> = [
@@ -70,20 +71,15 @@ const UNIT_OPTIONS: Array<{ id: CustomUnit; label: string }> = [
 function detectPreset(rule: RecurrenceRule): Preset {
   if (!rule) return 'none';
   if (rule === 'daily') return 'daily';
-  if (rule === 'weekdays') return 'weekdays';
-  if (rule === 'biweekly') return 'biweekly';
+  // Roundtrip the L-V preset: any weekly rule that names exactly Mon-Fri
+  // is rendered as the dedicated "Cada día de la semana (L-V)" preset.
+  if (rule === 'weekly:MO,TU,WE,TH,FR') return 'weekdays';
   if (rule.startsWith('weekly:')) return 'weekly';
   if (rule.startsWith('monthly:')) return 'monthly';
-  if (rule.startsWith('yearly:')) return 'yearly';
-  if (rule.startsWith('every:')) return 'custom';
   return 'none';
 }
 
-export function RecurrencePicker({
-  value,
-  onChange,
-  referenceDate,
-}: RecurrencePickerProps) {
+export function RecurrencePicker({ value, onChange, referenceDate }: RecurrencePickerProps) {
   const initialPreset = useMemo(() => detectPreset(value), [value]);
   const [preset, setPreset] = useState<Preset>(initialPreset);
 
@@ -147,7 +143,7 @@ export function RecurrencePicker({
 
   function toggleDay(code: string) {
     setWeeklyDays((days) =>
-      days.includes(code) ? days.filter((d) => d !== code) : [...days, code],
+      days.includes(code) ? days.filter((d) => d !== code) : [...days, code]
     );
   }
 
@@ -233,9 +229,7 @@ export function RecurrencePicker({
             max={31}
             value={monthDay}
             onChange={(e) =>
-              setMonthDay(
-                Math.max(1, Math.min(31, parseInt(e.target.value, 10) || 1)),
-              )
+              setMonthDay(Math.max(1, Math.min(31, parseInt(e.target.value, 10) || 1)))
             }
             style={{
               appearance: 'none',
@@ -371,7 +365,7 @@ function buildRule(
     yearDate: string;
     customN: number;
     customUnit: CustomUnit;
-  },
+  }
 ): RecurrenceRule {
   switch (preset) {
     case 'none':
@@ -379,21 +373,22 @@ function buildRule(
     case 'daily':
       return 'daily';
     case 'weekdays':
-      return 'weekdays';
+      // Map the "L-V" preset to the parser-accepted weekly form.
+      return 'weekly:MO,TU,WE,TH,FR';
     case 'weekly': {
       const days = args.weeklyDays.length > 0 ? args.weeklyDays : ['MO'];
       // Preserve canonical ISO order.
       const ordered = ISO_DAYS.map((d) => d.code).filter((c) => days.includes(c));
       return `weekly:${ordered.join(',')}`;
     }
-    case 'biweekly':
-      return 'biweekly';
     case 'monthly':
       return `monthly:${args.monthDay}`;
+    case 'biweekly':
     case 'yearly':
-      return args.yearDate ? `yearly:${args.yearDate}` : null;
     case 'custom':
-      return `every:${args.customN}:${args.customUnit}`;
+      // Not supported by the parser yet — keep the case here so the
+      // exhaustive switch typechecks; the UI hides these presets.
+      return null;
     default:
       return null;
   }
@@ -438,8 +433,7 @@ const UNIT_LABELS: Record<CustomUnit, { singular: string; plural: string }> = {
 export function formatRecurrence(rule: RecurrenceRule): string {
   if (!rule) return 'Una vez';
   if (rule === 'daily') return 'Todos los días';
-  if (rule === 'weekdays') return 'Cada día de la semana (L-V)';
-  if (rule === 'biweekly') return 'Cada 2 semanas';
+  if (rule === 'weekly:MO,TU,WE,TH,FR') return 'Cada día de la semana (L-V)';
   if (rule.startsWith('weekly:')) {
     const codes = rule.slice('weekly:'.length).split(',').filter(Boolean);
     if (codes.length === 0) return 'Semanal';
