@@ -25,9 +25,7 @@ import {
   Calendar,
   CalendarRange,
   Compass,
-  FolderTree,
   ListChecks,
-  MessageSquare,
   Settings,
   type LucideIcon,
 } from 'lucide-react';
@@ -44,8 +42,6 @@ const ITEMS: NavItem[] = [
   { key: 'week', label: 'Plan', href: '/week', Icon: CalendarRange },
   { key: 'tasks', label: 'Tasks', href: '/tasks', Icon: ListChecks },
   { key: 'goals', label: 'Goals', href: '/goals', Icon: Compass },
-  { key: 'chat', label: 'Chat', href: '/chat', Icon: MessageSquare },
-  { key: 'categories', label: 'Categorías', href: '/categories', Icon: FolderTree },
   { key: 'settings', label: 'Settings', href: '/settings', Icon: Settings },
 ];
 
@@ -122,9 +118,7 @@ export function AgendaBottomNav() {
                     minWidth: 0,
                     background: active ? 'var(--ag-bg-elevated)' : 'transparent',
                     border: 'none',
-                    borderTop: active
-                      ? '2px solid var(--ag-ink-primary)'
-                      : '2px solid transparent',
+                    borderTop: active ? '2px solid var(--ag-ink-primary)' : '2px solid transparent',
                     color: active ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
                     display: 'inline-flex',
                     flexDirection: 'column',

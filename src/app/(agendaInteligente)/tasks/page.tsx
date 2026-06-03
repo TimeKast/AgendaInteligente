@@ -53,6 +53,19 @@ export default async function TasksPage() {
     isInbox: c.isInbox,
   }));
 
+  // Map DB activity status → UI ActivityStatus. The DB enum uses
+  // 'pending' for the "no work done yet" state, but the row UI/filter
+  // family talks in 'todo' (per ActivityRow + TasksClient OPEN_STATUSES).
+  // Without this remap every new task lands in the cast as 'pending',
+  // never matches the "Por hacer" chip, and the user sees zero rows
+  // outside the "Todas" filter.
+  function toUiStatus(s: string): ActivityStatus {
+    if (s === 'in_progress' || s === 'done' || s === 'skipped' || s === 'blocked') {
+      return s;
+    }
+    return 'todo';
+  }
+
   const initialTasks: Task[] = [];
   if (!listResult.error && listResult.data) {
     for (const a of listResult.data.rows) {
@@ -63,7 +76,7 @@ export default async function TasksPage() {
         id: a.id,
         title: a.title,
         projectLabel: projectLabelById.get(a.projectId) ?? '',
-        status: a.status as ActivityStatus,
+        status: toUiStatus(a.status),
         priority: a.priority,
         scheduledTime: a.scheduledTime ? a.scheduledTime.slice(0, 5) : undefined,
         scheduledDate,
