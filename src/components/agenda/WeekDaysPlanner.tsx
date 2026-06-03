@@ -1,27 +1,26 @@
 'use client';
 
 /**
- * WeekDaysPlanner — 7 collapsible day cards for /week, drag-enabled.
+ * WeekDaysPlanner — week planner with deadline-grouped pool on top and
+ * 7 horizontal day cards below.
  *
- * Each card is a droppable target keyed by its YYYY-MM-DD. Activities
- * inside the cards are draggable. Drop semantics:
+ * Layout:
+ *   Pool (sticky on desktop): tasks with no day yet, split into
+ *     · Vence esta semana
+ *     · Vence la próxima semana
+ *     · Sin deadline (general backlog)
+ *   Days: responsive grid (auto-fill, minmax(200px, 1fr)) so we get
+ *     7 columns on wide desktops, 2-4 on tablets, 1 on mobile.
  *
+ * Drag semantics: MOVE (the activity loses its prior dates).
  *   activity → day card    → scheduled_dates = [targetDay]
- *   activity → "Sin día"   → scheduled_dates = []
- *
- * The drag is a MOVE: the activity loses its prior dates (no copy
- * across days). For multi-day rituals use the activity detail page.
- *
- * State flow:
- *   1. Local items[] state seeds from server data.
- *   2. onDragEnd updates items[] optimistically + fires updateActivity.
- *   3. On action failure → revert.
+ *   activity → pool        → scheduled_dates = []
  */
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ChevronDown, GripVertical, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, GripVertical, Plus } from 'lucide-react';
 import {
   DndContext,
   PointerSensor,
@@ -41,6 +40,7 @@ import {
   type QuickAddCategory,
 } from './ActivityQuickAdd';
 import { createActivity, updateActivity } from '@/lib/actions/activity';
+import { addDaysIsoYmd } from '@/lib/domain/day-calc';
 import type { WeekActivitySummary } from '@/lib/db/queries/week-activities';
 
 interface WeekDaysPlannerProps {
@@ -84,7 +84,6 @@ function dayLabel(ymd: string): string {
 const DROP_PREFIX = 'day:';
 const NO_DAY = `${DROP_PREFIX}none`;
 
-/** Compose the draggable id so the SAME activity in multiple buckets has unique ids. */
 function dragId(activityId: string, sourceYmd: string | null): string {
   return `${activityId}::${sourceYmd ?? 'none'}`;
 }
@@ -105,19 +104,18 @@ export function WeekDaysPlanner({
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  // Seed local list from the server-side bucket result. Each unique
-  // activity appears once with its full date list (within the visible
-  // week). Items outside the week have dates: [].
+  // Week boundaries for deadline bucketing.
+  const weekStart = days[0];
+  const weekEnd = days[6];
+  const nextWeekEnd = useMemo(() => addDaysIsoYmd(weekStart, 13), [weekStart]);
+
   const [items, setItems] = useState<PlannerItem[]>(() => {
     const seen = new Map<string, PlannerItem>();
     for (const d of days) {
       for (const a of byDay[d] ?? []) {
         const existing = seen.get(a.id);
-        if (existing) {
-          existing.dates.push(d);
-        } else {
-          seen.set(a.id, { ...a, dates: [d] });
-        }
+        if (existing) existing.dates.push(d);
+        else seen.set(a.id, { ...a, dates: [d] });
       }
     }
     for (const a of noDay) {
@@ -130,15 +128,32 @@ export function WeekDaysPlanner({
     const dayLookup = new Set(days);
     const byDayLocal: Record<string, PlannerItem[]> = {};
     for (const d of days) byDayLocal[d] = [];
-    const noDayLocal: PlannerItem[] = [];
+    const poolThisWeek: PlannerItem[] = [];
+    const poolNextWeek: PlannerItem[] = [];
+    const poolNoDeadline: PlannerItem[] = [];
     for (const item of items) {
       const matched = item.dates.filter((d) => dayLookup.has(d));
       if (matched.length > 0) {
         for (const d of matched) byDayLocal[d].push(item);
+        continue;
+      }
+      // No day in this week → pool by deadline.
+      if (item.dates.length > 0) continue; // scheduled in another week — hidden
+      const due = item.deadline ?? null;
+      if (due && due >= weekStart && due <= weekEnd) {
+        poolThisWeek.push(item);
+      } else if (due && due > weekEnd && due <= nextWeekEnd) {
+        poolNextWeek.push(item);
       } else {
-        noDayLocal.push(item);
+        poolNoDeadline.push(item);
       }
     }
+    const cmp = (x: PlannerItem, y: PlannerItem) => {
+      const dx = x.deadline ?? '9999-99-99';
+      const dy = y.deadline ?? '9999-99-99';
+      if (dx !== dy) return dx.localeCompare(dy);
+      return y.priority - x.priority;
+    };
     for (const d of days) {
       byDayLocal[d].sort((x, y) => {
         const tx = x.scheduledTime ?? '99:99';
@@ -147,9 +162,11 @@ export function WeekDaysPlanner({
         return y.priority - x.priority;
       });
     }
-    noDayLocal.sort((x, y) => y.priority - x.priority);
-    return { byDay: byDayLocal, noDay: noDayLocal };
-  }, [items, days]);
+    poolThisWeek.sort(cmp);
+    poolNextWeek.sort(cmp);
+    poolNoDeadline.sort((x, y) => y.priority - x.priority);
+    return { byDay: byDayLocal, poolThisWeek, poolNextWeek, poolNoDeadline };
+  }, [items, days, weekStart, weekEnd, nextWeekEnd]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -159,24 +176,20 @@ export function WeekDaysPlanner({
     const { activityId } = parseDragId(String(active.id));
     const overId = String(over.id);
     if (!overId.startsWith(DROP_PREFIX)) return;
-    const target = overId.slice(DROP_PREFIX.length); // YMD or "none"
+    const target = overId.slice(DROP_PREFIX.length);
 
     const current = items.find((it) => it.id === activityId);
     if (!current) return;
-    // If dropping on the only day the item is in, no-op.
     if (target === 'none' && current.dates.length === 0) return;
     if (target !== 'none' && current.dates.length === 1 && current.dates[0] === target) return;
 
     const nextDates = target === 'none' ? [] : [target];
     const prevDates = current.dates;
-
     setItems((prev) => prev.map((it) => (it.id === activityId ? { ...it, dates: nextDates } : it)));
-
     startTransition(async () => {
       const result = await updateActivity({ id: activityId, scheduledDates: nextDates });
       if (result.error) {
         toast.error(`No se pudo mover: ${result.error}`);
-        // Rollback
         setItems((prev) =>
           prev.map((it) => (it.id === activityId ? { ...it, dates: prevDates } : it))
         );
@@ -186,7 +199,7 @@ export function WeekDaysPlanner({
     });
   }
 
-  function handleCreate(draft: QuickAddDraft, targetDay: string) {
+  function handleCreate(draft: QuickAddDraft, targetDay: string | null) {
     startTransition(async () => {
       const result = await createActivity({
         title: draft.title,
@@ -194,7 +207,7 @@ export function WeekDaysPlanner({
         priority: draft.priority,
         description: draft.description,
         scheduledTime: draft.scheduledTime ? `${draft.scheduledTime}:00` : null,
-        scheduledDates: [targetDay],
+        scheduledDates: targetDay ? [targetDay] : [],
         recurrenceRule: draft.recurrenceRule ?? null,
         deadline: draft.deadline
           ? new Date(
@@ -224,7 +237,7 @@ export function WeekDaysPlanner({
             color: 'var(--ag-ink-primary)',
           }}
         >
-          Planeación día a día
+          Planeación de la semana
         </h3>
         <p
           style={{
@@ -235,34 +248,201 @@ export function WeekDaysPlanner({
             color: 'var(--ag-ink-soft)',
           }}
         >
-          Arrastrá tareas entre días o tocá + para agregar.
+          Arrastrá del pool a un día, o tocá + en cada tarjeta.
         </p>
       </header>
 
       <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
-        {days.map((d) => {
-          const items = buckets.byDay[d] ?? [];
-          const isToday = d === todayYmd;
-          const isOpen = openDay === d;
-          return (
-            <DayCard
-              key={d}
-              label={dayLabel(d)}
-              ymd={d}
-              isToday={isToday}
-              items={items}
-              isQuickAddOpen={isOpen}
-              onToggleQuickAdd={() => setOpenDay(isOpen ? null : d)}
-              projects={projects}
-              categories={categories}
-              onCreate={(draft) => handleCreate(draft, d)}
-            />
-          );
-        })}
+        <PoolPanel
+          thisWeek={buckets.poolThisWeek}
+          nextWeek={buckets.poolNextWeek}
+          noDeadline={buckets.poolNoDeadline}
+        />
 
-        <NoDayDropZone items={buckets.noDay} />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gap: 'var(--ag-space-3)',
+          }}
+        >
+          {days.map((d) => {
+            const items = buckets.byDay[d] ?? [];
+            const isToday = d === todayYmd;
+            const isOpen = openDay === d;
+            return (
+              <DayCard
+                key={d}
+                label={dayLabel(d)}
+                ymd={d}
+                isToday={isToday}
+                items={items}
+                isQuickAddOpen={isOpen}
+                onToggleQuickAdd={() => setOpenDay(isOpen ? null : d)}
+                projects={projects}
+                categories={categories}
+                onCreate={(draft) => handleCreate(draft, d)}
+              />
+            );
+          })}
+        </div>
       </DndContext>
     </section>
+  );
+}
+
+function PoolPanel({
+  thisWeek,
+  nextWeek,
+  noDeadline,
+}: {
+  thisWeek: PlannerItem[];
+  nextWeek: PlannerItem[];
+  noDeadline: PlannerItem[];
+}) {
+  const { isOver, setNodeRef } = useDroppable({ id: NO_DAY });
+  const total = thisWeek.length + nextWeek.length + noDeadline.length;
+  return (
+    <section
+      ref={setNodeRef}
+      style={{
+        border: '1px solid var(--ag-rule)',
+        borderRadius: 'var(--ag-radius-base)',
+        backgroundColor: isOver
+          ? 'color-mix(in oklab, var(--ag-bg-elevated), transparent 20%)'
+          : 'var(--ag-bg)',
+        padding: 'var(--ag-space-3)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--ag-space-3)',
+        transition: 'background-color 160ms ease-out',
+      }}
+    >
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 'var(--ag-space-2)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--ag-slate)',
+          }}
+        >
+          Pendientes sin día · {total}
+        </span>
+        {isOver ? (
+          <span
+            style={{
+              fontFamily: 'var(--ag-font-display)',
+              fontStyle: 'italic',
+              fontSize: 12,
+              color: 'var(--ag-ink-soft)',
+            }}
+          >
+            soltá acá para volver al pool
+          </span>
+        ) : null}
+      </header>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: 'var(--ag-space-3)',
+        }}
+      >
+        <PoolGroup label="Vence esta semana" tone="warning" items={thisWeek} />
+        <PoolGroup label="Vence la próxima semana" tone="notice" items={nextWeek} />
+        <PoolGroup label="Sin deadline" tone="muted" items={noDeadline} />
+      </div>
+    </section>
+  );
+}
+
+function PoolGroup({
+  label,
+  tone,
+  items,
+}: {
+  label: string;
+  tone: 'warning' | 'notice' | 'muted';
+  items: PlannerItem[];
+}) {
+  const [collapsed, setCollapsed] = useState(items.length === 0);
+  const accentColor =
+    tone === 'warning'
+      ? 'var(--ag-scope-life)'
+      : tone === 'notice'
+        ? 'var(--ag-scope-year)'
+        : 'var(--ag-ink-hint)';
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--ag-space-2)',
+        borderLeft: `3px solid ${accentColor}`,
+        paddingLeft: 'var(--ag-space-2)',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        style={{
+          appearance: 'none',
+          background: 'transparent',
+          border: 'none',
+          padding: 0,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          cursor: 'pointer',
+          fontFamily: 'var(--ag-font-body)',
+          fontSize: 11,
+          fontWeight: 500,
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+          color: 'var(--ag-slate)',
+          alignSelf: 'flex-start',
+        }}
+        aria-expanded={!collapsed}
+      >
+        {collapsed ? (
+          <ChevronRight size={12} strokeWidth={1.5} />
+        ) : (
+          <ChevronDown size={12} strokeWidth={1.5} />
+        )}
+        {label} · {items.length}
+      </button>
+      {collapsed ? null : items.length === 0 ? (
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'var(--ag-font-display)',
+            fontStyle: 'italic',
+            fontSize: 12,
+            color: 'var(--ag-ink-hint)',
+          }}
+        >
+          Vacío.
+        </p>
+      ) : (
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+          {items.slice(0, 30).map((a) => (
+            <DraggableRow key={`${a.id}-pool`} item={a} sourceYmd={null} />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -303,6 +483,7 @@ function DayCard({
         flexDirection: 'column',
         gap: 'var(--ag-space-2)',
         transition: 'background-color 160ms ease-out',
+        minHeight: 120,
       }}
     >
       <header
@@ -327,7 +508,7 @@ function DayCard({
           {isToday ? ' · hoy' : ''}
           <span
             style={{
-              marginLeft: 8,
+              marginLeft: 6,
               fontFamily: 'var(--ag-font-display)',
               fontStyle: 'italic',
               fontWeight: 400,
@@ -348,12 +529,12 @@ function DayCard({
             background: 'transparent',
             border: '1px solid var(--ag-rule)',
             borderRadius: 'var(--ag-radius-pill)',
-            padding: '4px 10px',
+            padding: '2px 8px',
             display: 'inline-flex',
             alignItems: 'center',
             gap: 4,
             fontFamily: 'var(--ag-font-body)',
-            fontSize: 12,
+            fontSize: 11,
             color: 'var(--ag-ink-soft)',
             cursor: 'pointer',
           }}
@@ -385,7 +566,7 @@ function DayCard({
             margin: 0,
             fontFamily: 'var(--ag-font-display)',
             fontStyle: 'italic',
-            fontSize: 13,
+            fontSize: 12,
             color: 'var(--ag-ink-hint)',
           }}
         >
@@ -399,57 +580,6 @@ function DayCard({
         </ul>
       )}
     </article>
-  );
-}
-
-function NoDayDropZone({ items }: { items: PlannerItem[] }) {
-  const { isOver, setNodeRef } = useDroppable({ id: NO_DAY });
-  return (
-    <details
-      ref={setNodeRef}
-      style={{
-        border: '1px dashed var(--ag-rule)',
-        borderRadius: 'var(--ag-radius-base)',
-        padding: 'var(--ag-space-3)',
-        backgroundColor: isOver
-          ? 'color-mix(in oklab, var(--ag-bg-elevated), transparent 30%)'
-          : 'transparent',
-        transition: 'background-color 160ms ease-out',
-      }}
-      open={isOver || items.length === 0}
-    >
-      <summary
-        style={{
-          cursor: 'pointer',
-          fontFamily: 'var(--ag-font-body)',
-          fontSize: 13,
-          color: 'var(--ag-ink-soft)',
-        }}
-      >
-        Sin día asignado · {items.length}
-        {isOver ? ' · soltá acá' : ''}
-      </summary>
-      {items.length === 0 ? (
-        <p
-          style={{
-            margin: 0,
-            paddingTop: 'var(--ag-space-2)',
-            fontFamily: 'var(--ag-font-display)',
-            fontStyle: 'italic',
-            fontSize: 12,
-            color: 'var(--ag-ink-hint)',
-          }}
-        >
-          Vacío.
-        </p>
-      ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, marginTop: 'var(--ag-space-2)' }}>
-          {items.slice(0, 30).map((a) => (
-            <DraggableRow key={`${a.id}-none`} item={a} sourceYmd={null} />
-          ))}
-        </ul>
-      )}
-    </details>
   );
 }
 
@@ -476,7 +606,7 @@ function DraggableRow({ item, sourceYmd }: { item: PlannerItem; sourceYmd: strin
         justifyContent: 'center',
       }}
     >
-      <GripVertical size={16} strokeWidth={1.5} aria-hidden />
+      <GripVertical size={14} strokeWidth={1.5} aria-hidden />
     </button>
   );
   return (

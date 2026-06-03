@@ -18,6 +18,7 @@ import { loadWeekActivities } from '@/lib/db/queries/week-activities';
 import { weekStartingFor } from '@/lib/domain/week-calc';
 import { todayInTimezone } from '@/lib/domain/day-calc';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
+import { WeekMonthTabs } from '@/components/agenda/WeekMonthTabs';
 import { WeekSheetClient } from '@/components/agenda/WeekSheetClient';
 
 const SPANISH_MONTHS = [
@@ -79,6 +80,7 @@ export default async function WeekPage() {
   return (
     <>
       <AgendaHeader dateLabel="Semana" />
+      <WeekMonthTabs active="week" />
       <WeekSheetClient
         initial={{
           weekStarting,

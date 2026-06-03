@@ -99,7 +99,9 @@ export async function loadWeekActivities(
     const matchedDays = dates.filter((d) => dayLookup.has(d));
     if (matchedDays.length > 0) {
       for (const d of matchedDays) byDay[d].push(summary);
-    } else {
+    } else if (dates.length === 0) {
+      // Only TRUE backlog (no dates at all) shows in the pool — items
+      // already scheduled for another week stay there, not in this view.
       noDay.push(summary);
     }
   }

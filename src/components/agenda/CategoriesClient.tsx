@@ -72,74 +72,6 @@ export function CategoriesClient({ initial }: Props) {
         width: '100%',
       }}
     >
-      <ul
-        style={{
-          margin: 0,
-          padding: 0,
-          listStyle: 'none',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-          gap: 'var(--ag-space-2)',
-        }}
-      >
-        {rows.map((c) => (
-          <li key={c.id}>
-            <Link
-              href={`/categories/${c.id}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--ag-space-3)',
-                padding: 'var(--ag-space-3)',
-                border: '1px solid var(--ag-rule)',
-                borderRadius: 'var(--ag-radius-base)',
-                backgroundColor: 'var(--ag-bg-elevated)',
-                textDecoration: 'none',
-                color: 'var(--ag-ink-primary)',
-                minHeight: 56,
-              }}
-            >
-              {c.isInbox ? (
-                <Inbox size={18} strokeWidth={1.5} color="var(--ag-ink-soft)" />
-              ) : (
-                <span
-                  aria-hidden
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 4,
-                    backgroundColor: c.color || 'var(--ag-ink-hint)',
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-              <span
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontFamily: 'var(--ag-font-body)',
-                  fontSize: 15,
-                }}
-              >
-                {c.name}
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--ag-font-mono)',
-                  fontSize: 12,
-                  color: 'var(--ag-ink-hint)',
-                }}
-              >
-                {c.projectCount}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-
       {creating ? (
         <form
           onSubmit={(e) => {
@@ -153,7 +85,6 @@ export function CategoriesClient({ initial }: Props) {
             border: '1px solid var(--ag-rule)',
             borderRadius: 'var(--ag-radius-base)',
             backgroundColor: 'var(--ag-bg-elevated)',
-            marginTop: 'var(--ag-space-3)',
           }}
         >
           <input
@@ -227,7 +158,6 @@ export function CategoriesClient({ initial }: Props) {
             fontFamily: 'var(--ag-font-body)',
             fontSize: 14,
             cursor: 'pointer',
-            marginTop: 'var(--ag-space-3)',
             alignSelf: 'flex-start',
           }}
         >
@@ -235,6 +165,74 @@ export function CategoriesClient({ initial }: Props) {
           Nueva categoría
         </button>
       )}
+
+      <ul
+        style={{
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gap: 'var(--ag-space-2)',
+        }}
+      >
+        {rows.map((c) => (
+          <li key={c.id}>
+            <Link
+              href={`/categories/${c.id}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--ag-space-3)',
+                padding: 'var(--ag-space-3)',
+                border: '1px solid var(--ag-rule)',
+                borderRadius: 'var(--ag-radius-base)',
+                backgroundColor: 'var(--ag-bg-elevated)',
+                textDecoration: 'none',
+                color: 'var(--ag-ink-primary)',
+                minHeight: 56,
+              }}
+            >
+              {c.isInbox ? (
+                <Inbox size={18} strokeWidth={1.5} color="var(--ag-ink-soft)" />
+              ) : (
+                <span
+                  aria-hidden
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 4,
+                    backgroundColor: c.color || 'var(--ag-ink-hint)',
+                    flexShrink: 0,
+                  }}
+                />
+              )}
+              <span
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontFamily: 'var(--ag-font-body)',
+                  fontSize: 15,
+                }}
+              >
+                {c.name}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--ag-font-mono)',
+                  fontSize: 12,
+                  color: 'var(--ag-ink-hint)',
+                }}
+              >
+                {c.projectCount}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </main>
   );
 }

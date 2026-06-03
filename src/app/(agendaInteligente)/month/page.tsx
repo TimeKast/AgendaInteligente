@@ -13,6 +13,7 @@ import { loadTodayUserProfile } from '@/lib/db/queries/today';
 import { getOrCreateMonthSheet } from '@/lib/db/queries/sheets';
 import { monthStartingFor } from '@/lib/domain/month-calc';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
+import { WeekMonthTabs } from '@/components/agenda/WeekMonthTabs';
 import { MonthSheetClient } from '@/components/agenda/MonthSheetClient';
 
 const SPANISH_MONTHS = [
@@ -52,6 +53,7 @@ export default async function MonthPage() {
   return (
     <>
       <AgendaHeader dateLabel="Mes" />
+      <WeekMonthTabs active="month" />
       <MonthSheetClient
         initial={{
           monthStarting,
