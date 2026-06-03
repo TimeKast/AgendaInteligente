@@ -163,6 +163,31 @@ export async function setDiscordWebhook(input: unknown): Promise<ActionResult> {
             updatedAt: new Date(),
           },
         });
+
+      // Sync contact_channels so enqueueAndSend actually dispatches via
+      // Discord. Before this, a user could save a webhook and the
+      // proactive_task would still skip the Discord call because the
+      // channel wasn't in their list. Saving a non-null webhook adds
+      // 'discord'; clearing the webhook removes it (defaulting to
+      // ['email'] when no channel remains).
+      const current = await db
+        .select({ contactChannels: users.contactChannels })
+        .from(users)
+        .where(eq(users.id, userId));
+      const channels = current[0]?.contactChannels ?? ['email'];
+      const has = channels.includes('discord');
+      if (data.webhookUrl && !has) {
+        await db
+          .update(users)
+          .set({ contactChannels: [...channels, 'discord'] })
+          .where(eq(users.id, userId));
+      } else if (!data.webhookUrl && has) {
+        const next = channels.filter((c) => c !== 'discord');
+        await db
+          .update(users)
+          .set({ contactChannels: next.length > 0 ? next : ['email'] })
+          .where(eq(users.id, userId));
+      }
     }
   );
 }
