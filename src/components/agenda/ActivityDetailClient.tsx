@@ -18,9 +18,11 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Trash2 } from 'lucide-react';
+import { Target, Trash2 } from 'lucide-react';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { updateActivity, transitionActivity, deleteActivity } from '@/lib/actions/activity';
+import { linkGoal, unlinkGoal } from '@/lib/actions/goal-link';
+import type { ActivityGoalRow } from '@/lib/db/queries/activity-detail';
 
 export interface ActivityDetailInput {
   id: string;
@@ -39,6 +41,7 @@ export interface ActivityDetailInput {
 
 interface Props {
   initial: ActivityDetailInput;
+  goals: ActivityGoalRow[];
 }
 
 const STATUS_OPTIONS: Array<{ value: 'done' | 'skipped' | 'blocked' | 'pending'; label: string }> =
@@ -49,14 +52,42 @@ const STATUS_OPTIONS: Array<{ value: 'done' | 'skipped' | 'blocked' | 'pending';
     { value: 'blocked', label: 'Bloqueada' },
   ];
 
-export function ActivityDetailClient({ initial }: Props) {
+export function ActivityDetailClient({ initial, goals }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description ?? '');
   const [deadline, setDeadline] = useState(initial.deadline ?? '');
   const [progress, setProgress] = useState(initial.progressPercent ?? 0);
   const [status, setStatus] = useState(initial.status);
+  const [linkedGoals, setLinkedGoals] = useState<Set<string>>(
+    () => new Set(goals.filter((g) => g.linked).map((g) => g.id))
+  );
   const [isPending, startTransition] = useTransition();
+
+  function toggleGoal(goalId: string) {
+    const wasLinked = linkedGoals.has(goalId);
+    const next = new Set(linkedGoals);
+    if (wasLinked) next.delete(goalId);
+    else next.add(goalId);
+    setLinkedGoals(next);
+    startTransition(async () => {
+      const result = wasLinked
+        ? await unlinkGoal({ goalId, targetType: 'activity', targetId: initial.id })
+        : await linkGoal({ goalId, targetType: 'activity', targetId: initial.id });
+      if (result.error) {
+        toast.error(`No se pudo ${wasLinked ? 'desvincular' : 'vincular'}: ${result.error}`);
+        // Roll back
+        setLinkedGoals((prev) => {
+          const rb = new Set(prev);
+          if (wasLinked) rb.add(goalId);
+          else rb.delete(goalId);
+          return rb;
+        });
+        return;
+      }
+      router.refresh();
+    });
+  }
 
   const dirty =
     title !== initial.title ||
@@ -233,6 +264,62 @@ export function ActivityDetailClient({ initial }: Props) {
             </p>
           </Label>
         )}
+
+        <Label text="Metas vinculadas">
+          {goals.length === 0 ? (
+            <p
+              style={{ margin: 0, ...textStyle, color: 'var(--ag-ink-hint)', fontStyle: 'italic' }}
+            >
+              No tienes metas activas todavía. Crea una en /goals para poder vincularla.
+            </p>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 6,
+              }}
+            >
+              {goals.map((g) => {
+                const isLinked = linkedGoals.has(g.id);
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => toggleGoal(g.id)}
+                    disabled={isPending}
+                    aria-pressed={isLinked}
+                    title={
+                      isLinked
+                        ? 'Vinculada — clic para desvincular'
+                        : 'Clic para vincular esta meta'
+                    }
+                    style={{
+                      appearance: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 10px',
+                      borderRadius: 'var(--ag-radius-pill)',
+                      border: '1px solid var(--ag-rule)',
+                      backgroundColor: isLinked ? 'var(--ag-ink-primary)' : 'transparent',
+                      color: isLinked ? 'var(--ag-accent-on)' : 'var(--ag-ink-soft)',
+                      fontFamily: 'var(--ag-font-body)',
+                      fontSize: 12,
+                      cursor: isPending ? 'wait' : 'pointer',
+                    }}
+                  >
+                    <Target size={12} strokeWidth={1.5} aria-hidden />
+                    {g.title}
+                    {g.deadline ? (
+                      <span style={{ opacity: 0.7, fontSize: 10 }}>· {g.deadline.slice(0, 7)}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Label>
       </main>
 
       <footer

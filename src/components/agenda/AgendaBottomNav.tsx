@@ -25,6 +25,7 @@ import {
   Calendar,
   CalendarRange,
   Compass,
+  LayoutDashboard,
   ListChecks,
   Settings,
   type LucideIcon,
@@ -38,6 +39,7 @@ interface NavItem {
 }
 
 const ITEMS: NavItem[] = [
+  { key: 'resumen', label: 'Resumen', href: '/resumen', Icon: LayoutDashboard },
   { key: 'today', label: 'Today', href: '/today', Icon: Calendar },
   { key: 'week', label: 'Plan', href: '/week', Icon: CalendarRange },
   { key: 'tasks', label: 'Tasks', href: '/tasks', Icon: ListChecks },

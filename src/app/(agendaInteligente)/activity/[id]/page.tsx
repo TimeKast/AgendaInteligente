@@ -7,7 +7,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { loadActivityDetail } from '@/lib/db/queries/activity-detail';
+import { loadActivityDetail, loadActivityGoals } from '@/lib/db/queries/activity-detail';
 import { ActivityDetailClient } from '@/components/agenda/ActivityDetailClient';
 
 interface PageProps {
@@ -20,7 +20,10 @@ export default async function ActivityDetailPage({ params }: PageProps) {
     redirect('/login');
   }
   const { id } = await params;
-  const activity = await loadActivityDetail(session.user.id, id);
+  const [activity, goals] = await Promise.all([
+    loadActivityDetail(session.user.id, id),
+    loadActivityGoals(session.user.id, id),
+  ]);
   if (!activity) {
     notFound();
   }
@@ -41,6 +44,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         progressPercent: activity.progressPercent,
         recurrenceRule: activity.recurrenceRule,
       }}
+      goals={goals}
     />
   );
 }

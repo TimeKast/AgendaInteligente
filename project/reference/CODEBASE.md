@@ -72,6 +72,7 @@
 | `src\app\(agendaInteligente)\onboarding\timezone\page.tsx` | — | — |
 | `src\app\(agendaInteligente)\projects\[id]\page.tsx` | — | — |
 | `src\app\(agendaInteligente)\projects\page.tsx` | — | — |
+| `src\app\(agendaInteligente)\resumen\page.tsx` | — | — |
 | `src\app\(agendaInteligente)\settings\account\page.tsx` | — | — |
 | `src\app\(agendaInteligente)\settings\appearance\page.tsx` | — | — |
 | `src\app\(agendaInteligente)\settings\billing\page.tsx` | — | — |
@@ -415,6 +416,7 @@
 | `src\lib\db\queries\busy-slots.ts` | — | — |
 | `src\lib\db\queries\catalog.ts` | — | — |
 | `src\lib\db\queries\category-detail.ts` | — | — |
+| `src\lib\db\queries\dashboard.ts` | — | — |
 | `src\lib\db\queries\goals.ts` | — | — |
 | `src\lib\db\queries\integrations.ts` | — | — |
 | `src\lib\db\queries\project-detail.ts` | — | — |
@@ -555,10 +557,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 495 |
+| Total files analyzed | 497 |
 | Total connections | 194 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 331 |
+| Orphan files (no connections) | 333 |
 
 ---
 

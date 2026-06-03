@@ -142,6 +142,7 @@
 | /projects/[id] | `src\app\(agendaInteligente)\projects\[id]\page.tsx` |
 | /register | `src\app\(auth)\register\page.tsx` |
 | /reset-password | `src\app\(auth)\reset-password\page.tsx` |
+| /resumen | `src\app\(agendaInteligente)\resumen\page.tsx` |
 | /settings | `src\app\(agendaInteligente)\settings\page.tsx` |
 | /settings/account | `src\app\(agendaInteligente)\settings\account\page.tsx` |
 | /settings/appearance | `src\app\(agendaInteligente)\settings\appearance\page.tsx` |
@@ -199,10 +200,10 @@
 | Metric | Value |
 |--------|-------|
 | Dependencies | 44 |
-| Page Routes | 48 |
+| Page Routes | 49 |
 | API Routes | 24 |
 | Components & Utils | 44 |
-| **Total items** | **160** |
+| **Total items** | **161** |
 
 ---
 
