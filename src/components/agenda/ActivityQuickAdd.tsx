@@ -244,7 +244,12 @@ export function ActivityQuickAdd({
     setOpen(false);
   }
 
+  // Recurrence wins over a fixed date: when there's a recurrence rule the
+  // schedule is derived from it, so we drop the user-picked date.
+  const hasRecurrence = recurrenceRule !== null;
+
   function resolveDateISO(): string | null {
+    if (hasRecurrence) return null;
     switch (dateChoice) {
       case 'today':
         return defaultDateISO;
@@ -484,21 +489,40 @@ export function ActivityQuickAdd({
                 flexWrap: 'wrap',
               }}
             >
-              <DateSelect
-                choice={dateChoice}
-                customDate={customDate}
-                onChoiceChange={setDateChoice}
-                onCustomDateChange={setCustomDate}
-              />
+              {hasRecurrence ? (
+                <span
+                  style={{
+                    ...pillSelectStyle,
+                    color: 'var(--ag-ink-hint)',
+                    fontStyle: 'italic',
+                    cursor: 'default',
+                  }}
+                  title="La recurrencia decide cuándo se programa — no hace falta una fecha fija"
+                >
+                  Según recurrencia
+                </span>
+              ) : (
+                <DateSelect
+                  choice={dateChoice}
+                  customDate={customDate}
+                  onChoiceChange={setDateChoice}
+                  onCustomDateChange={setCustomDate}
+                />
+              )}
               <input
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
-                disabled={dateChoice === 'none'}
+                disabled={!hasRecurrence && dateChoice === 'none'}
                 aria-label="Hora programada"
+                title={
+                  hasRecurrence
+                    ? 'Aplica a cada ocurrencia de la recurrencia'
+                    : 'Hora dentro del día'
+                }
                 style={{
                   ...fieldInputStyle(!!scheduledTime),
-                  opacity: dateChoice === 'none' ? 0.5 : 1,
+                  opacity: !hasRecurrence && dateChoice === 'none' ? 0.5 : 1,
                 }}
               />
             </div>
