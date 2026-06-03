@@ -18,7 +18,13 @@ import { listActivities } from '@/lib/actions/activity';
 import { loadTodayUserProfile, loadProjectLabelMap } from '@/lib/db/queries/today';
 import { listProjects, listCategories } from '@/lib/db/queries/catalog';
 import { loadTodaysBusySlots } from '@/lib/db/queries/busy-slots';
-import { todayInTimezone, todayLabelEs, userInitial } from '@/lib/domain/day-calc';
+import {
+  addDaysIsoYmd,
+  labelEsForYmd,
+  todayInTimezone,
+  todayLabelEs,
+  userInitial,
+} from '@/lib/domain/day-calc';
 import { TodayClient } from '@/components/agenda/TodayClient';
 import type { CloseDayActivityInput } from '@/components/agenda/CloseDayModal';
 
@@ -119,7 +125,11 @@ function toPool(
   };
 }
 
-export default async function TodayPage() {
+export default async function TodayPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect('/login?callbackUrl=/today');
@@ -135,15 +145,26 @@ export default async function TodayPage() {
   };
 
   const now = new Date();
-  const todayDate = todayInTimezone(now, profile.timezone);
-  const dateLabel = todayLabelEs(now, profile.timezone);
+  const todayYmd = todayInTimezone(now, profile.timezone);
+  const tomorrowYmd = addDaysIsoYmd(todayYmd, 1);
+
+  // Selected day: defaults to today, accepts `?date=tomorrow` or the
+  // literal YYYY-MM-DD for tomorrow. Anything else (yesterday, +2 days,
+  // garbage) silently falls back — we deliberately don't expose deeper
+  // navigation from this page.
+  const { date: dateParam } = await searchParams;
+  const viewingTomorrow = dateParam === 'tomorrow' || dateParam === tomorrowYmd;
+  const selectedDate = viewingTomorrow ? tomorrowYmd : todayYmd;
+  const dateLabel = viewingTomorrow
+    ? labelEsForYmd(tomorrowYmd)
+    : todayLabelEs(now, profile.timezone);
   const initials = userInitial(profile.name ?? profile.email);
 
   const [listResult, projectLabelById, externalEvents, projectRows, categoryRows] =
     await Promise.all([
-      listActivities({ date: todayDate, includeDone: false }),
+      listActivities({ date: selectedDate, includeDone: false }),
       loadProjectLabelMap(userId),
-      loadTodaysBusySlots(userId, todayDate, profile.timezone),
+      loadTodaysBusySlots(userId, selectedDate, profile.timezone),
       listProjects(userId),
       listCategories(userId),
     ]);
@@ -190,7 +211,8 @@ export default async function TodayPage() {
 
   return (
     <TodayClient
-      todayDate={todayDate}
+      todayDate={selectedDate}
+      viewingTomorrow={viewingTomorrow}
       dateLabel={dateLabel}
       initials={initials}
       todayActivities={todayActivities}

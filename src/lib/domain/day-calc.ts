@@ -55,14 +55,25 @@ export function todayInTimezone(instant: Date, tz: string): string {
  * Manual control keeps the label stable across deploys.
  */
 export function todayLabelEs(instant: Date, tz: string): string {
-  const ymd = todayInTimezone(instant, tz);
-  const [y, m, d] = ymd.split('-').map(Number);
+  return labelEsForYmd(todayInTimezone(instant, tz));
+}
 
-  // Use UTC to read back the weekday name from a synthetic Date —
-  // ymd was already TZ-resolved, so UTC is the right reference frame.
+/**
+ * Same Spanish format as `todayLabelEs` but driven by an already-resolved
+ * `YYYY-MM-DD` (e.g. the user's selected date when toggling Hoy/Mañana).
+ */
+export function labelEsForYmd(ymd: string): string {
+  const [y, m, d] = ymd.split('-').map(Number);
   const synthetic = new Date(Date.UTC(y, m - 1, d));
-  const weekdayIdx = synthetic.getUTCDay(); // 0 = Sunday
+  const weekdayIdx = synthetic.getUTCDay();
   return `${SPANISH_WEEKDAYS[weekdayIdx]}, ${d} de ${SPANISH_MONTHS[m - 1]}`;
+}
+
+/** YYYY-MM-DD + N calendar days (UTC arithmetic). */
+export function addDaysIsoYmd(ymd: string, days: number): string {
+  const d = new Date(`${ymd}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 /** First letter (upper) of a name or email. Used as avatar initial. */

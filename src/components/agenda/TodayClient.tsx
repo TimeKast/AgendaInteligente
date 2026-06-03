@@ -26,6 +26,7 @@ import {
   type CloseDayActivityInput,
 } from '@/components/agenda/CloseDayModal';
 import { TodayViewToggle, type TodayView } from '@/components/agenda/TodayViewToggle';
+import { DayViewToggle } from '@/components/agenda/DayViewToggle';
 import type {
   QuickAddDraft,
   QuickAddProject,
@@ -93,6 +94,12 @@ export interface TodayClientProps {
   projects: QuickAddProject[];
   /** Full category catalog. */
   categories: QuickAddCategory[];
+  /**
+   * When true, the page is rendering tomorrow's view (driven by
+   * `?date=<tomorrow>`). Hides close-day (cerrar mañana no tiene sentido)
+   * and flips the Hoy/Mañana toggle.
+   */
+  viewingTomorrow: boolean;
 }
 
 export function TodayClient({
@@ -105,6 +112,7 @@ export function TodayClient({
   externalEvents,
   projects,
   categories,
+  viewingTomorrow,
 }: TodayClientProps) {
   const [view, setView] = useState<TodayView>('fecha');
   const [closeOpen, setCloseOpen] = useState(false);
@@ -258,12 +266,17 @@ export function TodayClient({
         <div
           style={{
             display: 'flex',
-            justifyContent: 'flex-start',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 'var(--ag-space-3)',
             paddingBlock: 'var(--ag-space-3)',
-            overflowX: 'auto',
+            flexWrap: 'wrap',
           }}
         >
-          <TodayViewToggle value={view} onChange={setView} />
+          <DayViewToggle viewingTomorrow={viewingTomorrow} />
+          <div style={{ overflowX: 'auto' }}>
+            <TodayViewToggle value={view} onChange={setView} />
+          </div>
         </div>
 
         <TodayActivitiesBoard
@@ -280,27 +293,29 @@ export function TodayClient({
           todayDate={todayDate}
         />
 
-        <button
-          type="button"
-          onClick={() => setCloseOpen(true)}
-          disabled={isPending}
-          style={{
-            appearance: 'none',
-            background: 'transparent',
-            border: '1px solid var(--ag-rule)',
-            borderRadius: 'var(--ag-radius-base)',
-            padding: '12px 16px',
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 15,
-            color: 'var(--ag-ink-soft)',
-            cursor: isPending ? 'not-allowed' : 'pointer',
-            width: '100%',
-            marginTop: 'var(--ag-space-5)',
-            opacity: isPending ? 0.6 : 1,
-          }}
-        >
-          {isPending ? 'Cerrando…' : 'Cerrar día'}
-        </button>
+        {viewingTomorrow ? null : (
+          <button
+            type="button"
+            onClick={() => setCloseOpen(true)}
+            disabled={isPending}
+            style={{
+              appearance: 'none',
+              background: 'transparent',
+              border: '1px solid var(--ag-rule)',
+              borderRadius: 'var(--ag-radius-base)',
+              padding: '12px 16px',
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 15,
+              color: 'var(--ag-ink-soft)',
+              cursor: isPending ? 'not-allowed' : 'pointer',
+              width: '100%',
+              marginTop: 'var(--ag-space-5)',
+              opacity: isPending ? 0.6 : 1,
+            }}
+          >
+            {isPending ? 'Cerrando…' : 'Cerrar día'}
+          </button>
+        )}
       </main>
 
       <CloseDayModal

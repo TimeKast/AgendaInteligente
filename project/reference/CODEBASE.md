@@ -179,6 +179,7 @@
 | `src\components\agenda\DayOffChip.tsx` | — | `src\components\agenda\DaysOffPicker.tsx` |
 | `src\components\agenda\DayRow.tsx` | `src\components\agenda\DraggablePoolActivity.tsx`, `src\components\agenda\PlanSnapshotControls.tsx` | `src\components\agenda\WeekSwimlane.tsx` |
 | `src\components\agenda\DaySheetMorningSection.tsx` | — | — |
+| `src\components\agenda\DayViewToggle.tsx` | — | — |
 | `src\components\agenda\DaysOffPicker.tsx` | `src\components\agenda\DayOffChip.tsx` | — |
 | `src\components\agenda\DeadlineBadge.tsx` | — | `src\components\agenda\ActivityRow.tsx`, `src\components\agenda\DraggablePoolActivity.tsx` |
 | `src\components\agenda\DiscordIntegrationCard.tsx` | — | — |
@@ -552,10 +553,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 492 |
+| Total files analyzed | 493 |
 | Total connections | 190 |
 | High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 330 |
+| Orphan files (no connections) | 331 |
 
 ---
 
