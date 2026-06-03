@@ -24,7 +24,8 @@ import { eq } from 'drizzle-orm';
 import { calendarConnections } from '@/lib/db/schema/calendar-connections';
 import { scopedDb } from '@/lib/db/scoped';
 import { encryptToken, decryptToken } from './tokens';
-import { refreshAccessToken } from './google';
+import { refreshAccessToken as refreshGoogle } from './google';
+import { refreshAccessToken as refreshMicrosoft } from './microsoft';
 
 /** Refresh buffer — refresh proactively if token expires within this many seconds. */
 const REFRESH_BUFFER_MS = 60_000;
@@ -64,15 +65,25 @@ export async function getValidAccessToken(
     return decryptToken(row.accessToken);
   }
 
-  // Stale — refresh via Google then write back.
+  // Stale — route to the right provider's refresh endpoint.
   const refreshPlain = decryptToken(row.refreshToken);
-  const fresh = await refreshAccessToken(refreshPlain);
+  const fresh =
+    row.provider === 'outlook'
+      ? await refreshMicrosoft(refreshPlain)
+      : await refreshGoogle(refreshPlain);
 
   const newExpiresAt = new Date(now.getTime() + fresh.expires_in * 1000);
+  // Microsoft rotates the refresh_token on every grant; Google reuses
+  // the same one. Persist whatever the response carries — falling back
+  // to the prior ciphertext when the provider didn't return a new one.
+  const refreshUpdate = fresh.refresh_token
+    ? { refreshToken: encryptToken(fresh.refresh_token) }
+    : {};
   await sdb
     .update('calendarConnections', {
       accessToken: encryptToken(fresh.access_token),
       expiresAt: newExpiresAt,
+      ...refreshUpdate,
     })
     .where(eq(calendarConnections.id, connectionId))
     .execute();

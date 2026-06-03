@@ -48,6 +48,11 @@ const envSchema = z.object({
   AUTH_GOOGLE_ID: z.string().optional(),
   AUTH_GOOGLE_SECRET: z.string().optional(),
 
+  // Microsoft Graph OAuth (Optional) — only used for Outlook calendar sync,
+  // independent from sign-in auth. Required for /api/calendar/microsoft/*.
+  MS_CLIENT_ID: z.string().optional(),
+  MS_CLIENT_SECRET: z.string().optional(),
+
   // GitHub OAuth (Optional)
   AUTH_GITHUB_ID: z.string().optional(),
   AUTH_GITHUB_SECRET: z.string().optional(),
@@ -501,4 +506,19 @@ export function getEncryptionKey(): string {
     throw new Error('ENCRYPTION_KEY is required. Generate with: openssl rand -base64 32');
   }
   return e.ENCRYPTION_KEY;
+}
+
+export function isMicrosoftCalendarConfigured(): boolean {
+  const e = getEnv();
+  return !!e.MS_CLIENT_ID && !!e.MS_CLIENT_SECRET;
+}
+
+export function getMicrosoftCredentials(): { clientId: string; clientSecret: string } {
+  const e = getEnv();
+  if (!e.MS_CLIENT_ID || !e.MS_CLIENT_SECRET) {
+    throw new Error(
+      'Microsoft calendar OAuth not configured: missing MS_CLIENT_ID or MS_CLIENT_SECRET'
+    );
+  }
+  return { clientId: e.MS_CLIENT_ID, clientSecret: e.MS_CLIENT_SECRET };
 }

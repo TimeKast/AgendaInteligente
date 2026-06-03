@@ -4,12 +4,14 @@
  * Real data:
  *   - Google Calendar connections from `calendar_connections` (multi-account).
  *     "+ Conectar otra cuenta" → /api/calendar/google/connect.
- *     "Desconectar" → /api/calendar/connections/[id]/disconnect.
+ *   - Outlook Calendar connections (same table, provider='outlook').
+ *     "+ Conectar otra cuenta" → /api/calendar/microsoft/connect.
+ *     Card auto-disables when MS_CLIENT_ID/SECRET aren't set in env.
  *   - Discord webhook URL from `notification_prefs.discord_webhook_url`.
  *     Inline form (no OAuth — Discord webhooks just take a pasted URL).
+ *   - Disconnect (both providers) → /api/calendar/connections/[id]/disconnect.
  *
- * Placeholders (no v1 backend yet):
- *   - Outlook Calendar — disabled card.
+ * Placeholder (no v1 backend yet):
  *   - WhatsApp — disabled card.
  */
 
@@ -18,6 +20,7 @@ import { redirect } from 'next/navigation';
 import { Calendar, MessageCircle, Mail, MessageSquare } from 'lucide-react';
 import { auth } from '@/lib/auth/auth';
 import { loadIntegrationsSettings } from '@/lib/db/queries/integrations';
+import { isMicrosoftCalendarConfigured } from '@/lib/env';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { IntegrationCard } from '@/components/agenda/IntegrationCard';
 import { CalendarConnectionsListLive } from '@/components/settings/CalendarConnectionsListLive';
@@ -29,6 +32,7 @@ export default async function IntegrationsSettingsPage() {
     redirect('/login?callbackUrl=/settings/integrations');
   }
   const data = await loadIntegrationsSettings(session.user.id);
+  const msEnabled = isMicrosoftCalendarConfigured();
 
   return (
     <>
@@ -54,10 +58,10 @@ export default async function IntegrationsSettingsPage() {
           <CalendarConnectionsListLive
             icon={<Mail size={20} strokeWidth={1.5} />}
             providerName="Outlook Calendar"
-            description="Misma idea que Google Calendar, para cuentas Microsoft."
-            connections={[]}
-            connectHref={null}
-            disabledBadge="Próximamente v2"
+            description="Misma idea que Google Calendar, para cuentas Microsoft (Outlook, Hotmail, Entra ID)."
+            connections={data.microsoftConnections}
+            connectHref={msEnabled ? '/api/calendar/microsoft/connect' : null}
+            disabledBadge={msEnabled ? undefined : 'No configurado'}
           />
 
           <section

@@ -180,6 +180,8 @@
 | /api/calendar/connections/[id]/sync-now | `src\app\api\calendar\connections\[id]\sync-now\route.ts` |
 | /api/calendar/google/callback | `src\app\api\calendar\google\callback\route.ts` |
 | /api/calendar/google/connect | `src\app\api\calendar\google\connect\route.ts` |
+| /api/calendar/microsoft/callback | `src\app\api\calendar\microsoft\callback\route.ts` |
+| /api/calendar/microsoft/connect | `src\app\api\calendar\microsoft\connect\route.ts` |
 | /api/email/test | `src\app\api\email\test\route.ts` |
 | /api/health | `src\app\api\health\route.ts` |
 | /api/inngest | `src\app\api\inngest\route.ts` |
@@ -201,9 +203,9 @@
 |--------|-------|
 | Dependencies | 44 |
 | Page Routes | 49 |
-| API Routes | 24 |
+| API Routes | 26 |
 | Components & Utils | 44 |
-| **Total items** | **161** |
+| **Total items** | **163** |
 
 ---
 

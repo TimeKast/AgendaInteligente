@@ -27,7 +27,8 @@ import { and, eq, gt } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { calendarBusySlots } from '@/lib/db/schema/calendar-busy-slots';
 import { calendarConnections } from '@/lib/db/schema/calendar-connections';
-import { GoogleApiError, listEvents } from './google';
+import { GoogleApiError, listEvents as listEventsGoogle } from './google';
+import { MicrosoftApiError, listEvents as listEventsMicrosoft } from './microsoft';
 import { getValidAccessToken } from './refresh';
 import { ConnectionNotFoundError } from './refresh';
 
@@ -69,12 +70,16 @@ export async function syncConnection(
     return { connectionId, deleted: 0, inserted: 0, reconnectRequired: false };
   }
 
-  // Fetch a fresh access token (refresh if needed).
+  // Fetch a fresh access token (refresh if needed). Refresh handles
+  // both providers internally via the same primitives.
   let accessToken: string;
   try {
     accessToken = await getValidAccessToken(userId, connectionId, { now });
   } catch (err) {
-    if (err instanceof GoogleApiError && (err.status === 400 || err.status === 401)) {
+    if (
+      (err instanceof GoogleApiError || err instanceof MicrosoftApiError) &&
+      (err.status === 400 || err.status === 401)
+    ) {
       await markReconnectRequired(connectionId, err.message);
       return {
         connectionId,
@@ -90,9 +95,6 @@ export async function syncConnection(
   const timeMin = now;
   const timeMax = new Date(now.getTime() + windowDays * 24 * 60 * 60 * 1000);
 
-  // Fetch full event details per calendar — events.list returns title +
-  // description, freebusy would only return intervals. The bucket loop
-  // below accumulates rows and the bulk insert at the bottom commits.
   type RawEvent = {
     calendarId: string;
     startAt: Date;
@@ -102,24 +104,55 @@ export async function syncConnection(
   };
   const fetched: RawEvent[] = [];
   try {
-    for (const calId of connection.calendarIds) {
-      const events = await listEvents(accessToken, calId, { timeMin, timeMax });
-      for (const evt of events) {
-        // listEvents already filtered out all-day + cancelled; dateTime is
-        // present on every survivor.
-        const startStr = evt.start.dateTime!;
-        const endStr = evt.end.dateTime!;
-        fetched.push({
-          calendarId: calId,
-          startAt: new Date(startStr),
-          endAt: new Date(endStr),
-          title: evt.summary?.trim() ? evt.summary.trim().slice(0, 500) : null,
-          description: evt.description?.trim() ? evt.description.trim().slice(0, 2000) : null,
-        });
+    if (connection.provider === 'outlook') {
+      for (const calId of connection.calendarIds) {
+        const events = await listEventsMicrosoft(accessToken, calId, { timeMin, timeMax });
+        for (const evt of events) {
+          const startStr = evt.start.dateTime;
+          const endStr = evt.end.dateTime;
+          // Microsoft returns dateTimes without an offset by default; the
+          // `Prefer: outlook.timezone="UTC"` header on listEvents ensures
+          // they're already UTC, so the bare string parses correctly into
+          // a Date — but we append "Z" defensively in case the prefer
+          // header was ignored by the tenant.
+          const startIso = /Z$|[+-]\d{2}:?\d{2}$/.test(startStr) ? startStr : `${startStr}Z`;
+          const endIso = /Z$|[+-]\d{2}:?\d{2}$/.test(endStr) ? endStr : `${endStr}Z`;
+          const title = evt.subject?.trim() ? evt.subject.trim().slice(0, 500) : null;
+          // Prefer plain bodyPreview (already stripped of HTML); fall back
+          // to body.content trimmed if missing.
+          const rawDescription = evt.bodyPreview?.trim()
+            ? evt.bodyPreview.trim()
+            : (evt.body?.content?.trim() ?? '');
+          fetched.push({
+            calendarId: calId,
+            startAt: new Date(startIso),
+            endAt: new Date(endIso),
+            title,
+            description: rawDescription ? rawDescription.slice(0, 2000) : null,
+          });
+        }
+      }
+    } else {
+      for (const calId of connection.calendarIds) {
+        const events = await listEventsGoogle(accessToken, calId, { timeMin, timeMax });
+        for (const evt of events) {
+          const startStr = evt.start.dateTime!;
+          const endStr = evt.end.dateTime!;
+          fetched.push({
+            calendarId: calId,
+            startAt: new Date(startStr),
+            endAt: new Date(endStr),
+            title: evt.summary?.trim() ? evt.summary.trim().slice(0, 500) : null,
+            description: evt.description?.trim() ? evt.description.trim().slice(0, 2000) : null,
+          });
+        }
       }
     }
   } catch (err) {
-    if (err instanceof GoogleApiError && (err.status === 401 || err.status === 403)) {
+    if (
+      (err instanceof GoogleApiError || err instanceof MicrosoftApiError) &&
+      (err.status === 401 || err.status === 403)
+    ) {
       await markReconnectRequired(connectionId, err.message);
       return {
         connectionId,

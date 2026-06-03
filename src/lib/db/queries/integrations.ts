@@ -20,6 +20,7 @@ export interface IntegrationCalendarRow {
 
 export interface IntegrationsSettings {
   googleConnections: IntegrationCalendarRow[];
+  microsoftConnections: IntegrationCalendarRow[];
   discordWebhookUrl: string | null;
 }
 
@@ -39,30 +40,28 @@ export async function loadIntegrationsSettings(userId: string): Promise<Integrat
     db
       .select({
         id: calendarConnections.id,
+        provider: calendarConnections.provider,
         accountLabel: calendarConnections.accountLabel,
         externalAccountId: calendarConnections.externalAccountId,
         lastSyncedAt: calendarConnections.lastSyncedAt,
       })
       .from(calendarConnections)
-      .where(
-        and(
-          eq(calendarConnections.userId, userId),
-          eq(calendarConnections.provider, 'google'),
-          eq(calendarConnections.enabled, true)
-        )
-      ),
+      .where(and(eq(calendarConnections.userId, userId), eq(calendarConnections.enabled, true))),
     db
       .select({ discordWebhookUrl: notificationPrefs.discordWebhookUrl })
       .from(notificationPrefs)
       .where(eq(notificationPrefs.userId, userId)),
   ]);
 
+  const toRow = (c: (typeof connections)[number]): IntegrationCalendarRow => ({
+    id: c.id,
+    accountLabel: c.accountLabel ?? c.externalAccountId,
+    lastSyncLabel: formatLastSync(c.lastSyncedAt),
+  });
+
   return {
-    googleConnections: connections.map((c) => ({
-      id: c.id,
-      accountLabel: c.accountLabel ?? c.externalAccountId,
-      lastSyncLabel: formatLastSync(c.lastSyncedAt),
-    })),
+    googleConnections: connections.filter((c) => c.provider === 'google').map(toRow),
+    microsoftConnections: connections.filter((c) => c.provider === 'outlook').map(toRow),
     discordWebhookUrl: prefs[0]?.discordWebhookUrl ?? null,
   };
 }

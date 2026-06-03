@@ -45,6 +45,7 @@
 | `src\lib\inngest\events.ts` | 2 |
 | `src\lib\inngest\publish.ts` | 2 |
 | `src\lib\integrations\calendar\google.ts` | 2 |
+| `src\lib\integrations\calendar\microsoft.ts` | 2 |
 | `src\lib\integrations\calendar\refresh.ts` | 2 |
 
 ---
@@ -123,6 +124,8 @@
 | `src\app\api\calendar\connections\[id]\sync-now\route.ts` | — | — |
 | `src\app\api\calendar\google\callback\route.ts` | — | — |
 | `src\app\api\calendar\google\connect\route.ts` | — | — |
+| `src\app\api\calendar\microsoft\callback\route.ts` | — | — |
+| `src\app\api\calendar\microsoft\connect\route.ts` | — | — |
 | `src\app\api\email\test\route.ts` | — | — |
 | `src\app\api\health\route.ts` | — | — |
 | `src\app\api\inngest\route.ts` | — | — |
@@ -510,9 +513,10 @@
 | `src\lib\inngest\functions\weeksheet-materialize.ts` | `src\lib\inngest\client.ts` | `src\lib\inngest\functions\index.ts` |
 | `src\lib\inngest\publish.ts` | `src\lib\inngest\client.ts`, `src\lib\inngest\events.ts` | `src\lib\inngest\functions\daily-checkin-fanout.ts`, `src\lib\inngest\functions\weekly-fanout.ts` |
 | `src\lib\integrations\calendar\google.ts` | — | `src\lib\integrations\calendar\refresh.ts`, `src\lib\integrations\calendar\sync.ts` |
-| `src\lib\integrations\calendar\refresh.ts` | `src\lib\integrations\calendar\tokens.ts`, `src\lib\integrations\calendar\google.ts` | `src\lib\integrations\calendar\sync.ts`, `src\lib\integrations\calendar\sync.ts` |
+| `src\lib\integrations\calendar\microsoft.ts` | — | `src\lib\integrations\calendar\refresh.ts`, `src\lib\integrations\calendar\sync.ts` |
+| `src\lib\integrations\calendar\refresh.ts` | `src\lib\integrations\calendar\tokens.ts`, `src\lib\integrations\calendar\google.ts`, `src\lib\integrations\calendar\microsoft.ts` | `src\lib\integrations\calendar\sync.ts`, `src\lib\integrations\calendar\sync.ts` |
 | `src\lib\integrations\calendar\state.ts` | — | — |
-| `src\lib\integrations\calendar\sync.ts` | `src\lib\integrations\calendar\google.ts`, `src\lib\integrations\calendar\refresh.ts`, `src\lib\integrations\calendar\refresh.ts` | — |
+| `src\lib\integrations\calendar\sync.ts` | `src\lib\integrations\calendar\google.ts`, `src\lib\integrations\calendar\microsoft.ts`, `src\lib\integrations\calendar\refresh.ts`, `src\lib\integrations\calendar\refresh.ts` | — |
 | `src\lib\integrations\calendar\tokens.ts` | — | `src\lib\integrations\calendar\refresh.ts` |
 | `src\lib\integrations\voice\meter.ts` | — | — |
 | `src\lib\integrations\voice\whisper.ts` | — | — |
@@ -559,10 +563,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 499 |
-| Total connections | 196 |
-| High-risk files (2+ deps) | 35 |
-| Orphan files (no connections) | 333 |
+| Total files analyzed | 502 |
+| Total connections | 198 |
+| High-risk files (2+ deps) | 36 |
+| Orphan files (no connections) | 335 |
 
 ---
 
