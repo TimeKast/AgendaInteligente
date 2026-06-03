@@ -7,8 +7,9 @@
  *
  * Replaces SortableActivityRow for the new Today UX where reorder-within-list
  * is no longer the primary gesture — instead, drag = schedule/unschedule by
- * hour. The drag handle is the left grip (kept outside the row's <Link> so
- * taps still navigate to detail).
+ * hour. The ENTIRE row is the drag target: quick taps still navigate to
+ * detail via the inner <Link>, while a drag past the activation threshold
+ * (mouse: 6px / touch: 180ms hold) arms dnd-kit and starts the move.
  *
  * Resize (desktop only):
  *   When `durationMinutes` + `onResize` are provided, the row absolutely
