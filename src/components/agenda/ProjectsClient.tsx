@@ -73,6 +73,7 @@ export function ProjectsClient({ initial, categories }: Props) {
             categoryId: newCategoryId,
             categoryName: cat?.name ?? '',
             isInbox: false,
+            activeTaskCount: 0,
           },
         ]);
       }
@@ -236,6 +237,28 @@ export function ProjectsClient({ initial, categories }: Props) {
                           }}
                         >
                           {p.name}
+                        </span>
+                        <span
+                          aria-label={`${p.activeTaskCount} tarea${
+                            p.activeTaskCount === 1 ? '' : 's'
+                          } activa${p.activeTaskCount === 1 ? '' : 's'}`}
+                          title={`${p.activeTaskCount} activa${p.activeTaskCount === 1 ? '' : 's'}`}
+                          style={{
+                            fontFamily: 'var(--ag-font-mono)',
+                            fontSize: 11,
+                            color:
+                              p.activeTaskCount === 0 ? 'var(--ag-ink-hint)' : 'var(--ag-ink-soft)',
+                            padding: '2px 8px',
+                            borderRadius: 'var(--ag-radius-pill)',
+                            backgroundColor:
+                              p.activeTaskCount === 0
+                                ? 'transparent'
+                                : 'var(--ag-bg-sunken, var(--ag-bg))',
+                            border: '1px solid var(--ag-rule)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {p.activeTaskCount}
                         </span>
                       </div>
                       {p.status !== 'active' && (

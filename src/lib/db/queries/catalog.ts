@@ -9,6 +9,7 @@ import { eq, and, isNull, sql, asc } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { categories } from '@/lib/db/schema/categories';
 import { projects } from '@/lib/db/schema/projects';
+import { activities } from '@/lib/db/schema/activities';
 
 export interface CategoryListRow {
   id: string;
@@ -27,6 +28,13 @@ export interface ProjectListRow {
   categoryId: string;
   categoryName: string;
   isInbox: boolean;
+  /**
+   * Open activities tied to this project — `pending` or `in_progress`,
+   * not deleted, and not a recurrence-master template (those are templates
+   * users never see, only their materialized instances). Surfaced in the
+   * /projects list so you see workload at a glance.
+   */
+  activeTaskCount: number;
 }
 
 export async function listCategories(
@@ -53,6 +61,23 @@ export async function listCategories(
 }
 
 export async function listProjects(userId: string): Promise<ProjectListRow[]> {
+  // Count condition mirrors what counts as a "real, open task" in the UI:
+  //   - status IN ('pending','in_progress')
+  //   - not soft-deleted
+  //   - not a recurrence master template (a template has recurrence_rule
+  //     set AND no recurrence_parent_id — those rows never surface to the
+  //     user, only their materialized children do).
+  const activeTaskCountExpr = sql<number>`
+    count(${activities.id}) filter (
+      where ${activities.status} in ('pending','in_progress')
+        and ${activities.deletedAt} is null
+        and not (
+          ${activities.recurrenceRule} is not null
+          and ${activities.recurrenceParentId} is null
+        )
+    )::int
+  `;
+
   const rows = await db
     .select({
       id: projects.id,
@@ -62,10 +87,13 @@ export async function listProjects(userId: string): Promise<ProjectListRow[]> {
       categoryName: categories.name,
       categoryArchivedAt: categories.archivedAt,
       isInbox: projects.isInbox,
+      activeTaskCount: activeTaskCountExpr,
     })
     .from(projects)
     .leftJoin(categories, eq(categories.id, projects.categoryId))
+    .leftJoin(activities, eq(activities.projectId, projects.id))
     .where(and(eq(projects.userId, userId), isNull(projects.deletedAt)))
+    .groupBy(projects.id, categories.name, categories.archivedAt)
     .orderBy(projects.isInbox, asc(projects.name));
   // Hide projects whose parent category is archived — they shouldn't
   // appear in pickers or list surfaces until the category is restored.
@@ -78,5 +106,6 @@ export async function listProjects(userId: string): Promise<ProjectListRow[]> {
       categoryId: r.categoryId,
       categoryName: r.categoryName ?? '',
       isInbox: r.isInbox,
+      activeTaskCount: r.activeTaskCount ?? 0,
     }));
 }
