@@ -13,16 +13,22 @@ import { listCategories } from '@/lib/db/queries/catalog';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { CategoriesClient } from '@/components/agenda/CategoriesClient';
 
-export default async function CategoriesPage() {
+export default async function CategoriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ archived?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect('/login?callbackUrl=/categories');
   }
-  const rows = await listCategories(session.user.id);
+  const { archived } = await searchParams;
+  const showArchived = archived === '1';
+  const rows = await listCategories(session.user.id, { includeArchived: showArchived });
   return (
     <>
       <AgendaHeader dateLabel="Categorías" />
-      <CategoriesClient initial={rows} />
+      <CategoriesClient initial={rows} showArchived={showArchived} />
     </>
   );
 }

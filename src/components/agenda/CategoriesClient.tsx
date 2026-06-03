@@ -13,20 +13,39 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Plus, Inbox } from 'lucide-react';
-import { createCategory } from '@/lib/actions/category';
+import { Archive, ArchiveRestore, Plus, Inbox } from 'lucide-react';
+import { archiveCategory, createCategory, unarchiveCategory } from '@/lib/actions/category';
 import type { CategoryListRow } from '@/lib/db/queries/catalog';
 
 interface Props {
   initial: CategoryListRow[];
+  showArchived: boolean;
 }
 
-export function CategoriesClient({ initial }: Props) {
+export function CategoriesClient({ initial, showArchived }: Props) {
   const router = useRouter();
   const [rows, setRows] = useState(initial);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [isPending, startTransition] = useTransition();
+
+  function handleArchive(id: string, archived: boolean) {
+    // Optimistic flip.
+    const prevRows = rows;
+    setRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, archivedAt: archived ? new Date() : null } : r))
+    );
+    startTransition(async () => {
+      const result = archived ? await archiveCategory({ id }) : await unarchiveCategory({ id });
+      if (result.error) {
+        toast.error(`No se pudo ${archived ? 'archivar' : 'restaurar'}: ${result.error}`);
+        setRows(prevRows);
+        return;
+      }
+      toast.success(archived ? 'Categoría archivada.' : 'Categoría restaurada.');
+      router.refresh();
+    });
+  }
 
   function handleCreate() {
     const name = newName.trim();
@@ -48,6 +67,7 @@ export function CategoriesClient({ initial }: Props) {
             icon: null,
             isInbox: false,
             projectCount: 0,
+            archivedAt: null,
           },
         ]);
       }
@@ -166,6 +186,31 @@ export function CategoriesClient({ initial }: Props) {
         </button>
       )}
 
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <Link
+          href={showArchived ? '/categories' : '/categories?archived=1'}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 10px',
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 12,
+            color: 'var(--ag-ink-soft)',
+            border: '1px solid var(--ag-rule)',
+            borderRadius: 'var(--ag-radius-pill)',
+            textDecoration: 'none',
+          }}
+        >
+          {showArchived ? 'Ocultar archivadas' : 'Ver archivadas'}
+        </Link>
+      </div>
+
       <ul
         style={{
           margin: 0,
@@ -176,20 +221,21 @@ export function CategoriesClient({ initial }: Props) {
           gap: 'var(--ag-space-2)',
         }}
       >
-        {rows.map((c) => (
-          <li key={c.id}>
-            <Link
-              href={`/categories/${c.id}`}
+        {rows.map((c) => {
+          const archived = c.archivedAt !== null;
+          return (
+            <li
+              key={c.id}
               style={{
+                position: 'relative',
+                border: '1px solid var(--ag-rule)',
+                borderRadius: 'var(--ag-radius-base)',
+                backgroundColor: 'var(--ag-bg-elevated)',
+                opacity: archived ? 0.55 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 'var(--ag-space-3)',
                 padding: 'var(--ag-space-3)',
-                border: '1px solid var(--ag-rule)',
-                borderRadius: 'var(--ag-radius-base)',
-                backgroundColor: 'var(--ag-bg-elevated)',
-                textDecoration: 'none',
-                color: 'var(--ag-ink-primary)',
                 minHeight: 56,
               }}
             >
@@ -207,7 +253,8 @@ export function CategoriesClient({ initial }: Props) {
                   }}
                 />
               )}
-              <span
+              <Link
+                href={`/categories/${c.id}`}
                 style={{
                   flex: 1,
                   minWidth: 0,
@@ -216,10 +263,12 @@ export function CategoriesClient({ initial }: Props) {
                   whiteSpace: 'nowrap',
                   fontFamily: 'var(--ag-font-body)',
                   fontSize: 15,
+                  color: 'var(--ag-ink-primary)',
+                  textDecoration: archived ? 'line-through' : 'none',
                 }}
               >
                 {c.name}
-              </span>
+              </Link>
               <span
                 style={{
                   fontFamily: 'var(--ag-font-mono)',
@@ -229,9 +278,35 @@ export function CategoriesClient({ initial }: Props) {
               >
                 {c.projectCount}
               </span>
-            </Link>
-          </li>
-        ))}
+              {!c.isInbox ? (
+                <button
+                  type="button"
+                  onClick={() => handleArchive(c.id, !archived)}
+                  disabled={isPending}
+                  aria-label={archived ? 'Restaurar categoría' : 'Archivar categoría'}
+                  title={archived ? 'Restaurar' : 'Archivar'}
+                  style={{
+                    appearance: 'none',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--ag-ink-hint)',
+                    cursor: isPending ? 'wait' : 'pointer',
+                    padding: 4,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {archived ? (
+                    <ArchiveRestore size={16} strokeWidth={1.5} />
+                  ) : (
+                    <Archive size={16} strokeWidth={1.5} />
+                  )}
+                </button>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </main>
   );

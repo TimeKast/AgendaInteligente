@@ -16,6 +16,7 @@
  */
 
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '@/lib/db/drizzle';
 import { categories } from '@/lib/db/schema/categories';
 import { projects } from '@/lib/db/schema/projects';
@@ -29,6 +30,53 @@ import {
   deleteCategorySchema,
   reorderCategoriesSchema,
 } from '@/lib/validations/category';
+
+const archiveSchema = z.object({
+  id: z.string().uuid('ID inválido'),
+});
+
+/**
+ * Soft "inactive" toggle for a category — sets `archived_at`. Distinct
+ * from deleteCategory: archive is reversible and does NOT cascade into
+ * projects/activities (they stay reachable from their own catalog
+ * surfaces). Inbox cannot be archived.
+ */
+export async function archiveCategory(input: unknown): Promise<ActionResult> {
+  return await withSelf(
+    { schema: archiveSchema, revalidate: '/categories' },
+    input,
+    async (data, userId) => {
+      const sdb = scopedDb(userId);
+      const existing = await sdb.select('categories', eq(categories.id, data.id));
+      if (existing.length === 0) throw new ActionError('Categoría no encontrada');
+      if (existing[0].isInbox) throw new ActionError('Inbox no se puede archivar');
+      if (existing[0].deletedAt) throw new ActionError('Categoría borrada');
+      if (existing[0].archivedAt) return; // idempotent
+      await sdb
+        .update('categories', { archivedAt: sql`now()` })
+        .where(eq(categories.id, data.id))
+        .execute();
+    }
+  );
+}
+
+/** Restore an archived category — clears `archived_at`. */
+export async function unarchiveCategory(input: unknown): Promise<ActionResult> {
+  return await withSelf(
+    { schema: archiveSchema, revalidate: '/categories' },
+    input,
+    async (data, userId) => {
+      const sdb = scopedDb(userId);
+      const existing = await sdb.select('categories', eq(categories.id, data.id));
+      if (existing.length === 0) throw new ActionError('Categoría no encontrada');
+      if (!existing[0].archivedAt) return; // idempotent
+      await sdb
+        .update('categories', { archivedAt: null })
+        .where(eq(categories.id, data.id))
+        .execute();
+    }
+  );
+}
 
 /**
  * Create a new (non-Inbox) category for the current user.
