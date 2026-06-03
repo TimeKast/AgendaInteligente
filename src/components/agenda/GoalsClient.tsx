@@ -47,15 +47,33 @@ export function GoalsClient({ initial }: Props) {
   const [newDeadline, setNewDeadline] = useState('');
   const [isPending, startTransition] = useTransition();
 
-  const needsDeadline = newScope === 'quarter' || newScope === 'year';
+  /** End-of-quarter (UTC date YYYY-MM-DD) covering the given JS Date. */
+  function endOfQuarter(d: Date): string {
+    const m = d.getUTCMonth(); // 0-indexed
+    const qLastMonth = Math.floor(m / 3) * 3 + 2; // 2, 5, 8, 11
+    const lastDay = new Date(Date.UTC(d.getUTCFullYear(), qLastMonth + 1, 0)).getUTCDate();
+    return `${d.getUTCFullYear()}-${String(qLastMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  }
+  function endOfYear(d: Date): string {
+    return `${d.getUTCFullYear()}-12-31`;
+  }
+  function suggestedDeadline(scope: Scope): string {
+    const now = new Date();
+    if (scope === 'quarter') return endOfQuarter(now);
+    if (scope === 'year') return endOfYear(now);
+    return '';
+  }
+
+  function handleScopeChange(next: Scope) {
+    setNewScope(next);
+    // Pre-fill the deadline with the natural end-of-period boundary so
+    // the user gets a sensible default. They can still clear or change it.
+    setNewDeadline(suggestedDeadline(next));
+  }
 
   function handleCreate() {
     const title = newTitle.trim();
     if (!title) return;
-    if (needsDeadline && !newDeadline) {
-      toast.error('Trimestre/Año requieren deadline.');
-      return;
-    }
     startTransition(async () => {
       const result = await createGoal({
         title,
@@ -97,6 +115,119 @@ export function GoalsClient({ initial }: Props) {
         gap: 'var(--ag-space-4)',
       }}
     >
+      {creating ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCreate();
+          }}
+          style={{
+            display: 'flex',
+            gap: 8,
+            padding: 'var(--ag-space-3)',
+            border: '1px solid var(--ag-rule)',
+            borderRadius: 'var(--ag-radius-base)',
+            backgroundColor: 'var(--ag-bg-elevated)',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <select
+            value={newScope}
+            onChange={(e) => handleScopeChange(e.target.value as Scope)}
+            disabled={isPending}
+            style={selectStyle}
+            aria-label="Horizonte"
+          >
+            {SCOPE_ORDER.map((s) => (
+              <option key={s} value={s}>
+                {SCOPE_LABEL[s]}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
+            autoFocus
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Título de la meta"
+            disabled={isPending}
+            style={{ ...selectStyle, flex: 1, minWidth: 180 }}
+          />
+          <input
+            type="date"
+            value={newDeadline}
+            onChange={(e) => setNewDeadline(e.target.value)}
+            disabled={isPending}
+            style={selectStyle}
+            aria-label="Fecha específica (opcional)"
+            title="Fecha específica (opcional). Sin fecha, la meta toma el horizonte completo."
+          />
+          <button
+            type="submit"
+            disabled={isPending || !newTitle.trim()}
+            style={{
+              padding: '8px 14px',
+              border: 'none',
+              borderRadius: 'var(--ag-radius-base)',
+              backgroundColor: 'var(--ag-ink-primary)',
+              color: 'var(--ag-accent-on)',
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 13,
+              cursor: !newTitle.trim() ? 'not-allowed' : 'pointer',
+              opacity: isPending ? 0.7 : 1,
+            }}
+          >
+            Crear
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setCreating(false);
+              setNewTitle('');
+              setNewDeadline('');
+            }}
+            style={{
+              padding: '8px 12px',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--ag-ink-hint)',
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Cancelar
+          </button>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setCreating(true);
+            setNewDeadline(suggestedDeadline(newScope));
+          }}
+          style={{
+            appearance: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '10px 14px',
+            border: '1px dashed var(--ag-rule)',
+            borderRadius: 'var(--ag-radius-base)',
+            background: 'transparent',
+            color: 'var(--ag-ink-soft)',
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 14,
+            cursor: 'pointer',
+            alignSelf: 'flex-start',
+          }}
+        >
+          <Plus size={14} strokeWidth={1.5} />
+          Nueva meta
+        </button>
+      )}
+
       {SCOPE_ORDER.map((scope) => {
         const items = rows.filter((g) => g.scope === scope);
         if (items.length === 0) return null;
@@ -180,116 +311,6 @@ export function GoalsClient({ initial }: Props) {
         >
           Sin metas todavía. Crea la primera.
         </p>
-      )}
-
-      {creating ? (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleCreate();
-          }}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            padding: 'var(--ag-space-3)',
-            border: '1px solid var(--ag-rule)',
-            borderRadius: 'var(--ag-radius-base)',
-            backgroundColor: 'var(--ag-bg-elevated)',
-          }}
-        >
-          <select
-            value={newScope}
-            onChange={(e) => setNewScope(e.target.value as Scope)}
-            disabled={isPending}
-            style={selectStyle}
-          >
-            {SCOPE_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {SCOPE_LABEL[s]}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            autoFocus
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Título de la meta"
-            disabled={isPending}
-            style={selectStyle}
-          />
-          <input
-            type="date"
-            value={newDeadline}
-            onChange={(e) => setNewDeadline(e.target.value)}
-            disabled={isPending}
-            style={selectStyle}
-            placeholder={needsDeadline ? 'Deadline (requerido)' : 'Deadline (opcional)'}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="submit"
-              disabled={isPending || !newTitle.trim()}
-              style={{
-                flex: 1,
-                padding: '8px 14px',
-                border: 'none',
-                borderRadius: 'var(--ag-radius-base)',
-                backgroundColor: 'var(--ag-ink-primary)',
-                color: 'var(--ag-accent-on)',
-                fontFamily: 'var(--ag-font-body)',
-                fontSize: 13,
-                cursor: !newTitle.trim() ? 'not-allowed' : 'pointer',
-                opacity: isPending ? 0.7 : 1,
-              }}
-            >
-              Crear
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setCreating(false);
-                setNewTitle('');
-                setNewDeadline('');
-              }}
-              style={{
-                padding: '8px 12px',
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--ag-ink-hint)',
-                fontFamily: 'var(--ag-font-body)',
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setCreating(true)}
-          style={{
-            appearance: 'none',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '10px 14px',
-            border: '1px dashed var(--ag-rule)',
-            borderRadius: 'var(--ag-radius-base)',
-            background: 'transparent',
-            color: 'var(--ag-ink-soft)',
-            fontFamily: 'var(--ag-font-body)',
-            fontSize: 14,
-            cursor: 'pointer',
-            alignSelf: 'flex-start',
-          }}
-        >
-          <Plus size={14} strokeWidth={1.5} />
-          Nueva meta
-        </button>
       )}
     </main>
   );

@@ -71,32 +71,20 @@ const reviewNotesSchema = z
 const freeTextSchema = z.string().trim().max(2000).nullable().optional();
 
 /**
- * Scopes that require a deadline at create time. 5year/life are
- * deliberately open-ended (deadline-less long-horizon goals are valid).
+ * Deadline is now OPTIONAL for every scope. Quarter/year goals get an
+ * implicit end-of-quarter / end-of-year boundary from the scope itself;
+ * users who want a tighter, specific date can still supply one. This
+ * matches the user expectation that "Q4 goal" is enough — no need to
+ * type "2026-12-31" by hand.
  */
-const SCOPES_REQUIRING_DEADLINE: ReadonlySet<(typeof GOAL_SCOPES)[number]> = new Set([
-  'quarter',
-  'year',
-]);
-
-export const createGoalSchema = z
-  .object({
-    title: titleSchema,
-    description: descriptionSchema,
-    scope: scopeSchema,
-    deadline: deadlineSchema,
-    outcomeExpected: freeTextSchema,
-    notesCost: freeTextSchema,
-  })
-  .superRefine((data, ctx) => {
-    if (SCOPES_REQUIRING_DEADLINE.has(data.scope) && !data.deadline) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['deadline'],
-        message: `Deadline requerido para scope "${data.scope}"`,
-      });
-    }
-  });
+export const createGoalSchema = z.object({
+  title: titleSchema,
+  description: descriptionSchema,
+  scope: scopeSchema,
+  deadline: deadlineSchema,
+  outcomeExpected: freeTextSchema,
+  notesCost: freeTextSchema,
+});
 
 export const updateGoalSchema = z.object({
   id: idSchema,

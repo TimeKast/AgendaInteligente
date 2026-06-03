@@ -101,7 +101,7 @@ export function AgendaBottomNav() {
             margin: 0,
             padding: 0,
             display: 'grid',
-            gridTemplateColumns: 'repeat(7, 1fr)',
+            gridTemplateColumns: `repeat(${ITEMS.length}, 1fr)`,
           }}
         >
           {ITEMS.map(({ key, label, href, Icon }) => {
