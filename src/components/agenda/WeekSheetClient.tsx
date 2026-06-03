@@ -12,6 +12,9 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { updateWeekSheet } from '@/lib/actions/week-sheet';
+import { WeekDaysPlanner } from './WeekDaysPlanner';
+import type { WeekActivitiesResult } from '@/lib/db/queries/week-activities';
+import type { QuickAddProject, QuickAddCategory } from './ActivityQuickAdd';
 
 export interface WeekSheetInitial {
   weekStarting: string; // YYYY-MM-DD
@@ -28,9 +31,19 @@ export interface WeekSheetInitial {
 
 interface Props {
   initial: WeekSheetInitial;
+  weekActivities: WeekActivitiesResult;
+  todayYmd: string;
+  projects: QuickAddProject[];
+  categories: QuickAddCategory[];
 }
 
-export function WeekSheetClient({ initial }: Props) {
+export function WeekSheetClient({
+  initial,
+  weekActivities,
+  todayYmd,
+  projects,
+  categories,
+}: Props) {
   const router = useRouter();
   const [oneThing, setOneThing] = useState(initial.oneThing);
   const [wins, setWins] = useState<string[]>([
@@ -161,30 +174,57 @@ export function WeekSheetClient({ initial }: Props) {
         </Label>
       </Section>
 
-      <Section title="Review" subtitle="Cierre del sábado.">
-        <Label text="Resumen en una frase">
-          <textarea
-            value={reviewOneSentence}
-            onChange={(e) => setReviewOneSentence(e.target.value)}
-            rows={2}
-            disabled={isPending}
-            style={inputStyle}
-          />
-        </Label>
+      <WeekDaysPlanner
+        days={weekActivities.days}
+        todayYmd={todayYmd}
+        byDay={weekActivities.byDay}
+        noDay={weekActivities.noDay}
+        projects={projects}
+        categories={categories}
+      />
 
-        <Label text={`Energía esta semana: ${reviewEnergy}/10`}>
-          <input
-            type="range"
-            min={1}
-            max={10}
-            step={1}
-            value={reviewEnergy}
-            onChange={(e) => setReviewEnergy(Number(e.target.value))}
-            disabled={isPending}
-            style={{ width: '100%' }}
-          />
-        </Label>
-      </Section>
+      {initial.kickoffCompleted ? (
+        <Section title="Review" subtitle="Cierre del sábado.">
+          <Label text="Resumen en una frase">
+            <textarea
+              value={reviewOneSentence}
+              onChange={(e) => setReviewOneSentence(e.target.value)}
+              rows={2}
+              disabled={isPending}
+              style={inputStyle}
+            />
+          </Label>
+
+          <Label text={`Energía esta semana: ${reviewEnergy}/10`}>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              step={1}
+              value={reviewEnergy}
+              onChange={(e) => setReviewEnergy(Number(e.target.value))}
+              disabled={isPending}
+              style={{ width: '100%' }}
+            />
+          </Label>
+        </Section>
+      ) : (
+        <p
+          style={{
+            margin: 0,
+            padding: 'var(--ag-space-3) var(--ag-space-4)',
+            border: '1px dashed var(--ag-rule)',
+            borderRadius: 'var(--ag-radius-base)',
+            fontFamily: 'var(--ag-font-display)',
+            fontStyle: 'italic',
+            fontSize: 13,
+            color: 'var(--ag-ink-hint)',
+            textAlign: 'center',
+          }}
+        >
+          El review (resumen + energía) aparece cuando completás el kickoff.
+        </p>
+      )}
 
       <footer
         style={{
