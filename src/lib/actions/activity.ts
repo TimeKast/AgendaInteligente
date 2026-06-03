@@ -31,6 +31,7 @@ import {
   listActivitiesSchema,
 } from '@/lib/validations/activity';
 import { isAllowedTransition, reasonRequirementFor } from '@/lib/domain/activity-transitions';
+import { materializeUserRecurrences } from '@/lib/cron/recurrence';
 import { logger } from '@/lib/logger';
 import type { ActivityStatus } from '@/lib/db/schema/activities';
 
@@ -93,6 +94,18 @@ export async function createActivity(input: unknown): Promise<ActionResult<{ id:
           completedAt: status === 'done' ? new Date() : null,
         })
         .returning({ id: activities.id });
+
+      // Materialize the next ~14 days of instances when this activity is
+      // a recurring parent — otherwise the user wouldn't see their "daily
+      // L-V 7:30" task on /today until the cron next runs. Idempotent +
+      // non-fatal: failures here log but don't roll back the parent insert.
+      if (data.recurrenceRule) {
+        try {
+          await materializeUserRecurrences(userId);
+        } catch (err) {
+          logger.error('[createActivity] materializeUserRecurrences failed', err);
+        }
+      }
 
       return { id: inserted[0].id };
     }
@@ -333,7 +346,16 @@ export async function listActivities(input: unknown): Promise<ActionResult<ListA
       data.includeDeleted ? undefined : isNull(activities.deletedAt)
     );
 
-    const filtered = data.includeDone ? allRows : allRows.filter((r) => r.status !== 'done');
+    // Recurring "parents" (rows with a recurrence_rule and no
+    // recurrence_parent_id) are templates, not tasks to do. Hide them
+    // from every user-facing list — the materialized instances (which
+    // have recurrence_parent_id = parent.id and no rule of their own)
+    // represent the actual work and surface on their scheduled dates.
+    const isParentTemplate = (r: Activity): boolean =>
+      r.recurrenceRule !== null && r.recurrenceParentId === null;
+
+    const visible = allRows.filter((r) => !isParentTemplate(r));
+    const filtered = data.includeDone ? visible : visible.filter((r) => r.status !== 'done');
 
     const weekEnd = addDays(data.date, 6);
     const annotated = filtered.map((r) => ({
