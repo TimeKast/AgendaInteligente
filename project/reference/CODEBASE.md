@@ -14,7 +14,7 @@
 | `src\lib\db\schema\users.ts` | 17 |
 | `src\lib\inngest\client.ts` | 14 |
 | `src\lib\email\templates\layout.ts` | 9 |
-| `src\components\agenda\ActivityRow.tsx` | 7 |
+| `src\components\agenda\ActivityRow.tsx` | 8 |
 | `src\components\agenda\ActivityQuickAdd.tsx` | 7 |
 | `src\lib\ai\system-prompts\agent-base.ts` | 5 |
 | `src\components\agenda\DraggablePoolActivity.tsx` | 4 |
@@ -153,7 +153,7 @@
 | `src\components\agenda\AccountDeletionModal.tsx` | — | — |
 | `src\components\agenda\ActivityDetailClient.tsx` | — | — |
 | `src\components\agenda\ActivityQuickAdd.tsx` | `src\components\agenda\PriorityDots.tsx`, `src\components\agenda\RecurrencePicker.tsx` | `src\components\agenda\MonthPlanner.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx`, `src\components\agenda\VoiceCaptureSheet.tsx`, `src\components\agenda\WeekDaysPlanner.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\WeekSheetClient.tsx`, `src\components\agenda\WeekSwimlane.tsx` |
-| `src\components\agenda\ActivityRow.tsx` | `src\components\agenda\DeadlineBadge.tsx`, `src\components\agenda\RecurrencePicker.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\LinkedActivitiesList.tsx`, `src\components\agenda\ProjectActivityRow.tsx`, `src\components\agenda\SortableActivityRow.tsx`, `src\components\agenda\SortableActivityRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx`, `src\components\agenda\WeekDaysPlanner.tsx` |
+| `src\components\agenda\ActivityRow.tsx` | `src\components\agenda\DeadlineBadge.tsx`, `src\components\agenda\RecurrencePicker.tsx` | `src\components\agenda\DraggableTaskRow.tsx`, `src\components\agenda\LinkedActivitiesList.tsx`, `src\components\agenda\MonthWeeksPlanner.tsx`, `src\components\agenda\ProjectActivityRow.tsx`, `src\components\agenda\SortableActivityRow.tsx`, `src\components\agenda\SortableActivityRow.tsx`, `src\components\agenda\TodayActivitiesBoard.tsx`, `src\components\agenda\WeekDaysPlanner.tsx` |
 | `src\components\agenda\ActivitySection.tsx` | — | — |
 | `src\components\agenda\ActivityStatusModal.tsx` | — | `src\components\agenda\TodayActivitiesBoard.tsx` |
 | `src\components\agenda\AgendaBottomNav.tsx` | — | `src\components\agenda\AgendaShell.tsx` |
@@ -208,7 +208,8 @@
 | `src\components\agenda\MonthGrid.tsx` | `src\components\agenda\MonthDayCell.tsx` | `src\components\agenda\MonthPlanner.tsx` |
 | `src\components\agenda\MonthNavigation.tsx` | — | — |
 | `src\components\agenda\MonthPlanner.tsx` | `src\components\agenda\ActivityQuickAdd.tsx`, `src\components\agenda\WeekPoolSection.tsx`, `src\components\agenda\MonthGrid.tsx`, `src\components\agenda\DayActivitiesSheet.tsx`, `src\components\agenda\DraggablePoolActivity.tsx`, `src\components\agenda\MonthDayCell.tsx`, `src\components\agenda\QuickAddDayPopover.tsx`, `src\components\agenda\PlanSnapshotControls.tsx`, `src\components\agenda\PlanSnapshotViewer.tsx` | — |
-| `src\components\agenda\MonthSheetClient.tsx` | — | — |
+| `src\components\agenda\MonthSheetClient.tsx` | `src\components\agenda\MonthWeeksPlanner.tsx` | — |
+| `src\components\agenda\MonthWeeksPlanner.tsx` | `src\components\agenda\ActivityRow.tsx` | `src\components\agenda\MonthSheetClient.tsx` |
 | `src\components\agenda\MultiDayPicker.tsx` | — | `src\components\agenda\WeekSwimlane.tsx` |
 | `src\components\agenda\MutePickerModal.tsx` | — | — |
 | `src\components\agenda\NewCategoryModal.tsx` | `src\components\agenda\ColorPicker.tsx`, `src\components\agenda\IconPicker.tsx` | — |
@@ -419,6 +420,7 @@
 | `src\lib\db\queries\dashboard.ts` | — | — |
 | `src\lib\db\queries\goals.ts` | — | — |
 | `src\lib\db\queries\integrations.ts` | — | — |
+| `src\lib\db\queries\month-activities.ts` | — | — |
 | `src\lib\db\queries\project-detail.ts` | — | — |
 | `src\lib\db\queries\settings.ts` | — | — |
 | `src\lib\db\queries\sheets.ts` | — | — |
@@ -557,8 +559,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 497 |
-| Total connections | 194 |
+| Total files analyzed | 499 |
+| Total connections | 196 |
 | High-risk files (2+ deps) | 35 |
 | Orphan files (no connections) | 333 |
 

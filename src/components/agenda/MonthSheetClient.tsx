@@ -12,6 +12,8 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { updateMonthSheet } from '@/lib/actions/month-sheet';
+import { MonthWeeksPlanner } from './MonthWeeksPlanner';
+import type { MonthActivitiesResult } from '@/lib/db/queries/month-activities';
 
 export interface MonthSheetInitial {
   monthStarting: string; // YYYY-MM-01
@@ -24,9 +26,11 @@ export interface MonthSheetInitial {
 
 interface Props {
   initial: MonthSheetInitial;
+  monthActivities: MonthActivitiesResult;
+  todayYmd: string;
 }
 
-export function MonthSheetClient({ initial }: Props) {
+export function MonthSheetClient({ initial, monthActivities, todayYmd }: Props) {
   const router = useRouter();
   const [goals, setGoals] = useState(initial.goals);
   const [themesRaw, setThemesRaw] = useState(initial.themes.join(', '));
@@ -111,6 +115,8 @@ export function MonthSheetClient({ initial }: Props) {
           style={inputStyle}
         />
       </Label>
+
+      <MonthWeeksPlanner data={monthActivities} todayYmd={todayYmd} />
 
       <Label text="Resumen al cerrar (opcional, fin de mes)">
         <textarea
