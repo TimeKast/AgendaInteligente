@@ -4,11 +4,12 @@
  * SortableActivityRow — wraps ActivityRow with @dnd-kit/sortable so the row
  * can be reordered inside a SortableContext (DD-026).
  *
- * The visible drag handle is rendered via the `dragHandle` slot on ActivityRow
- * — that keeps the rest of the row tappable for navigation.
+ * The ENTIRE row is the drag target — quick taps navigate via the inner
+ * <Link>, hold-and-drag reorders. Activation thresholds (mouse: 6px move,
+ * touch: 180ms hold) live on the parent DndContext sensors, not here.
  */
 
-import { GripVertical, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ActivityRow } from './ActivityRow';
@@ -38,62 +39,50 @@ export function SortableActivityRow(props: SortableActivityRowProps) {
     backgroundColor: isDragging ? 'var(--ag-bg-elevated)' : 'transparent',
   };
 
-  const handle = (
-    <button
-      type="button"
-      aria-label={`Arrastrá para reordenar ${props.title}`}
-      {...attributes}
-      {...listeners}
-      style={{
-        appearance: 'none',
-        background: 'transparent',
-        border: 'none',
-        color: 'var(--ag-ink-hint)',
-        cursor: 'grab',
-        touchAction: 'none',
-        padding: 4,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <GripVertical size={16} strokeWidth={1.5} aria-hidden />
-    </button>
-  );
-
   const { onOpenStatus, ...rowProps } = props;
 
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, position: 'relative' }}
+      {...attributes}
+      {...listeners}
+      aria-label={`Arrastrá para reordenar ${props.title}`}
+      style={{
+        ...style,
+        position: 'relative',
+        cursor: isDragging ? 'grabbing' : 'grab',
+      }}
     >
-      <ActivityRow {...rowProps} dragHandle={handle} trailingSlot={
-        onOpenStatus ? (
-          <button
-            type="button"
-            aria-label={`Cambiar status de ${props.title}`}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onOpenStatus();
-            }}
-            style={{
-              appearance: 'none',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--ag-ink-hint)',
-              cursor: 'pointer',
-              padding: 4,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <MoreHorizontal size={16} strokeWidth={1.5} aria-hidden />
-          </button>
-        ) : undefined
-      } />
+      <ActivityRow
+        {...rowProps}
+        trailingSlot={
+          onOpenStatus ? (
+            <button
+              type="button"
+              aria-label={`Cambiar status de ${props.title}`}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onOpenStatus();
+              }}
+              style={{
+                appearance: 'none',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--ag-ink-hint)',
+                cursor: 'pointer',
+                padding: 4,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <MoreHorizontal size={16} strokeWidth={1.5} aria-hidden />
+            </button>
+          ) : undefined
+        }
+      />
     </div>
   );
 }

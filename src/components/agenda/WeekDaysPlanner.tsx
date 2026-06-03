@@ -20,10 +20,11 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ChevronDown, ChevronRight, GripVertical, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useDraggable,
   useDroppable,
   useSensor,
@@ -168,7 +169,12 @@ export function WeekDaysPlanner({
     return { byDay: byDayLocal, poolThisWeek, poolNextWeek, poolNoDeadline };
   }, [items, days, weekStart, weekEnd, nextWeekEnd]);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  // Desktop: instant after 6px move. Mobile: 180ms hold so quick taps
+  // navigate + vertical scroll keeps working on the lists.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 5 } })
+  );
 
   function handleDragEnd(e: DragEndEvent) {
     const { active, over } = e;
@@ -587,35 +593,17 @@ function DraggableRow({ item, sourceYmd }: { item: PlannerItem; sourceYmd: strin
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: dragId(item.id, sourceYmd),
   });
-  const handle = (
-    <button
-      type="button"
-      aria-label={`Arrastrá ${item.title}`}
-      {...attributes}
-      {...listeners}
-      style={{
-        appearance: 'none',
-        background: 'transparent',
-        border: 'none',
-        color: 'var(--ag-ink-hint)',
-        cursor: 'grab',
-        touchAction: 'none',
-        padding: 4,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <GripVertical size={14} strokeWidth={1.5} aria-hidden />
-    </button>
-  );
   return (
     <li
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      aria-label={`Arrastrá ${item.title}`}
       style={{
         listStyle: 'none',
         transform: CSS.Translate.toString(transform),
         opacity: isDragging ? 0.5 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
       }}
     >
       <ActivityRow
@@ -628,7 +616,6 @@ function DraggableRow({ item, sourceYmd }: { item: PlannerItem; sourceYmd: strin
         deadline={item.deadline ?? undefined}
         description={item.description}
         recurrenceRule={item.recurrenceRule ?? null}
-        dragHandle={handle}
       />
     </li>
   );

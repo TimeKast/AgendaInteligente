@@ -10,7 +10,6 @@
 
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
 import { DeadlineBadge } from './DeadlineBadge';
 
 export interface PoolActivity {
@@ -80,10 +79,10 @@ export function DraggablePoolActivity({
   const innerStyle: React.CSSProperties = {
     display: 'grid',
     gridTemplateColumns: trailingSlot
-      ? 'auto auto 1fr auto auto auto'
+      ? 'auto 1fr auto auto auto'
       : activity.deadline
-        ? 'auto auto 1fr auto auto'
-        : 'auto auto 1fr auto',
+        ? 'auto 1fr auto auto'
+        : 'auto 1fr auto',
     alignItems: 'center',
     gap: 'var(--ag-space-2)',
     padding: '6px 8px',
@@ -94,16 +93,6 @@ export function DraggablePoolActivity({
   return (
     <li ref={setNodeRef} style={wrapperStyle}>
       <div style={innerStyle} {...attributes} {...listeners}>
-        <span
-          aria-hidden
-          style={{
-            color: 'var(--ag-ink-hint)',
-            display: 'inline-flex',
-            alignItems: 'center',
-          }}
-        >
-          <GripVertical size={14} strokeWidth={1.5} />
-        </span>
         <span
           aria-label={isDone ? 'Hecha' : 'Por hacer'}
           style={{

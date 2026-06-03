@@ -44,7 +44,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -437,8 +438,12 @@ export function TodayActivitiesBoard({
     status: ExtendedActivityStatus;
   } | null>(null);
 
+  // Desktop: instant drag after 6px movement.
+  // Mobile: hold 180ms (tolerance 5px) so quick taps navigate + page can
+  // be scrolled by touching empty space between rows.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 

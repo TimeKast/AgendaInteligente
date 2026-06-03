@@ -12,11 +12,12 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ChevronDown, ChevronRight, GripVertical, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useDraggable,
   useDroppable,
   useSensor,
@@ -134,7 +135,12 @@ export function MonthWeeksPlanner({ data, todayYmd }: MonthWeeksPlannerProps) {
     return { byWeek, poolThisMonth, poolLater, poolNoDeadline };
   }, [items, data.weeks, data.monthStarting, data.monthEnd]);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  // Desktop: instant after 6px. Mobile: 180ms hold so quick taps navigate
+  // + vertical scroll keeps working inside the planner.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 5 } })
+  );
 
   function handleDragEnd(e: DragEndEvent) {
     const { active, over } = e;
@@ -486,35 +492,17 @@ function DraggableRow({ item, sourceWeek }: { item: PlannerItem; sourceWeek: str
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: dragId(item.id, sourceWeek),
   });
-  const handle = (
-    <button
-      type="button"
-      aria-label={`Arrastrá ${item.title}`}
-      {...attributes}
-      {...listeners}
-      style={{
-        appearance: 'none',
-        background: 'transparent',
-        border: 'none',
-        color: 'var(--ag-ink-hint)',
-        cursor: 'grab',
-        touchAction: 'none',
-        padding: 4,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <GripVertical size={14} strokeWidth={1.5} aria-hidden />
-    </button>
-  );
   return (
     <li
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      aria-label={`Arrastrá ${item.title}`}
       style={{
         listStyle: 'none',
         transform: CSS.Translate.toString(transform),
         opacity: isDragging ? 0.5 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
       }}
     >
       <ActivityRow
@@ -527,7 +515,6 @@ function DraggableRow({ item, sourceWeek }: { item: PlannerItem; sourceWeek: str
         deadline={item.deadline ?? undefined}
         description={item.description}
         recurrenceRule={item.recurrenceRule ?? null}
-        dragHandle={handle}
       />
     </li>
   );

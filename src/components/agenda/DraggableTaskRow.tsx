@@ -23,7 +23,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { GripVertical, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { ActivityRow, type ActivityStatus } from './ActivityRow';
@@ -304,29 +304,10 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
         position: 'relative',
       };
 
-  const handle =
-    props.draggable === false ? null : (
-      <button
-        type="button"
-        aria-label={`Arrastrá ${props.title}`}
-        {...attributes}
-        {...listeners}
-        style={{
-          appearance: 'none',
-          background: 'transparent',
-          border: 'none',
-          color: 'var(--ag-ink-hint)',
-          cursor: 'grab',
-          touchAction: 'none',
-          padding: 4,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <GripVertical size={16} strokeWidth={1.5} aria-hidden />
-      </button>
-    );
+  // The drag listeners now live on the outer wrapper (so the whole row
+  // is a drag target). We don't pass a `dragHandle` to ActivityRow anymore.
+  const dragProps =
+    props.draggable === false ? {} : ({ ...attributes, ...listeners } as Record<string, unknown>);
 
   const {
     onOpenStatus,
@@ -347,12 +328,12 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   const activityRowEl = (
     <ActivityRow
       {...rowProps}
-      dragHandle={handle}
       trailingSlot={
         onOpenStatus ? (
           <button
             type="button"
             aria-label={`Cambiar status de ${props.title}`}
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -378,7 +359,15 @@ export function DraggableTaskRow(props: DraggableTaskRowProps) {
   );
 
   return (
-    <div ref={setNodeRef} style={style} className={anchored ? 'ag-anchored-row' : undefined}>
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        cursor: props.draggable === false ? 'default' : isDragging ? 'grabbing' : 'grab',
+      }}
+      className={anchored ? 'ag-anchored-row' : undefined}
+      {...dragProps}
+    >
       {anchored ? (
         <>
           {/* Content wrapper — clipea el Link de ActivityRow para que NO llegue
