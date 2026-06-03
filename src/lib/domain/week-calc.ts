@@ -120,3 +120,29 @@ export function weekEndingFor(weekStartingStr: string): string {
     saturday.getUTCDate()
   ).padStart(2, '0')}`;
 }
+
+/**
+ * Shift a Sunday `YYYY-MM-DD` by ±N weeks at the calendar level.
+ * Pure date math, no TZ involved — the input string is already a
+ * user-local Sunday.
+ */
+export function shiftWeekStarting(weekStartingStr: string, deltaWeeks: number): string {
+  const [y, m, d] = weekStartingStr.split('-').map(Number);
+  const sunday = new Date(Date.UTC(y, m - 1, d));
+  const shifted = addDays(sunday, deltaWeeks * 7);
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}-${String(
+    shifted.getUTCDate()
+  ).padStart(2, '0')}`;
+}
+
+/**
+ * Validate that `s` is `YYYY-MM-DD` AND lands on a Sunday. Used to
+ * sanitize `?week=` query params before trusting them as identifiers.
+ */
+export function isValidSundayString(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split('-').map(Number);
+  const utc = new Date(Date.UTC(y, m - 1, d));
+  // getUTCDay: 0 = Sunday.
+  return utc.getUTCDay() === 0 && utc.getUTCFullYear() === y && utc.getUTCMonth() + 1 === m;
+}

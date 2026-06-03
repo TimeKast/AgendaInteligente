@@ -1,8 +1,10 @@
 /**
  * /month — MonthSheet (server-loaded).
  *
- * Loads the current month sheet (auto-creates via getOrCreateMonthSheet)
- * + renders MonthSheetClient with goals/themes/close-summary form.
+ * Loads the month sheet (auto-creates via getOrCreateMonthSheet) + renders
+ * MonthSheetClient with goals/themes/close-summary form.
+ *
+ * Navigation: `?month=YYYY-MM-01`. Missing/invalid → current month.
  *
  * Linked: ISSUE-131, BR-7, BR-19.
  */
@@ -12,7 +14,11 @@ import { auth } from '@/lib/auth/auth';
 import { loadTodayUserProfile } from '@/lib/db/queries/today';
 import { getOrCreateMonthSheet } from '@/lib/db/queries/sheets';
 import { loadMonthActivities } from '@/lib/db/queries/month-activities';
-import { monthStartingFor } from '@/lib/domain/month-calc';
+import {
+  monthStartingFor,
+  shiftMonthStarting,
+  isValidMonthStartingString,
+} from '@/lib/domain/month-calc';
 import { todayInTimezone } from '@/lib/domain/day-calc';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { WeekMonthTabs } from '@/components/agenda/WeekMonthTabs';
@@ -38,7 +44,11 @@ function monthLabelEs(monthStartingISO: string): string {
   return `${SPANISH_MONTHS[m - 1]} ${y}`;
 }
 
-export default async function MonthPage() {
+interface MonthPageProps {
+  searchParams: Promise<{ month?: string }>;
+}
+
+export default async function MonthPage({ searchParams }: MonthPageProps) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect('/login?callbackUrl=/month');
@@ -51,12 +61,21 @@ export default async function MonthPage() {
   };
   const now = new Date();
   const todayYmd = todayInTimezone(now, profile.timezone);
-  const monthStarting = monthStartingFor(now, profile.timezone);
+  const currentMonthStarting = monthStartingFor(now, profile.timezone);
+
+  const { month: monthParam } = await searchParams;
+  const monthStarting =
+    monthParam && isValidMonthStartingString(monthParam) ? monthParam : currentMonthStarting;
 
   const [sheet, monthData] = await Promise.all([
     getOrCreateMonthSheet(userId, monthStarting),
     loadMonthActivities(userId, monthStarting),
   ]);
+
+  const prevMonth = shiftMonthStarting(monthStarting, -1);
+  const nextMonth = shiftMonthStarting(monthStarting, 1);
+  const isCurrentMonth = monthStarting === currentMonthStarting;
+  const isPastMonth = monthStarting < currentMonthStarting;
 
   return (
     <>
@@ -70,6 +89,13 @@ export default async function MonthPage() {
           themes: sheet.themes ?? [],
           closeSummary: sheet.closeSummary ?? '',
           closed: !!sheet.closedAt,
+        }}
+        nav={{
+          prevHref: `/month?month=${prevMonth}`,
+          nextHref: `/month?month=${nextMonth}`,
+          isCurrentMonth,
+          isPastMonth,
+          todayYmd,
         }}
         monthActivities={monthData}
         todayYmd={todayYmd}

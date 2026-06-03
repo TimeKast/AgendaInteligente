@@ -58,3 +58,25 @@ export function nextMonthStartingFor(monthStartingStr: string): string {
   const nextM = m === 12 ? 1 : m + 1;
   return `${nextY}-${String(nextM).padStart(2, '0')}-01`;
 }
+
+/**
+ * Shift a `YYYY-MM-01` month-starting by ±N months. Pure calendar math.
+ */
+export function shiftMonthStarting(monthStartingStr: string, deltaMonths: number): string {
+  const [y, m] = monthStartingStr.split('-').map(Number);
+  // 1..12 → 0..11 for math then re-add 1.
+  const total = y * 12 + (m - 1) + deltaMonths;
+  const newY = Math.floor(total / 12);
+  const newM = ((total % 12) + 12) % 12; // keep 0..11 positive
+  return `${newY}-${String(newM + 1).padStart(2, '0')}-01`;
+}
+
+/**
+ * Validate that `s` is a `YYYY-MM-01` first-of-month string. Used to
+ * sanitize `?month=` query params before trusting them as identifiers.
+ */
+export function isValidMonthStartingString(s: string): boolean {
+  if (!/^\d{4}-\d{2}-01$/.test(s)) return false;
+  const [y, m] = s.split('-').map(Number);
+  return m >= 1 && m <= 12 && y >= 1900 && y <= 9999;
+}

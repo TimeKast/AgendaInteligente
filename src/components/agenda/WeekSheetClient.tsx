@@ -6,11 +6,17 @@
  * v1 wire: text fields only (one_thing, three_wins, learn_one,
  * avoid_one, review_one_sentence, review_energy). JSONB editors
  * (calendar blocks, people, self-care) defer to a follow-up.
+ *
+ * Header includes prev/next week navigation (Link-based, server-rendered).
+ * Kickoff is collapsed by default so the planner is the focal point.
+ * Review only renders for past weeks or current week from Friday onward.
  */
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { toast } from 'sonner';
+import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { updateWeekSheet } from '@/lib/actions/week-sheet';
 import { WeekDaysPlanner } from './WeekDaysPlanner';
 import type { WeekActivitiesResult } from '@/lib/db/queries/week-activities';
@@ -29,16 +35,43 @@ export interface WeekSheetInitial {
   reviewed: boolean;
 }
 
+interface WeekNav {
+  prevHref: string;
+  nextHref: string;
+  isCurrentWeek: boolean;
+  isPastWeek: boolean;
+  /** YYYY-MM-DD of today in the user's TZ — used to gate review by weekday. */
+  todayYmd: string;
+}
+
 interface Props {
   initial: WeekSheetInitial;
+  nav: WeekNav;
   weekActivities: WeekActivitiesResult;
   todayYmd: string;
   projects: QuickAddProject[];
   categories: QuickAddCategory[];
 }
 
+/**
+ * `true` when the review form should be visible:
+ *   - viewing a past week (already over → close it any time), OR
+ *   - viewing the current week AND today is Friday or Saturday (last two
+ *     days of the Sun..Sat cycle, the natural "fin de semana" close
+ *     window). Sunday on the current week is the START of the week,
+ *     not the end; navigate one week back to close.
+ */
+function shouldShowReview(nav: WeekNav): boolean {
+  if (nav.isPastWeek) return true;
+  if (!nav.isCurrentWeek) return false; // future week — nothing to close
+  const [y, m, d] = nav.todayYmd.split('-').map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=Sun … 5=Fri 6=Sat
+  return dow === 5 || dow === 6;
+}
+
 export function WeekSheetClient({
   initial,
+  nav,
   weekActivities,
   todayYmd,
   projects,
@@ -89,43 +122,20 @@ export function WeekSheetClient({
         gap: 'var(--ag-space-5)',
       }}
     >
-      <h2
-        style={{
-          margin: 0,
-          fontFamily: 'var(--ag-font-display)',
-          fontSize: 22,
-          fontWeight: 500,
-          color: 'var(--ag-ink-primary)',
-        }}
-      >
-        {initial.weekLabel}
-        {initial.kickoffCompleted && (
-          <span
-            style={{
-              marginLeft: 8,
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 12,
-              color: 'var(--ag-ink-hint)',
-            }}
-          >
-            kickoff ✓
-          </span>
-        )}
-        {initial.reviewed && (
-          <span
-            style={{
-              marginLeft: 8,
-              fontFamily: 'var(--ag-font-body)',
-              fontSize: 12,
-              color: 'var(--ag-ink-hint)',
-            }}
-          >
-            review ✓
-          </span>
-        )}
-      </h2>
+      <NavHeader
+        label={initial.weekLabel}
+        kickoffDone={initial.kickoffCompleted}
+        reviewDone={initial.reviewed}
+        prevHref={nav.prevHref}
+        nextHref={nav.nextHref}
+        isCurrentWeek={nav.isCurrentWeek}
+      />
 
-      <Section title="Kickoff" subtitle="Lo que arrancas el domingo.">
+      <CollapsibleSection
+        title="Objetivos de la semana"
+        subtitle="Kickoff: una sola cosa, tres wins, aprender, evitar."
+        defaultOpen={false}
+      >
         <Label text="Si solo una cosa pasa, ¿cuál?">
           <textarea
             value={oneThing}
@@ -172,7 +182,7 @@ export function WeekSheetClient({
             style={inputStyle}
           />
         </Label>
-      </Section>
+      </CollapsibleSection>
 
       <WeekDaysPlanner
         days={weekActivities.days}
@@ -183,8 +193,16 @@ export function WeekSheetClient({
         categories={categories}
       />
 
-      {initial.kickoffCompleted ? (
-        <Section title="Review" subtitle="Cierre del sábado.">
+      {shouldShowReview(nav) && (
+        <CollapsibleSection
+          title="Cierre de la semana"
+          subtitle={
+            nav.isPastWeek
+              ? 'Review pendiente de una semana pasada.'
+              : 'Llegó el fin de semana — resumen + energía.'
+          }
+          defaultOpen={nav.isPastWeek && !initial.reviewed}
+        >
           <Label text="Resumen en una frase">
             <textarea
               value={reviewOneSentence}
@@ -207,23 +225,7 @@ export function WeekSheetClient({
               style={{ width: '100%' }}
             />
           </Label>
-        </Section>
-      ) : (
-        <p
-          style={{
-            margin: 0,
-            padding: 'var(--ag-space-3) var(--ag-space-4)',
-            border: '1px dashed var(--ag-rule)',
-            borderRadius: 'var(--ag-radius-base)',
-            fontFamily: 'var(--ag-font-display)',
-            fontStyle: 'italic',
-            fontSize: 13,
-            color: 'var(--ag-ink-hint)',
-            textAlign: 'center',
-          }}
-        >
-          El review (resumen + energía) aparece cuando completás el kickoff.
-        </p>
+        </CollapsibleSection>
       )}
 
       <footer
@@ -276,42 +278,176 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 };
 
-function Section({
+function NavHeader({
+  label,
+  kickoffDone,
+  reviewDone,
+  prevHref,
+  nextHref,
+  isCurrentWeek,
+}: {
+  label: string;
+  kickoffDone: boolean;
+  reviewDone: boolean;
+  prevHref: string;
+  nextHref: string;
+  isCurrentWeek: boolean;
+}) {
+  return (
+    <header
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        alignItems: 'center',
+        gap: 'var(--ag-space-2)',
+      }}
+    >
+      <NavArrow href={prevHref} direction="prev" />
+      <div style={{ textAlign: 'center', minWidth: 0 }}>
+        <h2
+          style={{
+            margin: 0,
+            fontFamily: 'var(--ag-font-display)',
+            fontSize: 20,
+            fontWeight: 500,
+            color: 'var(--ag-ink-primary)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {label}
+        </h2>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 8,
+            marginTop: 2,
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 11,
+            color: 'var(--ag-ink-hint)',
+          }}
+        >
+          {!isCurrentWeek && <span style={{ fontStyle: 'italic' }}>Otra semana</span>}
+          {kickoffDone && <span>kickoff ✓</span>}
+          {reviewDone && <span>review ✓</span>}
+        </div>
+      </div>
+      <NavArrow href={nextHref} direction="next" />
+    </header>
+  );
+}
+
+function NavArrow({ href, direction }: { href: string; direction: 'prev' | 'next' }) {
+  const Icon = direction === 'prev' ? ChevronLeft : ChevronRight;
+  const label = direction === 'prev' ? 'Semana anterior' : 'Semana siguiente';
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      title={label}
+      style={{
+        appearance: 'none',
+        border: '1px solid var(--ag-rule)',
+        borderRadius: 'var(--ag-radius-base)',
+        padding: 6,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'var(--ag-ink-soft)',
+        backgroundColor: 'var(--ag-bg-elevated)',
+        textDecoration: 'none',
+      }}
+    >
+      <Icon size={18} strokeWidth={1.5} />
+    </Link>
+  );
+}
+
+function CollapsibleSection({
   title,
   subtitle,
+  defaultOpen,
   children,
 }: {
   title: string;
   subtitle: string;
+  defaultOpen: boolean;
   children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ag-space-3)' }}>
-      <header>
-        <h3
+    <section
+      style={{
+        border: '1px solid var(--ag-rule)',
+        borderRadius: 'var(--ag-radius-base)',
+        backgroundColor: 'var(--ag-bg-elevated)',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        style={{
+          appearance: 'none',
+          background: 'transparent',
+          border: 'none',
+          width: '100%',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          alignItems: 'center',
+          gap: 'var(--ag-space-2)',
+          padding: 'var(--ag-space-3) var(--ag-space-4)',
+          cursor: 'pointer',
+          textAlign: 'left',
+          color: 'var(--ag-ink-primary)',
+        }}
+      >
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span
+            style={{
+              fontFamily: 'var(--ag-font-display)',
+              fontSize: 16,
+              fontWeight: 500,
+            }}
+          >
+            {title}
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--ag-font-display)',
+              fontStyle: 'italic',
+              fontSize: 12,
+              color: 'var(--ag-ink-soft)',
+            }}
+          >
+            {subtitle}
+          </span>
+        </span>
+        <ChevronDown
+          size={18}
+          strokeWidth={1.5}
           style={{
-            margin: 0,
-            fontFamily: 'var(--ag-font-display)',
-            fontSize: 16,
-            fontWeight: 500,
-            color: 'var(--ag-ink-primary)',
+            color: 'var(--ag-ink-hint)',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform var(--ag-duration-base) var(--ag-ease)',
+          }}
+        />
+      </button>
+      {open && (
+        <div
+          style={{
+            padding: 'var(--ag-space-3) var(--ag-space-4) var(--ag-space-4)',
+            borderTop: '1px solid var(--ag-rule)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--ag-space-3)',
           }}
         >
-          {title}
-        </h3>
-        <p
-          style={{
-            margin: 0,
-            fontFamily: 'var(--ag-font-display)',
-            fontStyle: 'italic',
-            fontSize: 13,
-            color: 'var(--ag-ink-soft)',
-          }}
-        >
-          {subtitle}
-        </p>
-      </header>
-      {children}
+          {children}
+        </div>
+      )}
     </section>
   );
 }
