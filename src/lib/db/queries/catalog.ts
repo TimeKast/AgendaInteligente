@@ -61,20 +61,19 @@ export async function listCategories(
 }
 
 export async function listProjects(userId: string): Promise<ProjectListRow[]> {
-  // Count condition mirrors what counts as a "real, open task" in the UI:
-  //   - status IN ('pending','in_progress')
-  //   - not soft-deleted
-  //   - not a recurrence master template (a template has recurrence_rule
-  //     set AND no recurrence_parent_id — those rows never surface to the
-  //     user, only their materialized children do).
+  // Count condition: 1 row per "thing the user has to do", not per
+  // materialized instance. We count:
+  //   - one-shot open tasks (recurrence_rule null, no parent), AND
+  //   - recurrence master templates (recurrence_rule set, no parent) —
+  //     each recurring habit shows up as 1, not as N pre-materialized
+  //     instances for the next 14 days.
+  // We EXCLUDE materialized instances (recurrence_parent_id not null)
+  // because they're the schedule of an already-counted template.
   const activeTaskCountExpr = sql<number>`
     count(${activities.id}) filter (
       where ${activities.status} in ('pending','in_progress')
         and ${activities.deletedAt} is null
-        and not (
-          ${activities.recurrenceRule} is not null
-          and ${activities.recurrenceParentId} is null
-        )
+        and ${activities.recurrenceParentId} is null
     )::int
   `;
 
