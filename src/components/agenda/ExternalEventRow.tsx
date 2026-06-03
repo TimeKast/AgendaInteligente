@@ -25,6 +25,9 @@ interface ExternalEventRowProps {
    * slots — so a 9:30-10:30 meeting renders as ONE block, not two.
    */
   spanSlots?: number;
+  /** Optional event description — shown inline when the block is tall
+   * enough (multi-slot) and always via native `title` tooltip. */
+  description?: string | null;
 }
 
 export function ExternalEventRow({
@@ -32,6 +35,7 @@ export function ExternalEventRow({
   timeRange,
   source,
   spanSlots = 1,
+  description,
 }: ExternalEventRowProps) {
   // Google freeBusy doesn't return event_title — the sync may store NULL.
   // Fall back to the source so the row is still useful instead of just
@@ -43,9 +47,16 @@ export function ExternalEventRow({
   // of its host slot and grow down — one visual block per event.
   const spans = Math.max(1, spanSlots);
   const isMulti = spans > 1;
+  const tooltip = [
+    displayTitle,
+    description?.trim() ? description.trim() : null,
+    `${timeRange} · ${sourceSuffix}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
   return (
     <div
-      title={source ? `Evento de ${source}` : 'Tenés un evento Google a esa hora'}
+      title={tooltip}
       role="note"
       aria-label={`Evento de Google Calendar: ${displayTitle}, ${timeRange}`}
       style={{
@@ -109,6 +120,27 @@ export function ExternalEventRow({
         >
           {timeRange} · {sourceSuffix}
         </span>
+        {/* Inline description when the block is tall enough to host it
+         * (≥ 2 slots = ≥ 1h). Single-slot events keep the tooltip only
+         * since a description line wouldn't fit in 26px of content area. */}
+        {isMulti && description?.trim() ? (
+          <span
+            style={{
+              marginTop: 4,
+              fontFamily: 'var(--ag-font-display)',
+              fontStyle: 'italic',
+              fontSize: 12,
+              lineHeight: 1.35,
+              color: 'var(--ag-ink-hint)',
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: spans >= 3 ? 4 : 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {description.trim()}
+          </span>
+        ) : null}
       </div>
     </div>
   );

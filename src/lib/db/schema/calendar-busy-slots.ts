@@ -45,6 +45,9 @@ export const calendarBusySlots = pgTable(
     /** Optional title for display in the UI (calendar event summary). */
     eventTitle: text('event_title'),
 
+    /** Optional event description (HTML stripped to plain text upstream). */
+    eventDescription: text('event_description'),
+
     syncedAt: timestamp('synced_at', { mode: 'date', withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

@@ -28,6 +28,8 @@ export interface ExternalEventForBoard {
   spanSlots: number;
   /** Every 30-min slot the event blocks — anchor included. */
   coveredSlots: string[];
+  /** Free-form event description (Google's `description` field). */
+  description: string | null;
 }
 
 const CALENDAR_START_HOUR = 6;
@@ -94,6 +96,7 @@ export async function loadTodaysBusySlots(
       startAt: calendarBusySlots.startAt,
       endAt: calendarBusySlots.endAt,
       eventTitle: calendarBusySlots.eventTitle,
+      eventDescription: calendarBusySlots.eventDescription,
       accountLabel: calendarConnections.accountLabel,
       externalAccountId: calendarConnections.externalAccountId,
     })
@@ -162,6 +165,7 @@ export async function loadTodaysBusySlots(
       source,
       spanSlots: covered.length,
       coveredSlots: covered,
+      description: r.eventDescription,
     });
   }
   return out;

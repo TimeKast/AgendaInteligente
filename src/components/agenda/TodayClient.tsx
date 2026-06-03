@@ -70,6 +70,7 @@ interface ExternalEventInput {
   source: string;
   spanSlots: number;
   coveredSlots: string[];
+  description: string | null;
 }
 
 export interface TodayClientProps {

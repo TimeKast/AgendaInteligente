@@ -29,6 +29,8 @@ const REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 const USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
 const CALENDAR_LIST_URL = 'https://www.googleapis.com/calendar/v3/users/me/calendarList';
 const FREEBUSY_URL = 'https://www.googleapis.com/calendar/v3/freeBusy';
+const EVENTS_URL = (calendarId: string) =>
+  `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
 /** Scope required for read-only calendar access. */
@@ -213,6 +215,69 @@ export async function freeBusy(
     result[id] = entry.busy ?? [];
   }
   return result;
+}
+
+export interface GoogleCalendarEvent {
+  id: string;
+  /** Event title (Google's "summary" field). */
+  summary?: string;
+  description?: string;
+  /** Confirmed | tentative | cancelled. We only persist confirmed/tentative. */
+  status?: string;
+  /** Either dateTime (timed) or date (all-day). */
+  start: { dateTime?: string; date?: string; timeZone?: string };
+  end: { dateTime?: string; date?: string; timeZone?: string };
+}
+
+/**
+ * List a single calendar's events in `[timeMin, timeMax)` with single-event
+ * expansion (recurring events are flattened into instances). Pages until
+ * Google stops returning `nextPageToken`. Hard cap at 1000 events per
+ * sync to keep latency bounded — calendars with more would need windowing.
+ *
+ * Why not `freeBusy`: the freebusy endpoint returns intervals only, never
+ * the event summary or description. To surface "what's blocked at 10am"
+ * we need the full event payload.
+ */
+export async function listEvents(
+  accessToken: string,
+  calendarId: string,
+  options: { timeMin: Date; timeMax: Date }
+): Promise<GoogleCalendarEvent[]> {
+  const out: GoogleCalendarEvent[] = [];
+  let pageToken: string | undefined;
+  let safety = 10; // max 10 pages × 250 = 2500 events
+  while (safety-- > 0) {
+    const params = new URLSearchParams({
+      timeMin: options.timeMin.toISOString(),
+      timeMax: options.timeMax.toISOString(),
+      singleEvents: 'true',
+      orderBy: 'startTime',
+      maxResults: '250',
+      // Don't waste bandwidth on cancelled rows.
+      showDeleted: 'false',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const res = await fetch(`${EVENTS_URL(calendarId)}?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const body = (await res.json()) as Record<string, unknown>;
+    if (!res.ok) {
+      throw new GoogleApiError(`listEvents failed: ${res.status}`, res.status, body);
+    }
+    const items = (body.items as GoogleCalendarEvent[] | undefined) ?? [];
+    for (const evt of items) {
+      // Skip cancelled instances of recurring series.
+      if (evt.status === 'cancelled') continue;
+      // Skip all-day events — they don't block hour slots on our grid.
+      if (!evt.start?.dateTime || !evt.end?.dateTime) continue;
+      out.push(evt);
+    }
+    pageToken = typeof body.nextPageToken === 'string' ? body.nextPageToken : undefined;
+    if (!pageToken) break;
+  }
+  return out;
 }
 
 /**

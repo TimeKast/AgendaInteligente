@@ -27,7 +27,7 @@ import { and, eq, gt } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { calendarBusySlots } from '@/lib/db/schema/calendar-busy-slots';
 import { calendarConnections } from '@/lib/db/schema/calendar-connections';
-import { freeBusy, GoogleApiError } from './google';
+import { GoogleApiError, listEvents } from './google';
 import { getValidAccessToken } from './refresh';
 import { ConnectionNotFoundError } from './refresh';
 
@@ -90,13 +90,34 @@ export async function syncConnection(
   const timeMin = now;
   const timeMax = new Date(now.getTime() + windowDays * 24 * 60 * 60 * 1000);
 
-  let busy: Record<string, Array<{ start: string; end: string }>>;
+  // Fetch full event details per calendar — events.list returns title +
+  // description, freebusy would only return intervals. The bucket loop
+  // below accumulates rows and the bulk insert at the bottom commits.
+  type RawEvent = {
+    calendarId: string;
+    startAt: Date;
+    endAt: Date;
+    title: string | null;
+    description: string | null;
+  };
+  const fetched: RawEvent[] = [];
   try {
-    busy = await freeBusy(accessToken, {
-      calendarIds: connection.calendarIds,
-      timeMin,
-      timeMax,
-    });
+    for (const calId of connection.calendarIds) {
+      const events = await listEvents(accessToken, calId, { timeMin, timeMax });
+      for (const evt of events) {
+        // listEvents already filtered out all-day + cancelled; dateTime is
+        // present on every survivor.
+        const startStr = evt.start.dateTime!;
+        const endStr = evt.end.dateTime!;
+        fetched.push({
+          calendarId: calId,
+          startAt: new Date(startStr),
+          endAt: new Date(endStr),
+          title: evt.summary?.trim() ? evt.summary.trim().slice(0, 500) : null,
+          description: evt.description?.trim() ? evt.description.trim().slice(0, 2000) : null,
+        });
+      }
+    }
   } catch (err) {
     if (err instanceof GoogleApiError && (err.status === 401 || err.status === 403)) {
       await markReconnectRequired(connectionId, err.message);
@@ -113,9 +134,7 @@ export async function syncConnection(
 
   // Wipe rows for this connection whose end is still in the future. We
   // filter on `end_at > now` (not `start_at >= now`) so ongoing events get
-  // cleaned out too — otherwise Google's freeBusy, which clamps `start` to
-  // `max(eventStart, now)` for in-progress events, leaves a stale row each
-  // sync and duplicates pile up. Past events stay for historical audit.
+  // cleaned out too. Past events stay for historical audit.
   const deleted = await db
     .delete(calendarBusySlots)
     .where(
@@ -123,16 +142,16 @@ export async function syncConnection(
     )
     .returning({ id: calendarBusySlots.id });
 
-  const newRows = Object.entries(busy).flatMap(([calendarId, intervals]) =>
-    intervals.map((interval) => ({
-      userId,
-      connectionId,
-      calendarId,
-      startAt: new Date(interval.start),
-      endAt: new Date(interval.end),
-      syncedAt: now,
-    }))
-  );
+  const newRows = fetched.map((evt) => ({
+    userId,
+    connectionId,
+    calendarId: evt.calendarId,
+    startAt: evt.startAt,
+    endAt: evt.endAt,
+    eventTitle: evt.title,
+    eventDescription: evt.description,
+    syncedAt: now,
+  }));
 
   if (newRows.length > 0) {
     await db.insert(calendarBusySlots).values(newRows);

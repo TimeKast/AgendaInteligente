@@ -119,6 +119,7 @@ interface ExternalEvent {
   spanSlots: number;
   /** Every slot blocked, anchor included. */
   coveredSlots: string[];
+  description: string | null;
 }
 
 const INITIAL_SCHEDULED: ScheduledActivity[] = [
@@ -294,6 +295,7 @@ const EXTERNAL_EVENTS: ExternalEvent[] = [
     source: 'Google',
     spanSlots: 2,
     coveredSlots: ['10:00', '10:30'],
+    description: null,
   },
   {
     id: 'gc-2',
@@ -303,6 +305,7 @@ const EXTERNAL_EVENTS: ExternalEvent[] = [
     source: 'Google',
     spanSlots: 2,
     coveredSlots: ['14:00', '14:30'],
+    description: null,
   },
 ];
 
@@ -761,6 +764,7 @@ export function TodayActivitiesBoard({
           timeRange={evt.timeRange}
           source={evt.source}
           spanSlots={evt.spanSlots}
+          description={evt.description}
         />
       );
       map[evt.hour] = existing ? (
