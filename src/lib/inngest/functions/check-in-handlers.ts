@@ -19,15 +19,73 @@ import { db } from '@/lib/db/drizzle';
 import { users } from '@/lib/db/schema/users';
 import { daySheets } from '@/lib/db/schema/day-sheets';
 import { activities } from '@/lib/db/schema/activities';
+import { notificationPrefs } from '@/lib/db/schema/notification-prefs';
 import { enqueueAndSend } from '@/lib/notifications/proactive';
+import {
+  resolveCheckInCopy,
+  type DailySlot,
+  type Lang,
+} from '@/lib/notifications/check-in-defaults';
 import { getInngest } from '../client';
 
 interface StepLike {
   run<T>(id: string, fn: () => Promise<T> | T): Promise<T>;
 }
 
-type Lang = 'es' | 'en';
+interface SlotContext {
+  lang: Lang;
+  overrides: {
+    morningTitle: string | null;
+    morningBody: string | null;
+    middayTitle: string | null;
+    middayBody: string | null;
+    eveningTitle: string | null;
+    eveningBody: string | null;
+  };
+}
 
+async function loadSlotContext(userId: string): Promise<SlotContext> {
+  const [userRow, prefsRow] = await Promise.all([
+    db
+      .select({ preferredLanguage: users.preferredLanguage })
+      .from(users)
+      .where(eq(users.id, userId)),
+    db
+      .select({
+        morningTitle: notificationPrefs.morningTitle,
+        morningBody: notificationPrefs.morningBody,
+        middayTitle: notificationPrefs.middayTitle,
+        middayBody: notificationPrefs.middayBody,
+        eveningTitle: notificationPrefs.eveningTitle,
+        eveningBody: notificationPrefs.eveningBody,
+      })
+      .from(notificationPrefs)
+      .where(eq(notificationPrefs.userId, userId)),
+  ]);
+  const lang: Lang = userRow[0]?.preferredLanguage === 'en' ? 'en' : 'es';
+  const p = prefsRow[0];
+  return {
+    lang,
+    overrides: {
+      morningTitle: p?.morningTitle ?? null,
+      morningBody: p?.morningBody ?? null,
+      middayTitle: p?.middayTitle ?? null,
+      middayBody: p?.middayBody ?? null,
+      eveningTitle: p?.eveningTitle ?? null,
+      eveningBody: p?.eveningBody ?? null,
+    },
+  };
+}
+
+function resolveFor(
+  slot: DailySlot,
+  ctx: SlotContext,
+  anchor?: string
+): { title: string; body: string } {
+  return resolveCheckInCopy(slot, ctx.lang, ctx.overrides, anchor);
+}
+
+/** Lighter helper used by weekly handlers (no copy overrides for those yet). */
 async function loadLang(userId: string): Promise<Lang> {
   const row = await db
     .select({ preferredLanguage: users.preferredLanguage })
@@ -47,12 +105,13 @@ export async function runMorningCheckIn({
 }): Promise<{ status: string }> {
   const { userId, date } = event.data;
   return await step.run('enqueue-morning', async () => {
-    const lang = await loadLang(userId);
+    const ctx = await loadSlotContext(userId);
+    const copy = resolveFor('morning', ctx);
     const result = await enqueueAndSend({
       userId,
       type: 'morning_open',
-      title: lang === 'en' ? 'Good morning' : 'Buenos días',
-      body: lang === 'en' ? "What's today's intention?" : '¿Cuál es la intención de hoy?',
+      title: copy.title,
+      body: copy.body,
       url: `/chat?context=morning_check&date=${date}`,
       payload: { context: 'morning_check', date },
     });
@@ -118,17 +177,14 @@ export async function runMiddayCheckIn({
     return { status: 'skipped', skipped: true };
   }
   return await step.run('enqueue-midday', async () => {
-    const lang = await loadLang(userId);
+    const ctx = await loadSlotContext(userId);
     const anchor = decision.pendingWin ?? '';
-    const body =
-      lang === 'en'
-        ? `You said you'd ${anchor}. How's it going?`
-        : `Dijiste que ibas a ${anchor}. ¿Cómo va?`;
+    const copy = resolveFor('midday', ctx, anchor);
     const result = await enqueueAndSend({
       userId,
       type: 'midday_check',
-      title: lang === 'en' ? 'Quick check' : 'Mediodía',
-      body,
+      title: copy.title,
+      body: copy.body,
       url: `/chat?context=midday_check&date=${date}`,
       payload: { context: 'midday_check', date, anchor },
     });
@@ -152,12 +208,13 @@ export async function runEveningCheckIn({
 }): Promise<{ status: string }> {
   const { userId, date } = event.data;
   return await step.run('enqueue-evening', async () => {
-    const lang = await loadLang(userId);
+    const ctx = await loadSlotContext(userId);
+    const copy = resolveFor('evening', ctx);
     const result = await enqueueAndSend({
       userId,
       type: 'evening_close',
-      title: lang === 'en' ? 'Closing the day' : 'Cerramos el día',
-      body: lang === 'en' ? 'One sentence to close?' : 'Una frase para cerrar?',
+      title: copy.title,
+      body: copy.body,
       url: `/chat?context=evening_close&date=${date}`,
       payload: { context: 'evening_close', date },
     });

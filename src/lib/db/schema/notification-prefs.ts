@@ -42,6 +42,25 @@ export const notificationPrefs = pgTable(
     /** Daily evening check-in time. */
     eveningTime: time('evening_time').notNull().default('21:00'),
 
+    // ─── Custom check-in copy (overrides hardcoded defaults) ────────
+    // NULL on each = use the default string from
+    // `src/lib/notifications/check-in-defaults.ts`. Editor lives in
+    // /settings/notifications. Midday body supports a `{win}` token
+    // that the handler swaps for the user's planned win of the day.
+
+    /** Override for morning push title. */
+    morningTitle: text('morning_title'),
+    /** Override for morning push body. */
+    morningBody: text('morning_body'),
+    /** Override for midday push title. */
+    middayTitle: text('midday_title'),
+    /** Override for midday push body. Supports `{win}` placeholder. */
+    middayBody: text('midday_body'),
+    /** Override for evening push title. */
+    eveningTitle: text('evening_title'),
+    /** Override for evening push body. */
+    eveningBody: text('evening_body'),
+
     /** Weekly kickoff day-of-week (0=Sunday … 6=Saturday). */
     weeklyKickoffDow: smallint('weekly_kickoff_dow').notNull().default(0),
 

@@ -66,6 +66,13 @@ export interface NotificationsPrefs {
   pushEnabled: boolean;
   emailEnabled: boolean;
   contactChannels: string[];
+  /** Custom check-in copy. NULL on each = use the default. */
+  morningTitle: string | null;
+  morningBody: string | null;
+  middayTitle: string | null;
+  middayBody: string | null;
+  eveningTitle: string | null;
+  eveningBody: string | null;
 }
 
 export async function loadNotificationsPrefs(userId: string): Promise<NotificationsPrefs> {
@@ -82,6 +89,12 @@ export async function loadNotificationsPrefs(userId: string): Promise<Notificati
         weekendSkip: notificationPrefs.weekendSkip,
         pushEnabled: notificationPrefs.pushEnabled,
         emailEnabled: notificationPrefs.emailEnabled,
+        morningTitle: notificationPrefs.morningTitle,
+        morningBody: notificationPrefs.morningBody,
+        middayTitle: notificationPrefs.middayTitle,
+        middayBody: notificationPrefs.middayBody,
+        eveningTitle: notificationPrefs.eveningTitle,
+        eveningBody: notificationPrefs.eveningBody,
       })
       .from(notificationPrefs)
       .where(eq(notificationPrefs.userId, userId)),
@@ -100,5 +113,11 @@ export async function loadNotificationsPrefs(userId: string): Promise<Notificati
     pushEnabled: p?.pushEnabled ?? false,
     emailEnabled: p?.emailEnabled ?? false,
     contactChannels: userRows[0]?.contactChannels ?? ['email'],
+    morningTitle: p?.morningTitle ?? null,
+    morningBody: p?.morningBody ?? null,
+    middayTitle: p?.middayTitle ?? null,
+    middayBody: p?.middayBody ?? null,
+    eveningTitle: p?.eveningTitle ?? null,
+    eveningBody: p?.eveningBody ?? null,
   };
 }

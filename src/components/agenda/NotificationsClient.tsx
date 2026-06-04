@@ -15,6 +15,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { updateNotificationPrefs } from '@/lib/actions/notification-prefs';
+import { defaultCopy, type DailySlot } from '@/lib/notifications/check-in-defaults';
 
 const DOW_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -37,6 +38,12 @@ interface Props {
     pushEnabled: boolean;
     emailEnabled: boolean;
     contactChannels: string[];
+    morningTitle: string | null;
+    morningBody: string | null;
+    middayTitle: string | null;
+    middayBody: string | null;
+    eveningTitle: string | null;
+    eveningBody: string | null;
   };
 }
 
@@ -57,6 +64,12 @@ export function NotificationsClient({ initial }: Props) {
   const [pushEnabled, setPushEnabled] = useState(initial.pushEnabled);
   const [emailEnabled, setEmailEnabled] = useState(initial.emailEnabled);
   const [channels, setChannels] = useState<string[]>(initial.contactChannels);
+  const [morningTitle, setMorningTitle] = useState(initial.morningTitle ?? '');
+  const [morningBody, setMorningBody] = useState(initial.morningBody ?? '');
+  const [middayTitle, setMiddayTitle] = useState(initial.middayTitle ?? '');
+  const [middayBody, setMiddayBody] = useState(initial.middayBody ?? '');
+  const [eveningTitle, setEveningTitle] = useState(initial.eveningTitle ?? '');
+  const [eveningBody, setEveningBody] = useState(initial.eveningBody ?? '');
   const [isPending, startTransition] = useTransition();
 
   function toggleChannel(c: string, on: boolean) {
@@ -79,6 +92,14 @@ export function NotificationsClient({ initial }: Props) {
         contactChannels: channels.filter(
           (c) => c === 'email' || c === 'discord' || c === 'whatsapp'
         ),
+        // Empty string → action persists null and the handler falls
+        // back to the default copy from check-in-defaults.
+        morningTitle,
+        morningBody,
+        middayTitle,
+        middayBody,
+        eveningTitle,
+        eveningBody,
       });
       if (result.error) {
         toast.error(`No se pudo guardar: ${result.error}`);
@@ -108,6 +129,60 @@ export function NotificationsClient({ initial }: Props) {
           label="Saltar fines de semana"
           value={weekendSkip}
           onChange={setWeekendSkip}
+          disabled={isPending}
+        />
+      </Section>
+
+      <Section title="Mensajes personalizados">
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'var(--ag-font-display)',
+            fontStyle: 'italic',
+            fontSize: 12,
+            color: 'var(--ag-ink-soft)',
+            lineHeight: 1.4,
+          }}
+        >
+          Dejá los campos vacíos para usar el mensaje por defecto. En el de mediodía podés escribir{' '}
+          <code
+            style={{
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: 12,
+              padding: '0 4px',
+              backgroundColor: 'var(--ag-bg-sunken, var(--ag-bg))',
+              borderRadius: 'var(--ag-radius-xs)',
+            }}
+          >
+            {'{win}'}
+          </code>{' '}
+          y se reemplaza por tu win planeado del día.
+        </p>
+        <CopyRow
+          slot="morning"
+          label="Mañana"
+          title={morningTitle}
+          body={morningBody}
+          onTitle={setMorningTitle}
+          onBody={setMorningBody}
+          disabled={isPending}
+        />
+        <CopyRow
+          slot="midday"
+          label="Mediodía"
+          title={middayTitle}
+          body={middayBody}
+          onTitle={setMiddayTitle}
+          onBody={setMiddayBody}
+          disabled={isPending}
+        />
+        <CopyRow
+          slot="evening"
+          label="Noche"
+          title={eveningTitle}
+          body={eveningBody}
+          onTitle={setEveningTitle}
+          onBody={setEveningBody}
           disabled={isPending}
         />
       </Section>
@@ -333,6 +408,80 @@ function DowTimeRow({
           }}
         />
       </div>
+    </div>
+  );
+}
+
+function CopyRow({
+  slot,
+  label,
+  title,
+  body,
+  onTitle,
+  onBody,
+  disabled,
+}: {
+  slot: DailySlot;
+  label: string;
+  title: string;
+  body: string;
+  onTitle: (v: string) => void;
+  onBody: (v: string) => void;
+  disabled: boolean;
+}) {
+  const defaults = defaultCopy(slot, 'es');
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        padding: 'var(--ag-space-3)',
+        borderRadius: 'var(--ag-radius-base)',
+        backgroundColor: 'var(--ag-bg-elevated)',
+        border: '1px solid var(--ag-rule)',
+      }}
+    >
+      <span
+        style={{ fontFamily: 'var(--ag-font-body)', fontSize: 14, color: 'var(--ag-ink-primary)' }}
+      >
+        {label}
+      </span>
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => onTitle(e.target.value)}
+        placeholder={defaults.title}
+        maxLength={80}
+        disabled={disabled}
+        style={{
+          padding: '6px 8px',
+          border: '1px solid var(--ag-rule)',
+          borderRadius: 'var(--ag-radius-base)',
+          backgroundColor: 'var(--ag-bg)',
+          fontFamily: 'var(--ag-font-body)',
+          fontSize: 13,
+          outline: 'none',
+        }}
+      />
+      <textarea
+        value={body}
+        onChange={(e) => onBody(e.target.value)}
+        placeholder={defaults.body}
+        rows={2}
+        maxLength={280}
+        disabled={disabled}
+        style={{
+          padding: '6px 8px',
+          border: '1px solid var(--ag-rule)',
+          borderRadius: 'var(--ag-radius-base)',
+          backgroundColor: 'var(--ag-bg)',
+          fontFamily: 'var(--ag-font-body)',
+          fontSize: 13,
+          resize: 'vertical',
+          outline: 'none',
+        }}
+      />
     </div>
   );
 }

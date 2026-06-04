@@ -10,6 +10,10 @@ import { z } from 'zod';
 
 const hhmm = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Hora inválida (HH:mm)');
 const dow = z.number().int().min(0).max(6);
+// Custom copy: short strings. Empty string = clear override (back to
+// default). nullable() lets the client explicitly clear by sending null.
+const customTitle = z.string().max(80).nullable().optional();
+const customBody = z.string().max(280).nullable().optional();
 
 export const updateNotificationPrefsSchema = z.object({
   morningTime: hhmm.optional(),
@@ -23,6 +27,12 @@ export const updateNotificationPrefsSchema = z.object({
   pushEnabled: z.boolean().optional(),
   emailEnabled: z.boolean().optional(),
   contactChannels: z.array(z.enum(['email', 'discord', 'whatsapp'])).optional(),
+  morningTitle: customTitle,
+  morningBody: customBody,
+  middayTitle: customTitle,
+  middayBody: customBody,
+  eveningTitle: customTitle,
+  eveningBody: customBody,
 });
 
 export type UpdateNotificationPrefsInput = z.infer<typeof updateNotificationPrefsSchema>;

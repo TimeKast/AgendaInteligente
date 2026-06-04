@@ -47,6 +47,22 @@ export async function updateNotificationPrefs(input: unknown): Promise<ActionRes
         if (data[f] !== undefined) prefsUpdate[f] = data[f];
       }
 
+      // Custom copy overrides. Empty/whitespace string = clear back to
+      // default (persisted as null).
+      const copyFields = [
+        'morningTitle',
+        'morningBody',
+        'middayTitle',
+        'middayBody',
+        'eveningTitle',
+        'eveningBody',
+      ] as const;
+      for (const f of copyFields) {
+        const v = data[f];
+        if (v === undefined) continue;
+        prefsUpdate[f] = v === null || v.trim().length === 0 ? null : v.trim();
+      }
+
       if (Object.keys(prefsUpdate).length > 0) {
         await db
           .insert(notificationPrefs)
