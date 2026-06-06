@@ -124,27 +124,30 @@ export const morningCheckInHandler = getInngest().createFunction(
   runMorningCheckIn
 );
 
-// ─── midday (conditional) ─────────────────────────────────────────────
+// ─── midday ───────────────────────────────────────────────────────────
+// Always fires (same shape as morning + evening). Previously it was
+// gated on `winsPlanned` because the default copy used the `{win}`
+// anchor — without a planned win, the message read "Dijiste que ibas a
+// . ¿Cómo va?". Since the user now controls the copy from settings and
+// the resolver strips an empty `{win}` cleanly, the gate is gone. The
+// win anchor is still fetched best-effort for users who keep it in
+// their custom body.
 
-/** Whether the midday check-in should fire for this user+date. */
-export async function shouldFireMidday(
-  userId: string,
-  date: string
-): Promise<{ fire: boolean; pendingWin?: string }> {
-  // 1. Read the morning sheet (winsPlanned).
+/**
+ * Best-effort win anchor for the midday `{win}` substitution. Returns
+ * an empty string when the user hasn't recorded a planned win — the
+ * resolver drops the token from the body without leaving "" debris.
+ */
+export async function resolveMiddayAnchor(userId: string, date: string): Promise<string> {
   const sheetRows = await db
     .select({ winsPlanned: daySheets.winsPlanned })
     .from(daySheets)
     .where(and(eq(daySheets.userId, userId), eq(daySheets.date, date)));
   const wins = sheetRows[0]?.winsPlanned ?? [];
-  if (wins.length === 0) {
-    return { fire: false };
-  }
+  if (wins.length > 0) return wins[0];
 
-  // 2. Find the matching activities — wins are free-text matched against
-  // activity titles. For v1 we keep it simple: fire if there's at least
-  // ONE pending activity (the agent will reference it). The full
-  // "all wins matched to done" check requires fuzzy matching, deferred.
+  // No planned win → use the next pending scheduled activity title as
+  // a softer fallback, so `{win}` still resolves to something concrete.
   const pending = await db
     .select({ title: activities.title })
     .from(activities)
@@ -152,16 +155,11 @@ export async function shouldFireMidday(
       and(
         eq(activities.userId, userId),
         eq(activities.status, 'pending'),
-        gt(activities.scheduledTime, '00:00') // any scheduled-time activity
+        gt(activities.scheduledTime, '00:00')
       )
     )
     .limit(1);
-
-  if (pending.length === 0) {
-    return { fire: false };
-  }
-  // Default to surfacing the first planned win as the prompt anchor.
-  return { fire: true, pendingWin: wins[0] };
+  return pending[0]?.title ?? '';
 }
 
 export async function runMiddayCheckIn({
@@ -172,13 +170,9 @@ export async function runMiddayCheckIn({
   event: { data: { userId: string; date: string } };
 }): Promise<{ status: string; skipped?: boolean }> {
   const { userId, date } = event.data;
-  const decision = await step.run('check-conditional', () => shouldFireMidday(userId, date));
-  if (!decision.fire) {
-    return { status: 'skipped', skipped: true };
-  }
+  const anchor = await step.run('resolve-anchor', () => resolveMiddayAnchor(userId, date));
   return await step.run('enqueue-midday', async () => {
     const ctx = await loadSlotContext(userId);
-    const anchor = decision.pendingWin ?? '';
     const copy = resolveFor('midday', ctx, anchor);
     const result = await enqueueAndSend({
       userId,

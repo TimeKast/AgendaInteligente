@@ -152,45 +152,8 @@ describe('runEveningCheckIn', () => {
   });
 });
 
-describe('runMiddayCheckIn — conditional skip', () => {
-  it('skips when DaySheet has no winsPlanned', async () => {
-    vi.resetModules();
-    state.daySheetRow = { winsPlanned: [] };
-    const { runMiddayCheckIn } = await import('@/lib/inngest/functions/check-in-handlers');
-    const result = await runMiddayCheckIn({
-      step: makeStep() as never,
-      event: { data: { userId: USER, date: '2026-05-27' } },
-    });
-    expect(result.status).toBe('skipped');
-    expect(result.skipped).toBe(true);
-    expect(enqueueMock).not.toHaveBeenCalled();
-  });
-
-  it('skips when DaySheet missing entirely', async () => {
-    vi.resetModules();
-    state.daySheetRow = null;
-    const { runMiddayCheckIn } = await import('@/lib/inngest/functions/check-in-handlers');
-    const result = await runMiddayCheckIn({
-      step: makeStep() as never,
-      event: { data: { userId: USER, date: '2026-05-27' } },
-    });
-    expect(result.status).toBe('skipped');
-    expect(enqueueMock).not.toHaveBeenCalled();
-  });
-
-  it('skips when there are wins but NO pending activities', async () => {
-    vi.resetModules();
-    state.daySheetRow = { winsPlanned: ['cerrar el reporte'] };
-    state.pendingActivities = [];
-    const { runMiddayCheckIn } = await import('@/lib/inngest/functions/check-in-handlers');
-    const result = await runMiddayCheckIn({
-      step: makeStep() as never,
-      event: { data: { userId: USER, date: '2026-05-27' } },
-    });
-    expect(result.status).toBe('skipped');
-  });
-
-  it('fires when wins planned + at least one pending activity', async () => {
+describe('runMiddayCheckIn — always fires', () => {
+  it('fires with the planned win substituted into {win}', async () => {
     vi.resetModules();
     state.daySheetRow = { winsPlanned: ['cerrar el reporte', 'almorzar'] };
     state.pendingActivities = [{ title: 'cerrar el reporte' }];
@@ -204,6 +167,45 @@ describe('runMiddayCheckIn — conditional skip', () => {
       expect.objectContaining({
         type: 'midday_check',
         body: expect.stringContaining('cerrar el reporte'),
+      })
+    );
+  });
+
+  it('fires when there is no planned win — {win} placeholder is stripped', async () => {
+    vi.resetModules();
+    state.daySheetRow = null;
+    state.pendingActivities = [];
+    const { runMiddayCheckIn } = await import('@/lib/inngest/functions/check-in-handlers');
+    const result = await runMiddayCheckIn({
+      step: makeStep() as never,
+      event: { data: { userId: USER, date: '2026-05-27' } },
+    });
+    expect(result.status).toBe('sent');
+    expect(enqueueMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'midday_check',
+        // Default Spanish midday body without the {win} substitution
+        // would have left a dangling "ibas a ." — the resolver strips
+        // the token + the trailing dot cleanly.
+        body: expect.not.stringContaining('{win}'),
+      })
+    );
+  });
+
+  it('falls back to a pending activity title when no winsPlanned but pending exists', async () => {
+    vi.resetModules();
+    state.daySheetRow = null;
+    state.pendingActivities = [{ title: 'enviar email' }];
+    const { runMiddayCheckIn } = await import('@/lib/inngest/functions/check-in-handlers');
+    const result = await runMiddayCheckIn({
+      step: makeStep() as never,
+      event: { data: { userId: USER, date: '2026-05-27' } },
+    });
+    expect(result.status).toBe('sent');
+    expect(enqueueMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'midday_check',
+        body: expect.stringContaining('enviar email'),
       })
     );
   });
