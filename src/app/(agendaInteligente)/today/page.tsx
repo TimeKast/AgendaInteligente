@@ -162,7 +162,11 @@ export default async function TodayPage({
 
   const [listResult, projectLabelById, externalEvents, projectRows, categoryRows] =
     await Promise.all([
-      listActivities({ date: selectedDate, includeDone: false }),
+      listActivities({
+        date: selectedDate,
+        includeDone: false,
+        collapseRecurringInstances: true,
+      }),
       loadProjectLabelMap(userId),
       loadTodaysBusySlots(userId, selectedDate, profile.timezone),
       listProjects(userId),

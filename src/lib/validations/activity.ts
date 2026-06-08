@@ -184,5 +184,13 @@ export const listActivitiesSchema = z.object({
   date: isoDate,
   includeDone: z.boolean().default(true),
   includeDeleted: z.boolean().default(false),
+  /**
+   * When true, recurring instances are collapsed: each parent template
+   * contributes at most ONE row (the "best" one — today's instance,
+   * else next-up, else most relevant overdue). Today view enables this
+   * so the pool isn't flooded by 14 daily yoga rows. /tasks keeps the
+   * default `false` so every instance is browsable.
+   */
+  collapseRecurringInstances: z.boolean().default(false),
 });
 export type ListActivitiesInput = z.infer<typeof listActivitiesSchema>;

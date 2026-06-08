@@ -1,7 +1,7 @@
 # 🗺️ CODEBASE — Dependency Map
 
 > **Auto-generated** — Run `pnpm generate:codebase` to update
-> **Last updated:** 2026-06-06
+> **Last updated:** 2026-06-08
 
 ---
 

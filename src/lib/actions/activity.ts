@@ -309,12 +309,37 @@ function classifyScope(act: Activity, today: string, weekEnd: string): ActivityS
   if (dates.length === 0) return 'backlog';
   // `scheduled_dates` is sorted ascending (BR-15) — earliest date wins for scope.
   const next = dates.find((d) => d >= today);
-  if (!next) return 'backlog'; // every scheduled date is in the past
+  if (!next) {
+    // Every scheduled date is in the past AND the row reached us with
+    // status != 'done' (caller filters above) → overdue. Surface in
+    // today's pool so the user actually sees the debt instead of letting
+    // it rot in the backlog tail.
+    return 'today_pool';
+  }
   if (next === today) {
     return act.scheduledTime ? 'today_scheduled' : 'today_pool';
   }
   return next <= weekEnd ? 'week' : 'backlog';
 }
+
+/** Earliest scheduled date of an activity (sorted ascending per BR-15). */
+function earliestDate(act: Activity): string {
+  const dates = act.scheduledDates ?? [];
+  return dates[0] ?? '';
+}
+
+/**
+ * Pick the "best" instance for a recurring parent — the one we want to
+ * surface in the today view. Priority:
+ *   today_scheduled > today_pool > week > backlog
+ * Within the same scope, the earliest date wins (next-up beats far-future).
+ */
+const SCOPE_PRIORITY: Record<ActivityScope, number> = {
+  today_scheduled: 0,
+  today_pool: 1,
+  week: 2,
+  backlog: 3,
+};
 
 /** YYYY-MM-DD of `date + days` in UTC arithmetic (no TZ ambiguity). */
 function addDays(date: string, days: number): string {
@@ -363,15 +388,43 @@ export async function listActivities(input: unknown): Promise<ActionResult<ListA
       scope: classifyScope(r, data.date, weekEnd),
     }));
 
-    const scheduled = annotated.filter(
+    // Dedupe materialized recurring instances when the caller opts in.
+    // Each parent contributes at most ONE row. The today view enables
+    // this so the pool isn't flooded by 14 daily-yoga rows; /tasks
+    // (browse / filter view) opts out so every instance stays visible.
+    // Non-recurring rows pass through untouched either way.
+    let deduped: Array<Activity & { scope: ActivityScope }> = annotated;
+    if (data.collapseRecurringInstances) {
+      const bestPerParent = new Map<string, Activity & { scope: ActivityScope }>();
+      for (const r of annotated) {
+        if (!r.recurrenceParentId) continue;
+        const existing = bestPerParent.get(r.recurrenceParentId);
+        if (!existing) {
+          bestPerParent.set(r.recurrenceParentId, r);
+          continue;
+        }
+        const rRank = SCOPE_PRIORITY[r.scope];
+        const eRank = SCOPE_PRIORITY[existing.scope];
+        if (rRank < eRank) {
+          bestPerParent.set(r.recurrenceParentId, r);
+        } else if (rRank === eRank && earliestDate(r) < earliestDate(existing)) {
+          bestPerParent.set(r.recurrenceParentId, r);
+        }
+      }
+      deduped = annotated.filter(
+        (r) => !r.recurrenceParentId || bestPerParent.get(r.recurrenceParentId)?.id === r.id
+      );
+    }
+
+    const scheduled = deduped.filter(
       (r): r is Activity & { scope: 'today_scheduled' } => r.scope === 'today_scheduled'
     );
-    const todayUnscheduled = annotated.filter((r) => r.scope === 'today_pool');
-    const thisWeek = annotated.filter((r) => r.scope === 'week');
-    const backlog = annotated.filter((r) => r.scope === 'backlog');
+    const todayUnscheduled = deduped.filter((r) => r.scope === 'today_pool');
+    const thisWeek = deduped.filter((r) => r.scope === 'week');
+    const backlog = deduped.filter((r) => r.scope === 'backlog');
 
     return {
-      rows: annotated,
+      rows: deduped,
       scheduled,
       pool: { todayUnscheduled, thisWeek, backlog },
     };
