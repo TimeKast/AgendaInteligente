@@ -6,28 +6,31 @@
  * `requiresReason` to validate before persisting; the UI imports
  * `getAllowedNextStatuses` to render only valid action buttons.
  *
- * Matrix per BR-8 (06_DATA_MODEL.md §BR-8):
+ * Matrix per BR-8 (06_DATA_MODEL.md §BR-8) + cancelled (ISSUE-tbd):
  *
- *   pending     → in_progress | done | skipped | blocked
- *   in_progress → done | blocked | pending
- *   done        → pending                       (undo only — no skip/block)
- *   skipped     → pending                       (reactivate)
- *   blocked     → in_progress | pending
+ *   pending     → in_progress | done | skipped | blocked | cancelled
+ *   in_progress → done | blocked | pending | cancelled
+ *   done        → pending                       (undo only — no skip/block/cancel)
+ *   skipped     → pending | cancelled
+ *   blocked     → in_progress | pending | cancelled
+ *   cancelled   → pending                       (un-cancel only)
  *
  * Forbidden transitions (notable):
- *   - done → skipped/blocked   (re-classifying a finished task makes no sense;
- *                               the path is done → pending → skipped if needed)
+ *   - done → skipped/blocked/cancelled  (re-classifying a finished task makes
+ *                                        no sense; path is done → pending → X)
  *   - skipped → in_progress/done/blocked  (must go through pending)
+ *   - cancelled → in_progress/done/skipped/blocked  (must go through pending)
  */
 
 import type { ActivityStatus } from '@/lib/db/schema/activities';
 
 const ALLOWED: Record<ActivityStatus, ReadonlySet<ActivityStatus>> = {
-  pending: new Set<ActivityStatus>(['in_progress', 'done', 'skipped', 'blocked']),
-  in_progress: new Set<ActivityStatus>(['done', 'blocked', 'pending']),
+  pending: new Set<ActivityStatus>(['in_progress', 'done', 'skipped', 'blocked', 'cancelled']),
+  in_progress: new Set<ActivityStatus>(['done', 'blocked', 'pending', 'cancelled']),
   done: new Set<ActivityStatus>(['pending']),
-  skipped: new Set<ActivityStatus>(['pending']),
-  blocked: new Set<ActivityStatus>(['in_progress', 'pending']),
+  skipped: new Set<ActivityStatus>(['pending', 'cancelled']),
+  blocked: new Set<ActivityStatus>(['in_progress', 'pending', 'cancelled']),
+  cancelled: new Set<ActivityStatus>(['pending']),
 };
 
 /**

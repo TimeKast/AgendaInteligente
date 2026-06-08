@@ -365,7 +365,10 @@ interface TodayActivitiesBoardProps {
    * wiring. Receives the activity id + the BR-8 target status. The
    * board updates its local view optimistically before invoking.
    */
-  onTransitionPersist?: (id: string, toStatus: 'done' | 'skipped' | 'blocked' | 'pending') => void;
+  onTransitionPersist?: (
+    id: string,
+    toStatus: 'done' | 'skipped' | 'blocked' | 'cancelled' | 'pending'
+  ) => void;
   /**
    * Server-loaded initial state. When provided, replaces the prototype
    * INITIAL_SCHEDULED / INITIAL_POOL mocks with real activities. The
@@ -667,11 +670,12 @@ export function TodayActivitiesBoard({
     // expects. 'todo' is the rest state — no transition to record.
     const mapped: Record<
       ExtendedActivityStatus,
-      'done' | 'skipped' | 'blocked' | 'pending' | null
+      'done' | 'skipped' | 'blocked' | 'cancelled' | 'pending' | null
     > = {
       done: 'done',
       skipped: 'skipped',
       blocked: 'blocked',
+      cancelled: 'cancelled',
       todo: 'pending',
       in_progress: null,
     };

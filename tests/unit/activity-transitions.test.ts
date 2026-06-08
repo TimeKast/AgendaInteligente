@@ -15,12 +15,14 @@ import {
 import { ACTIVITY_STATUSES, type ActivityStatus } from '@/lib/db/schema/activities';
 
 // Per BR-8 §05_BUSINESS_RULES.md (source of truth — keep in sync).
+// Cancelled added as a terminal state (with undo path back to pending).
 const EXPECTED: Record<ActivityStatus, ActivityStatus[]> = {
-  pending: ['in_progress', 'done', 'skipped', 'blocked'],
-  in_progress: ['done', 'blocked', 'pending'],
+  pending: ['in_progress', 'done', 'skipped', 'blocked', 'cancelled'],
+  in_progress: ['done', 'blocked', 'pending', 'cancelled'],
   done: ['pending'],
-  skipped: ['pending'],
-  blocked: ['in_progress', 'pending'],
+  skipped: ['pending', 'cancelled'],
+  blocked: ['in_progress', 'pending', 'cancelled'],
+  cancelled: ['pending'],
 };
 
 describe('isAllowedTransition — BR-8 matrix', () => {

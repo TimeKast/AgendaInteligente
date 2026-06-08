@@ -40,7 +40,7 @@ import { createActivity, transitionActivity, updateActivity } from '@/lib/action
 interface ScheduledActivityInput {
   id: string;
   title: string;
-  status: 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
+  status: 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked' | 'cancelled';
   scheduledTime: string; // HH:00
   priority: number;
   projectLabel: string;
@@ -53,7 +53,7 @@ interface ScheduledActivityInput {
 interface PoolActivityInput {
   id: string;
   title: string;
-  status: 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
+  status: 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked' | 'cancelled';
   scope: 'today' | 'week' | 'backlog';
   quadrant: 1 | 2 | 3 | 4;
   priority: number;
@@ -212,7 +212,7 @@ export function TodayClient({
 
   function handleTransitionPersist(
     id: string,
-    toStatus: 'done' | 'skipped' | 'blocked' | 'pending'
+    toStatus: 'done' | 'skipped' | 'blocked' | 'cancelled' | 'pending'
   ) {
     startTransition(async () => {
       const result = await transitionActivity({ id, toStatus });

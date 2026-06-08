@@ -209,11 +209,12 @@ export function TasksClient({ initialTasks, todayDate, projects, categories }: T
     }
     const mapped: Record<
       ExtendedActivityStatus,
-      'done' | 'skipped' | 'blocked' | 'pending' | null
+      'done' | 'skipped' | 'blocked' | 'cancelled' | 'pending' | null
     > = {
       done: 'done',
       skipped: 'skipped',
       blocked: 'blocked',
+      cancelled: 'cancelled',
       todo: 'pending',
       in_progress: null,
     };

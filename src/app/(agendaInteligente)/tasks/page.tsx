@@ -60,7 +60,13 @@ export default async function TasksPage() {
   // never matches the "Por hacer" chip, and the user sees zero rows
   // outside the "Todas" filter.
   function toUiStatus(s: string): ActivityStatus {
-    if (s === 'in_progress' || s === 'done' || s === 'skipped' || s === 'blocked') {
+    if (
+      s === 'in_progress' ||
+      s === 'done' ||
+      s === 'skipped' ||
+      s === 'blocked' ||
+      s === 'cancelled'
+    ) {
       return s;
     }
     return 'todo';

@@ -150,7 +150,14 @@ export const activities = pgTable(
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
 
-export const ACTIVITY_STATUSES = ['pending', 'in_progress', 'done', 'skipped', 'blocked'] as const;
+export const ACTIVITY_STATUSES = [
+  'pending',
+  'in_progress',
+  'done',
+  'skipped',
+  'blocked',
+  'cancelled',
+] as const;
 export type ActivityStatus = (typeof ACTIVITY_STATUSES)[number];
 
 export const ACTIVITY_REASON_CATEGORIES = [

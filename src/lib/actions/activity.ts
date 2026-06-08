@@ -380,7 +380,14 @@ export async function listActivities(input: unknown): Promise<ActionResult<ListA
       r.recurrenceRule !== null && r.recurrenceParentId === null;
 
     const visible = allRows.filter((r) => !isParentTemplate(r));
-    const filtered = data.includeDone ? visible : visible.filter((r) => r.status !== 'done');
+    // "Closed" set = terminal statuses the user has explicitly resolved.
+    // Done + cancelled are both "out of play"; the today view excludes
+    // them so overdue lists don't fill with already-closed work the
+    // user already chose to drop. /tasks (includeDone=true) keeps every
+    // status visible so the user can browse the full history.
+    const filtered = data.includeDone
+      ? visible
+      : visible.filter((r) => r.status !== 'done' && r.status !== 'cancelled');
 
     const weekEnd = addDays(data.date, 6);
     const annotated = filtered.map((r) => ({

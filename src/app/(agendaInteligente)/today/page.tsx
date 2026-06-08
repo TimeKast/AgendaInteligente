@@ -29,7 +29,7 @@ import { TodayClient } from '@/components/agenda/TodayClient';
 import type { CloseDayActivityInput } from '@/components/agenda/CloseDayModal';
 
 type Quadrant = 1 | 2 | 3 | 4;
-type UiStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
+type UiStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked' | 'cancelled';
 
 interface ScheduledInput {
   id: string;
@@ -57,10 +57,10 @@ interface PoolInput {
   description?: string | null;
 }
 
-/** Map a 5-state DB status → the board's 5-state UI status. Same labels for now. */
+/** Map a 6-state DB status → the board's 6-state UI status. Same labels for now. */
 function uiStatus(s: string): UiStatus {
   if (s === 'in_progress') return 'in_progress';
-  if (s === 'done' || s === 'skipped' || s === 'blocked') return s;
+  if (s === 'done' || s === 'skipped' || s === 'blocked' || s === 'cancelled') return s;
   return 'todo';
 }
 

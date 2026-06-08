@@ -26,6 +26,7 @@ import {
   Check,
   MinusCircle,
   Repeat,
+  XCircle,
 } from 'lucide-react';
 import { DeadlineBadge } from './DeadlineBadge';
 import { formatRecurrence } from './RecurrencePicker';
@@ -125,7 +126,7 @@ function ProjectDot({ label }: { label: string }) {
   );
 }
 
-export type ActivityStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
+export type ActivityStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked' | 'cancelled';
 
 interface ActivityRowProps {
   title: string;
@@ -238,6 +239,20 @@ function Checkbox({ status }: { status: ActivityStatus }) {
     );
   }
 
+  if (status === 'cancelled') {
+    return (
+      <span
+        aria-label="Cancelada"
+        style={{
+          ...base,
+          color: 'var(--ag-ink-hint)',
+        }}
+      >
+        <XCircle size={14} strokeWidth={1.5} />
+      </span>
+    );
+  }
+
   return (
     <span
       aria-label="Por hacer"
@@ -267,7 +282,11 @@ export function ActivityRow({
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
   const isSkipped = status === 'skipped';
-  const showProgress = !isDone && (progressPercent ?? 0) > 0;
+  const isCancelled = status === 'cancelled';
+  // Terminal "closed" set: both done and cancelled get the dim/strike-through
+  // look so they read as "out of play" at a glance.
+  const isClosed = isDone || isCancelled;
+  const showProgress = !isClosed && (progressPercent ?? 0) > 0;
 
   // Hide the checkbox for the default 'todo' status — title is what matters,
   // and the implicit "no marker = por hacer" reads cleanly. Non-default
@@ -312,9 +331,9 @@ export function ActivityRow({
               fontFamily: 'var(--ag-font-body)',
               fontSize: 16,
               lineHeight: 1.4,
-              color: isDone || isSkipped ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
+              color: isClosed || isSkipped ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
               fontStyle: isInProgress ? 'italic' : 'normal',
-              textDecoration: isDone ? 'line-through' : 'none',
+              textDecoration: isClosed ? 'line-through' : 'none',
               textDecorationColor: 'var(--ag-rule)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
