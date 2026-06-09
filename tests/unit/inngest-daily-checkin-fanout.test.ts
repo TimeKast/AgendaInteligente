@@ -82,6 +82,11 @@ function userRow(overrides: Record<string, unknown> = {}) {
     weekendSkip: false,
     daysOff: [] as string[],
     mutedUntil: null,
+    // Nag chain: disabled by default for unrelated tests. Tests that
+    // exercise nag behavior set these explicitly.
+    nagIntervalMinutes: 0,
+    lastCheckInAt: null,
+    lastActiveAt: null,
     ...overrides,
   };
 }
@@ -162,11 +167,18 @@ describe('runDailyCheckinFanout', () => {
     expect(state.published[0].data).toMatchObject({ userId: 'u-mx' });
   });
 
-  it('emits both midday and evening for the same user when their times coincide (synthetic test)', async () => {
-    // Pathological prefs: midday and evening both at 13:00.
-    state.userRows = [userRow({ middayTime: '13:00', eveningTime: '13:00' })];
-    // 19:02 UTC == 13:02 MX → both midday + evening windows.
-    const now = new Date(Date.UTC(2026, 4, 26, 19, 2));
+  it('emits midday.check_in.due as a nag when interval has elapsed + user inactive', async () => {
+    // Morning fired at 14:00 UTC (08:00 MX). User never visited. Nag
+    // interval = 60min. Now = 15:30 UTC (09:30 MX) → 90 min elapsed → fire.
+    const lastCheckIn = new Date(Date.UTC(2026, 4, 26, 14, 0));
+    state.userRows = [
+      userRow({
+        nagIntervalMinutes: 60,
+        lastCheckInAt: lastCheckIn,
+        lastActiveAt: null,
+      }),
+    ];
+    const now = new Date(Date.UTC(2026, 4, 26, 15, 30));
 
     const { runDailyCheckinFanout } = await import('@/lib/inngest/functions/daily-checkin-fanout');
     const result = await runDailyCheckinFanout({
@@ -175,9 +187,34 @@ describe('runDailyCheckinFanout', () => {
       now,
     });
 
-    expect(result.emitted).toBe(2);
-    const names = state.published.map((p) => p.name).sort();
-    expect(names).toEqual(['evening.check_in.due', 'midday.check_in.due']);
+    expect(result.emitted).toBe(1);
+    expect(state.published[0]).toEqual({
+      name: 'midday.check_in.due',
+      data: { userId: 'u1', date: '2026-05-26' },
+    });
+  });
+
+  it('does NOT emit a nag once the user visited the app since the last push', async () => {
+    const lastCheckIn = new Date(Date.UTC(2026, 4, 26, 14, 0));
+    const lastActive = new Date(Date.UTC(2026, 4, 26, 14, 10));
+    state.userRows = [
+      userRow({
+        nagIntervalMinutes: 60,
+        lastCheckInAt: lastCheckIn,
+        lastActiveAt: lastActive,
+      }),
+    ];
+    const now = new Date(Date.UTC(2026, 4, 26, 15, 30));
+
+    const { runDailyCheckinFanout } = await import('@/lib/inngest/functions/daily-checkin-fanout');
+    const result = await runDailyCheckinFanout({
+      step: cast(makeStep(state.userRows)),
+      logger: makeLogger(),
+      now,
+    });
+
+    expect(result.emitted).toBe(0);
+    expect(publishMock).not.toHaveBeenCalled();
   });
 
   it('respects weekend_skip + days_off + muted_until', async () => {

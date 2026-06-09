@@ -17,6 +17,8 @@
 import type { Metadata } from 'next';
 import { Source_Serif_4, Inter } from 'next/font/google';
 import './agenda-tokens.css';
+import { auth } from '@/lib/auth/auth';
+import { recordActivity } from '@/lib/notifications/activity-tracker';
 import { AgendaShell } from '@/components/agenda/AgendaShell';
 import { AppearanceController } from '@/components/agenda/AppearanceController';
 
@@ -39,7 +41,18 @@ export const metadata: Metadata = {
   title: 'AgendaInteligente — prototype',
 };
 
-export default function AgendaLayout({ children }: { children: React.ReactNode }) {
+export default async function AgendaLayout({ children }: { children: React.ReactNode }) {
+  // Best-effort activity tracking — feeds the nag check-in logic in the
+  // 5-min fanout cron. Fires on every authenticated page render (full
+  // load or refresh). Internally throttled to 1/min so a Cmd-R spam
+  // doesn't hammer Postgres. We don't redirect on auth failures here;
+  // pages handle their own gating.
+  const session = await auth();
+  if (session?.user?.id) {
+    // fire-and-forget; never block rendering
+    void recordActivity(session.user.id);
+  }
+
   return (
     <div
       data-theme="agenda"

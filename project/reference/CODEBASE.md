@@ -1,7 +1,7 @@
 # 🗺️ CODEBASE — Dependency Map
 
 > **Auto-generated** — Run `pnpm generate:codebase` to update
-> **Last updated:** 2026-06-08
+> **Last updated:** 2026-06-09
 
 ---
 
@@ -523,6 +523,7 @@
 | `src\lib\invites\index.ts` | `src\lib\invites\token.ts` | — |
 | `src\lib\invites\token.ts` | — | `src\lib\invites\index.ts` |
 | `src\lib\logger.ts` | — | — |
+| `src\lib\notifications\activity-tracker.ts` | — | — |
 | `src\lib\notifications\check-in-defaults.ts` | — | — |
 | `src\lib\notifications\discord.ts` | — | — |
 | `src\lib\notifications\index.ts` | — | — |
@@ -564,10 +565,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 503 |
+| Total files analyzed | 504 |
 | Total connections | 198 |
 | High-risk files (2+ deps) | 36 |
-| Orphan files (no connections) | 336 |
+| Orphan files (no connections) | 337 |
 
 ---
 

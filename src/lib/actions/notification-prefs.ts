@@ -42,6 +42,7 @@ export async function updateNotificationPrefs(input: unknown): Promise<ActionRes
         'weekendSkip',
         'pushEnabled',
         'emailEnabled',
+        'nagIntervalMinutes',
       ] as const;
       for (const f of fields) {
         if (data[f] !== undefined) prefsUpdate[f] = data[f];

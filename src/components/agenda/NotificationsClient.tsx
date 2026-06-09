@@ -44,8 +44,21 @@ interface Props {
     middayBody: string | null;
     eveningTitle: string | null;
     eveningBody: string | null;
+    nagIntervalMinutes: number;
   };
 }
+
+// Allowed nag intervals (minutes) + their human labels. 0 = disabled.
+// Must stay in sync with NAG_INTERVAL_VALUES in
+// `lib/validations/notification-prefs.ts`.
+const NAG_INTERVAL_OPTIONS: Array<{ value: number; label: string }> = [
+  { value: 0, label: 'Desactivado (solo mañana + noche)' },
+  { value: 15, label: 'Cada 15 minutos' },
+  { value: 30, label: 'Cada 30 minutos' },
+  { value: 60, label: 'Cada 1 hora' },
+  { value: 120, label: 'Cada 2 horas' },
+  { value: 240, label: 'Cada 4 horas' },
+];
 
 function trimSeconds(t: string): string {
   return t.slice(0, 5);
@@ -54,7 +67,10 @@ function trimSeconds(t: string): string {
 export function NotificationsClient({ initial }: Props) {
   const router = useRouter();
   const [morning, setMorning] = useState(trimSeconds(initial.morningTime));
-  const [midday, setMidday] = useState(trimSeconds(initial.middayTime));
+  // `midday_time` is legacy: the midday slot no longer fires on a fixed
+  // time of day — it nags after morning. We still round-trip the column
+  // (no UI surface) so existing data isn't lost.
+  const [midday] = useState(trimSeconds(initial.middayTime));
   const [evening, setEvening] = useState(trimSeconds(initial.eveningTime));
   const [kickoffDow, setKickoffDow] = useState(initial.weeklyKickoffDow);
   const [kickoffTime, setKickoffTime] = useState(trimSeconds(initial.weeklyKickoffTime));
@@ -70,6 +86,7 @@ export function NotificationsClient({ initial }: Props) {
   const [middayBody, setMiddayBody] = useState(initial.middayBody ?? '');
   const [eveningTitle, setEveningTitle] = useState(initial.eveningTitle ?? '');
   const [eveningBody, setEveningBody] = useState(initial.eveningBody ?? '');
+  const [nagInterval, setNagInterval] = useState<number>(initial.nagIntervalMinutes);
   const [isPending, startTransition] = useTransition();
 
   function toggleChannel(c: string, on: boolean) {
@@ -100,6 +117,7 @@ export function NotificationsClient({ initial }: Props) {
         middayBody,
         eveningTitle,
         eveningBody,
+        nagIntervalMinutes: nagInterval,
       });
       if (result.error) {
         toast.error(`No se pudo guardar: ${result.error}`);
@@ -123,12 +141,35 @@ export function NotificationsClient({ initial }: Props) {
     >
       <Section title="Check-ins diarios">
         <TimeRow label="Mañana" value={morning} onChange={setMorning} disabled={isPending} />
-        <TimeRow label="Mediodía" value={midday} onChange={setMidday} disabled={isPending} />
         <TimeRow label="Noche" value={evening} onChange={setEvening} disabled={isPending} />
         <ToggleRow
           label="Saltar fines de semana"
           value={weekendSkip}
           onChange={setWeekendSkip}
+          disabled={isPending}
+        />
+      </Section>
+
+      <Section title="Insistencia">
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'var(--ag-font-display)',
+            fontStyle: 'italic',
+            fontSize: 12,
+            color: 'var(--ag-ink-soft)',
+            lineHeight: 1.4,
+          }}
+        >
+          Después del check-in de la mañana, si no entrás a la app te volvemos a avisar cada cierto
+          tiempo. La cadena se detiene en cuanto abrís cualquier pantalla. La noche siempre se
+          manda, sin importar si ya entraste.
+        </p>
+        <SelectRow
+          label="Recordar cada"
+          value={nagInterval}
+          options={NAG_INTERVAL_OPTIONS}
+          onChange={setNagInterval}
           disabled={isPending}
         />
       </Section>
@@ -144,7 +185,8 @@ export function NotificationsClient({ initial }: Props) {
             lineHeight: 1.4,
           }}
         >
-          Dejá los campos vacíos para usar el mensaje por defecto. En el de mediodía podés escribir{' '}
+          Dejá los campos vacíos para usar el mensaje por defecto. En el de insistencia podés
+          escribir{' '}
           <code
             style={{
               fontFamily: 'var(--ag-font-mono)',
@@ -169,7 +211,7 @@ export function NotificationsClient({ initial }: Props) {
         />
         <CopyRow
           slot="midday"
-          label="Mediodía"
+          label="Insistencia"
           title={middayTitle}
           body={middayBody}
           onTitle={setMiddayTitle}
@@ -409,6 +451,67 @@ function DowTimeRow({
         />
       </div>
     </div>
+  );
+}
+
+function SelectRow<T extends number | string>({
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: T;
+  options: Array<{ value: T; label: string }>;
+  onChange: (v: T) => void;
+  disabled: boolean;
+}) {
+  return (
+    <label
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 'var(--ag-space-3)',
+        padding: '10px 12px',
+        borderRadius: 'var(--ag-radius-base)',
+        backgroundColor: 'var(--ag-bg-elevated)',
+        border: '1px solid var(--ag-rule)',
+      }}
+    >
+      <span
+        style={{ fontFamily: 'var(--ag-font-body)', fontSize: 14, color: 'var(--ag-ink-primary)' }}
+      >
+        {label}
+      </span>
+      <select
+        value={String(value)}
+        onChange={(e) => {
+          const next = e.target.value;
+          const match = options.find((o) => String(o.value) === next);
+          if (match) onChange(match.value);
+        }}
+        disabled={disabled}
+        style={{
+          appearance: 'none',
+          padding: '6px 28px 6px 10px',
+          border: '1px solid var(--ag-rule)',
+          borderRadius: 'var(--ag-radius-base)',
+          backgroundColor: 'var(--ag-bg)',
+          fontFamily: 'var(--ag-font-body)',
+          fontSize: 13,
+          color: 'var(--ag-ink-primary)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {options.map((o) => (
+          <option key={String(o.value)} value={String(o.value)}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

@@ -11,6 +11,7 @@ import { describe, it, expect } from 'vitest';
 import {
   shouldFireDailyCheckIn,
   shouldFireWeeklyCheckIn,
+  shouldFireNag,
   localPartsAt,
   type CheckInPrefs,
 } from '@/lib/domain/checkin-schedule';
@@ -30,6 +31,7 @@ const basePrefs: CheckInPrefs = {
   weekendSkip: false,
   daysOff: [],
   mutedUntil: null,
+  nagIntervalMinutes: 0, // disable nag for unrelated tests
 };
 
 // Helper — build UTC date.
@@ -219,5 +221,77 @@ describe('shouldFireWeeklyCheckIn', () => {
     // Tick at 01:00 UTC Mon = 19:00 MX Sun → past window:
     const b = shouldFireWeeklyCheckIn('kickoff', basePrefs, MX, utc(2026, 5, 25, 1, 0));
     expect(b).toBeNull();
+  });
+});
+
+// ─── shouldFireNag — "insistencia" between morning and evening ────────
+
+describe('shouldFireNag — nag chain after morning', () => {
+  // Common scenario: TZ Mexico City (UTC-6), morning at 08:00 fired at
+  // 14:00 UTC, evening at 21:00 = 03:00 UTC next day. nag interval 60min.
+  const nagPrefs: CheckInPrefs = { ...basePrefs, nagIntervalMinutes: 60 };
+
+  it('fires after the interval has elapsed and the user has not visited', () => {
+    // Last check-in at 14:00 UTC (08:00 MX), now = 15:30 UTC (09:30 MX).
+    // Elapsed = 90 min > 60 → fire.
+    const lastCheckIn = utc(2026, 5, 27, 14, 0);
+    const now = utc(2026, 5, 27, 15, 30);
+    expect(shouldFireNag(nagPrefs, MX, now, lastCheckIn, null)).not.toBeNull();
+  });
+
+  it('does NOT fire if the user came in after the last push', () => {
+    const lastCheckIn = utc(2026, 5, 27, 14, 0);
+    const lastActive = utc(2026, 5, 27, 14, 10); // visited 10 min after morning
+    const now = utc(2026, 5, 27, 15, 30);
+    expect(shouldFireNag(nagPrefs, MX, now, lastCheckIn, lastActive)).toBeNull();
+  });
+
+  it('does NOT fire before the interval has elapsed', () => {
+    const lastCheckIn = utc(2026, 5, 27, 14, 0);
+    const now = utc(2026, 5, 27, 14, 45); // only 45 min, interval is 60
+    expect(shouldFireNag(nagPrefs, MX, now, lastCheckIn, null)).toBeNull();
+  });
+
+  it('does NOT fire before morning time of day (user-local)', () => {
+    // 07:30 MX = 13:30 UTC. Before morning_time 08:00.
+    const lastCheckIn = utc(2026, 5, 27, 12, 0); // yesterday spill
+    const now = utc(2026, 5, 27, 13, 30);
+    expect(shouldFireNag(nagPrefs, MX, now, lastCheckIn, null)).toBeNull();
+  });
+
+  it('does NOT fire after evening time of day', () => {
+    // 21:30 MX = 03:30 UTC next day. After evening_time 21:00.
+    const lastCheckIn = utc(2026, 5, 28, 2, 0); // 20:00 MX same day
+    const now = utc(2026, 5, 28, 3, 30);
+    expect(shouldFireNag(nagPrefs, MX, now, lastCheckIn, null)).toBeNull();
+  });
+
+  it('does NOT fire if morning never fired today (lastCheckIn is yesterday)', () => {
+    // Yesterday's morning, now is today's window — wait for today's morning first.
+    const lastCheckIn = utc(2026, 5, 26, 14, 0); // 08:00 MX yesterday
+    const now = utc(2026, 5, 27, 15, 30); // 09:30 MX today
+    expect(shouldFireNag(nagPrefs, MX, now, lastCheckIn, null)).toBeNull();
+  });
+
+  it('does NOT fire when nagIntervalMinutes is 0', () => {
+    const prefs: CheckInPrefs = { ...nagPrefs, nagIntervalMinutes: 0 };
+    const lastCheckIn = utc(2026, 5, 27, 14, 0);
+    const now = utc(2026, 5, 27, 15, 30);
+    expect(shouldFireNag(prefs, MX, now, lastCheckIn, null)).toBeNull();
+  });
+
+  it('respects weekend_skip', () => {
+    // 2026-05-30 is Saturday in MX.
+    const prefs: CheckInPrefs = { ...nagPrefs, weekendSkip: true };
+    const lastCheckIn = utc(2026, 5, 30, 14, 0);
+    const now = utc(2026, 5, 30, 15, 30);
+    expect(shouldFireNag(prefs, MX, now, lastCheckIn, null)).toBeNull();
+  });
+
+  it('respects muted_until', () => {
+    const prefs: CheckInPrefs = { ...nagPrefs, mutedUntil: utc(2026, 5, 27, 23, 0) };
+    const lastCheckIn = utc(2026, 5, 27, 14, 0);
+    const now = utc(2026, 5, 27, 15, 30);
+    expect(shouldFireNag(prefs, MX, now, lastCheckIn, null)).toBeNull();
   });
 });

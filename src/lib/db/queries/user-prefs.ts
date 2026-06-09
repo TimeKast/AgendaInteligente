@@ -73,6 +73,8 @@ export interface NotificationsPrefs {
   middayBody: string | null;
   eveningTitle: string | null;
   eveningBody: string | null;
+  /** Minutes between nag re-fires after morning. 0 = nag disabled. */
+  nagIntervalMinutes: number;
 }
 
 export async function loadNotificationsPrefs(userId: string): Promise<NotificationsPrefs> {
@@ -95,6 +97,7 @@ export async function loadNotificationsPrefs(userId: string): Promise<Notificati
         middayBody: notificationPrefs.middayBody,
         eveningTitle: notificationPrefs.eveningTitle,
         eveningBody: notificationPrefs.eveningBody,
+        nagIntervalMinutes: notificationPrefs.nagIntervalMinutes,
       })
       .from(notificationPrefs)
       .where(eq(notificationPrefs.userId, userId)),
@@ -119,5 +122,6 @@ export async function loadNotificationsPrefs(userId: string): Promise<Notificati
     middayBody: p?.middayBody ?? null,
     eveningTitle: p?.eveningTitle ?? null,
     eveningBody: p?.eveningBody ?? null,
+    nagIntervalMinutes: p?.nagIntervalMinutes ?? 60,
   };
 }

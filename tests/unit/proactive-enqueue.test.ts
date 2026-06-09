@@ -114,9 +114,12 @@ describe('enqueueAndSend — OPS-1 24h limit', () => {
   it('cancels when ≥4 sent tasks in last 24h', async () => {
     state.sentCount = 4;
     const { enqueueAndSend } = await import('@/lib/notifications/proactive');
+    // Use evening_close — `morning_open` and `midday_check` are part of
+    // the morning/nag chain and intentionally exempt from OPS-1 (the
+    // chain self-throttles via shouldFireNag).
     const result = await enqueueAndSend({
       userId: USER,
-      type: 'midday_check',
+      type: 'evening_close',
       title: 'x',
       body: 'y',
     });
@@ -137,6 +140,25 @@ describe('enqueueAndSend — OPS-1 24h limit', () => {
       body: 'y',
     });
     expect(result.status).toBe('sent');
+  });
+
+  it('exempts morning_open + midday_check from OPS-1 (nag chain self-throttles)', async () => {
+    state.sentCount = 99;
+    const { enqueueAndSend } = await import('@/lib/notifications/proactive');
+    const morning = await enqueueAndSend({
+      userId: USER,
+      type: 'morning_open',
+      title: 'Buenos días',
+      body: '¿Cómo arrancamos?',
+    });
+    const nag = await enqueueAndSend({
+      userId: USER,
+      type: 'midday_check',
+      title: '¿Sigues ahí?',
+      body: 'Te espero en la app.',
+    });
+    expect(morning.status).toBe('sent');
+    expect(nag.status).toBe('sent');
   });
 });
 

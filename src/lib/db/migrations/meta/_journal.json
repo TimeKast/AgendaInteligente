@@ -204,6 +204,13 @@
       "when": 1780795000000,
       "tag": "0028_activity_status_cancelled",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1781026950058,
+      "tag": "0029_dear_power_pack",
+      "breakpoints": true
     }
   ]
 }

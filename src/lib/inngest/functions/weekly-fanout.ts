@@ -79,6 +79,9 @@ export async function runWeeklyFanout({
       weekendSkip: row.weekendSkip,
       daysOff: row.daysOff,
       mutedUntil: row.mutedUntil,
+      // Weekly fanout doesn't consume nag prefs, but CheckInPrefs is
+      // shared with the daily side; keep the shape complete.
+      nagIntervalMinutes: 0,
     };
 
     for (const kind of KINDS) {

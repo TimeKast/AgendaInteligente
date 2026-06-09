@@ -34,6 +34,8 @@ export interface CheckInPrefs {
   /** Array of YYYY-MM-DD strings (user-local dates). */
   daysOff: string[];
   mutedUntil: Date | null;
+  /** Minutes between nag re-fires. 0 = nag disabled. */
+  nagIntervalMinutes: number;
 }
 
 /** Parsed local view of `now` for a given TZ. */
@@ -199,6 +201,59 @@ export function shouldFireWeeklyCheckIn(
   const weekStartLocal = localPartsAt(weekStart, tz);
 
   return { weekStarting: weekStartLocal.isoDate };
+}
+
+/**
+ * Decide if a "nag" midday push should fire RIGHT NOW for this user.
+ *
+ * The nag replaces the old fixed-time midday slot. Conditions:
+ *   1. `nagIntervalMinutes > 0` (user enabled nagging).
+ *   2. Not muted / not a day-off / not weekend-skipped.
+ *   3. We're past morning_time and before evening_time, user-local.
+ *   4. Morning has already fired today (we know because `lastCheckInAt`
+ *      lands in today's local date).
+ *   5. The user hasn't opened the app since the last morning/nag push
+ *      (`lastActiveAt < lastCheckInAt`). Once they come in, the chain
+ *      pauses until tomorrow morning.
+ *   6. At least `nagIntervalMinutes` have passed since `lastCheckInAt`.
+ *
+ * Returns `{ isoDate }` (user-local) when the nag should fire, else null.
+ */
+export function shouldFireNag(
+  prefs: CheckInPrefs,
+  tz: string,
+  now: Date,
+  lastCheckInAt: Date | null,
+  lastActiveAt: Date | null
+): { isoDate: string } | null {
+  if (prefs.nagIntervalMinutes <= 0) return null;
+  if (isMuted(prefs, now)) return null;
+
+  const local = localPartsAt(now, tz);
+  if (isWeekendSkipped(prefs, local.weekday)) return null;
+  if (isDayOff(prefs, local.isoDate)) return null;
+
+  const morningMin = parseTimeToMinutes(prefs.morningTime);
+  const eveningMin = parseTimeToMinutes(prefs.eveningTime);
+  const localMin = local.hour * 60 + local.minute;
+  if (localMin < morningMin) return null; // morning not yet
+  if (localMin >= eveningMin) return null; // evening will close
+
+  if (lastCheckInAt === null) return null; // no push yet today (morning will arrive)
+
+  // Morning must have fired in TODAY's local date (otherwise it's a
+  // leftover from yesterday and we're waiting for today's morning tick).
+  const lastCheckInLocalDate = localPartsAt(lastCheckInAt, tz).isoDate;
+  if (lastCheckInLocalDate !== local.isoDate) return null;
+
+  // User came in since the last push → pause the chain.
+  if (lastActiveAt !== null && lastActiveAt >= lastCheckInAt) return null;
+
+  // Throttle: at least `nagIntervalMinutes` since the last push.
+  const elapsedMin = (now.getTime() - lastCheckInAt.getTime()) / 60_000;
+  if (elapsedMin < prefs.nagIntervalMinutes) return null;
+
+  return { isoDate: local.isoDate };
 }
 
 /** Test-only — exposed for the cron handlers + tests. */

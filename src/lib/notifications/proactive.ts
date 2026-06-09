@@ -7,6 +7,10 @@
  *
  * Gate order (each writes its own status row for telemetry):
  *   1. OPS-1: ≥4 successful `sent` tasks in last 24h → cancelled_anti_spam.
+ *      EXEMPTION: `morning_open` and `midday_check` are the
+ *      morning-check-in + nag chain — that chain has its own gating
+ *      (interval + last_active_at) in `shouldFireNag`, and capping at
+ *      4/day would silently break a user with a 15-min nag interval.
  *   2. OPS-2: any pattern_challenge / risk_alert / project_kill_suggestion
  *      sent_at within last 7 days → cancelled_anti_spam (max 1/week).
  *   3. NotificationPref.muted_until > now → cancelled_muted.
@@ -16,6 +20,9 @@
  * On success: status = 'sent', sent_at = now, push delivered via the
  * kit's `sendPush` helper. Failures from `sendPush` are logged but
  * status stays 'sent' (the kit auto-removes 410-Gone subscriptions).
+ *
+ * For morning + nag pushes we also stamp `notification_prefs.last_check_in_at`
+ * so the fanout's nag decision has a single read path.
  *
  * Linked: OPS-1, OPS-2, FT-086, FT-087.
  */
@@ -37,6 +44,12 @@ import { logger } from '@/lib/logger';
 const ANTI_SPAM_24H_LIMIT = 4;
 const CHALLENGE_WEEK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const ANTI_SPAM_24H_WINDOW_MS = 24 * 60 * 60 * 1000;
+/**
+ * Types in the morning → nag chain. They share their own throttling
+ * (interval + last_active_at) in `shouldFireNag`, so the generic
+ * 4/24h cap (OPS-1) would just sabotage a 15-min nag interval.
+ */
+const NAG_CHAIN_TYPES: ReadonlySet<ProactiveTaskType> = new Set(['morning_open', 'midday_check']);
 
 export interface EnqueueInput {
   userId: string;
@@ -69,19 +82,24 @@ export async function enqueueAndSend(input: EnqueueInput): Promise<EnqueueResult
   const now = input.now ?? new Date();
 
   // ── Gate 1: OPS-1 24h limit ──────────────────────────────────────
-  const windowStart24 = new Date(now.getTime() - ANTI_SPAM_24H_WINDOW_MS);
-  const sentCount = await db
-    .select({ c: count() })
-    .from(proactiveTasks)
-    .where(
-      and(
-        eq(proactiveTasks.userId, input.userId),
-        eq(proactiveTasks.status, 'sent'),
-        gt(proactiveTasks.sentAt, windowStart24)
-      )
-    );
-  if ((sentCount[0]?.c ?? 0) >= ANTI_SPAM_24H_LIMIT) {
-    return await record(input, now, 'cancelled_anti_spam', 'over_24h_limit');
+  // Skipped for the morning/nag chain — that chain self-throttles via
+  // `shouldFireNag` (interval + last_active_at), and a 4/day generic
+  // cap would silently break short nag intervals.
+  if (!NAG_CHAIN_TYPES.has(input.type)) {
+    const windowStart24 = new Date(now.getTime() - ANTI_SPAM_24H_WINDOW_MS);
+    const sentCount = await db
+      .select({ c: count() })
+      .from(proactiveTasks)
+      .where(
+        and(
+          eq(proactiveTasks.userId, input.userId),
+          eq(proactiveTasks.status, 'sent'),
+          gt(proactiveTasks.sentAt, windowStart24)
+        )
+      );
+    if ((sentCount[0]?.c ?? 0) >= ANTI_SPAM_24H_LIMIT) {
+      return await record(input, now, 'cancelled_anti_spam', 'over_24h_limit');
+    }
   }
 
   // ── Gate 2: OPS-2 weekly challenge limit ─────────────────────────
@@ -174,6 +192,20 @@ export async function enqueueAndSend(input: EnqueueInput): Promise<EnqueueResult
     .update(proactiveTasks)
     .set({ status: 'sent', sentAt: now })
     .where(eq(proactiveTasks.id, taskId));
+
+  // Stamp `last_check_in_at` for the nag chain — the fanout's
+  // `shouldFireNag` reads it on every tick. Other proactive types
+  // don't participate in the nag throttle, so we skip the write.
+  if (NAG_CHAIN_TYPES.has(input.type)) {
+    try {
+      await db
+        .update(notificationPrefs)
+        .set({ lastCheckInAt: now })
+        .where(eq(notificationPrefs.userId, input.userId));
+    } catch (err) {
+      logger.error('[proactive.enqueueAndSend] last_check_in_at stamp failed', err);
+    }
+  }
 
   return { status: 'sent', taskId, reason: 'ok' };
 }

@@ -3,18 +3,22 @@
  *
  * Ticks every 5 min UTC. Each tick:
  *   1. SELECT every active user with their `notification_prefs` + TZ.
- *   2. For each user × each slot (morning/midday/evening), ask
- *      `shouldFireDailyCheckIn` whether NOW falls in the slot window.
- *   3. Publish `<slot>.check_in.due` events for every match, using a
- *      deterministic event id so Inngest dedupes retries.
+ *   2. Morning + evening: fixed time slots — `shouldFireDailyCheckIn`
+ *      asks whether NOW falls in the slot window.
+ *   3. Midday: NOT a fixed slot. After morning fires, if the user
+ *      hasn't been recorded as active, `shouldFireNag` re-fires it
+ *      every `nag_interval_minutes` until either the user opens the
+ *      app OR evening_time arrives. The nag pushes through the same
+ *      `midday.check_in.due` event so the existing handler + copy
+ *      override apply unchanged.
+ *   4. Publish events with deterministic dedupe ids.
  *
- * Idempotency: event id = `<userId>-<isoDate>-<slot>`. If the cron
- * fires twice within the 5-min window (clock skew, Inngest retry),
- * the second emit is dropped server-side by event idempotency.
- *
- * Why fan-out > per-user orchestrator: stateless, pref changes reflect
- * on the next tick at zero cost, same pattern reused by weekly + system
- * crons. See ISSUE-080b for the α/β decision write-up.
+ * Idempotency:
+ *   - morning/evening: `<userId>-<isoDate>-<slot>` (one per day).
+ *   - midday/nag: `<userId>-<isoDate>-midday-<bucket>` where bucket is
+ *     `floor(minutes_since_last_check_in / nag_interval)` — so a single
+ *     cron run inside the nag window emits at most one event, and
+ *     overlapping retries collapse on the same id.
  *
  * Linked: FT-085, BR-15..20.
  */
@@ -25,6 +29,7 @@ import { users } from '@/lib/db/schema/users';
 import { notificationPrefs } from '@/lib/db/schema/notification-prefs';
 import {
   shouldFireDailyCheckIn,
+  shouldFireNag,
   type DailySlot,
   type CheckInPrefs,
 } from '@/lib/domain/checkin-schedule';
@@ -43,9 +48,13 @@ interface UserWithPrefs {
   id: string;
   timezone: string;
   prefs: CheckInPrefs;
+  lastCheckInAt: Date | null;
+  lastActiveAt: Date | null;
 }
 
-const SLOTS: DailySlot[] = ['morning', 'midday', 'evening'];
+// Fixed-time slots the fanout still iterates on. Midday is handled
+// separately by `shouldFireNag` (interval-based, not time-based).
+const FIXED_SLOTS: DailySlot[] = ['morning', 'evening'];
 
 export async function runDailyCheckinFanout({
   step,
@@ -71,6 +80,9 @@ export async function runDailyCheckinFanout({
         weekendSkip: notificationPrefs.weekendSkip,
         daysOff: notificationPrefs.daysOff,
         mutedUntil: notificationPrefs.mutedUntil,
+        nagIntervalMinutes: notificationPrefs.nagIntervalMinutes,
+        lastCheckInAt: notificationPrefs.lastCheckInAt,
+        lastActiveAt: notificationPrefs.lastActiveAt,
       })
       .from(users)
       .innerJoin(notificationPrefs, eq(notificationPrefs.userId, users.id))
@@ -99,21 +111,45 @@ export async function runDailyCheckinFanout({
         weekendSkip: row.weekendSkip,
         daysOff: row.daysOff,
         mutedUntil: row.mutedUntil,
+        nagIntervalMinutes: row.nagIntervalMinutes,
       },
+      lastCheckInAt: row.lastCheckInAt,
+      lastActiveAt: row.lastActiveAt,
     };
 
-    for (const slot of SLOTS) {
+    // Morning + evening: fixed time-of-day slots.
+    for (const slot of FIXED_SLOTS) {
       const decision = shouldFireDailyCheckIn(slot, user.prefs, user.timezone, now);
       if (!decision) continue;
-
       const eventName = `${slot}.check_in.due` as const;
-      // Inngest idempotency: same id within the event-retention window
-      // is dropped server-side. Deterministic from (user, date, slot)
-      // so duplicate cron ticks across a 5-min window collapse.
       const dedupeId = `${user.id}-${decision.isoDate}-${slot}`;
       tasks.push(
         step.run(`publish-${dedupeId}`, () =>
           publish(eventName, { userId: user.id, date: decision.isoDate })
+        )
+      );
+      emitted++;
+    }
+
+    // Midday: nag — fires after morning when the user hasn't visited.
+    const nagDecision = shouldFireNag(
+      user.prefs,
+      user.timezone,
+      now,
+      user.lastCheckInAt,
+      user.lastActiveAt
+    );
+    if (nagDecision && user.lastCheckInAt) {
+      // Bucket the nag by interval count from `lastCheckInAt`. Two
+      // cron ticks inside the same nag window collapse to the same
+      // dedupe id, but a fresh window after the next push lands in
+      // a new bucket and is allowed to emit again.
+      const elapsedMin = (now.getTime() - user.lastCheckInAt.getTime()) / 60_000;
+      const bucket = Math.floor(elapsedMin / user.prefs.nagIntervalMinutes);
+      const dedupeId = `${user.id}-${nagDecision.isoDate}-midday-nag-${bucket}`;
+      tasks.push(
+        step.run(`publish-${dedupeId}`, () =>
+          publish('midday.check_in.due', { userId: user.id, date: nagDecision.isoDate })
         )
       );
       emitted++;

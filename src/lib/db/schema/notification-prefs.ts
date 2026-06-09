@@ -16,6 +16,7 @@ import {
   pgTable,
   time,
   smallint,
+  integer,
   boolean,
   timestamp,
   uuid,
@@ -60,6 +61,30 @@ export const notificationPrefs = pgTable(
     eveningTitle: text('evening_title'),
     /** Override for evening push body. */
     eveningBody: text('evening_body'),
+
+    // ─── "Nag" mode (replaces the fixed midday slot) ────────────────
+    // After the morning push, if the user hasn't opened the app, the
+    // fanout re-fires the midday-typed push every `nagIntervalMinutes`
+    // until the user is recorded as active OR the evening_time arrives.
+    // Set to 0 to disable nagging entirely (only morning + evening fire).
+
+    /** Minutes between nag re-fires. 0 = nag disabled. */
+    nagIntervalMinutes: integer('nag_interval_minutes').notNull().default(60),
+
+    /**
+     * Last server-recorded user activity in any authenticated screen.
+     * Used by the fanout to decide whether to nag — if the user came in
+     * after the last morning/nag push, the chain is paused for today.
+     * Updated by `recordActivity()` (throttled to 1/min).
+     */
+    lastActiveAt: timestamp('last_active_at', { mode: 'date', withTimezone: true }),
+
+    /**
+     * Last time a morning or nag push actually got sent for this user.
+     * Denormalized off `proactive_tasks` so the fanout decision is a
+     * single read. Stamped by `enqueueAndSend` after a successful send.
+     */
+    lastCheckInAt: timestamp('last_check_in_at', { mode: 'date', withTimezone: true }),
 
     /** Weekly kickoff day-of-week (0=Sunday … 6=Saturday). */
     weeklyKickoffDow: smallint('weekly_kickoff_dow').notNull().default(0),
