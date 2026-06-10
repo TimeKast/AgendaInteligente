@@ -21,6 +21,8 @@ import { eq, isNull, sql } from 'drizzle-orm';
 import { activities, type Activity } from '@/lib/db/schema/activities';
 import { projects } from '@/lib/db/schema/projects';
 import { scopedDb } from '@/lib/db/scoped';
+import { loadTodayUserProfile } from '@/lib/db/queries/today';
+import { todayInTimezone } from '@/lib/domain/day-calc';
 import { withSelf } from '@/lib/actions/helpers';
 import { ActionError, type ActionResult } from '@/lib/actions/types';
 import {
@@ -184,6 +186,38 @@ export async function updateActivity(input: unknown): Promise<ActionResult> {
         .update('activities', updates as Record<string, unknown>)
         .where(eq(activities.id, data.id))
         .execute();
+
+      // When the user changes the recurrence rule on a parent template,
+      // soft-delete future child instances so the next materializer run
+      // re-seeds under the NEW rule. Past + today's instances stay so
+      // history isn't rewritten. Detail UI routes "edit recurrence on
+      // an instance" to the parent id, so `current` here is always the
+      // template when this branch fires.
+      const isParentTemplate =
+        current.recurrenceRule !== null && current.recurrenceParentId === null;
+      const ruleChanged =
+        data.recurrenceRule !== undefined &&
+        (data.recurrenceRule ?? null) !== (current.recurrenceRule ?? null);
+
+      if (isParentTemplate && ruleChanged) {
+        const profile = await loadTodayUserProfile(userId);
+        const tz = profile?.timezone ?? 'UTC';
+        const todayLocal = todayInTimezone(new Date(), tz);
+        await sdb
+          .update('activities', { deletedAt: new Date() })
+          .where(
+            sql`${activities.recurrenceParentId} = ${current.id}
+              AND ${activities.deletedAt} IS NULL
+              AND ${activities.scheduledDates}[1] > ${todayLocal}::date`
+          )
+          .execute();
+        // Re-materialize so the user sees fresh instances right away
+        // (cron only runs daily at 02:00 UTC). Fire-and-forget; the row
+        // already saved successfully.
+        void materializeUserRecurrences(userId).catch((err) =>
+          logger.error('[updateActivity] re-materialize failed', err)
+        );
+      }
     }
   );
 }
