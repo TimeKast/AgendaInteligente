@@ -1,22 +1,11 @@
 'use client';
 
 /**
- * AgendaBottomNav — horizontal bottom nav, rendered on ALL breakpoints.
+ * AgendaBottomNav — responsive primary nav.
  *
- * Items: Today / Plan / Tasks / Goals / Chat / Categorías / Settings.
- * The "Plan" slot covers both /week and /month — the inner WeekMonthTabs
- * toggles between the two.
- *
- * Responsive sizing (handled via the `.ag-bottom-nav` CSS class scoped in this
- * file via a <style jsx global>-equivalent: an inline injected <style> tag):
- *   - Mobile (<768px): 64px tall, icons 16px, label 9px — compact for iPhone SE
- *     baseline (375px / 7 items ≈ 53px per cell).
- *   - Desktop (≥768px): 72px tall, icons 22px, label 13px sentence case —
- *     generous breathing room (≈110px+ per cell at 768px; scales up).
- *
- * Active state: ink-primary text + 2px top border + subtle bg-elevated fill.
- * NO blue accent — strictly warm-book tokens. Lucide icons stroke 1.5.
- * Active route inferred from `usePathname()`. Each item is a `<Link>`.
+ * Mobile (<768px): horizontal bottom nav.
+ * Desktop (>=768px): fixed left icon sidebar/rail. This preserves the desktop
+ * interaction Teddy asked for: icons live in the sidebar, not at the bottom.
  */
 
 import Link from 'next/link';
@@ -60,20 +49,115 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-// Responsive sizing via a scoped style tag. Inline `style` can't host media
-// queries; this keeps everything in the component file without touching
-// globals.css. Two icon instances (compact + generous) toggled by viewport.
 const RESPONSIVE_CSS = `
-[data-theme='agenda'] .ag-bottom-nav-list { height: 64px; }
-[data-theme='agenda'] .ag-bottom-nav-icon-desktop { display: none; }
-[data-theme='agenda'] .ag-bottom-nav-icon-mobile { display: inline-flex; }
-[data-theme='agenda'] .ag-bottom-nav-label { font-size: 9px; }
+[data-theme='agenda'] .ag-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  background-color: var(--ag-bg);
+  border-top: 1px solid var(--ag-rule);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+[data-theme='agenda'] .ag-bottom-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(${ITEMS.length}, 1fr);
+  height: 64px;
+}
+
+[data-theme='agenda'] .ag-bottom-nav-li {
+  display: flex;
+  min-width: 0;
+}
+
+[data-theme='agenda'] .ag-bottom-nav-item {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-top: 2px solid transparent;
+  color: var(--ag-ink-hint);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  font-family: var(--ag-font-body);
+  text-decoration: none;
+  transition: color var(--ag-duration-base) var(--ag-ease), background-color var(--ag-duration-base) var(--ag-ease), border-color var(--ag-duration-base) var(--ag-ease);
+  padding-inline: 2px;
+}
+
+[data-theme='agenda'] .ag-bottom-nav-item[data-active='true'] {
+  background: var(--ag-bg-elevated);
+  border-top-color: var(--ag-ink-primary);
+  color: var(--ag-ink-primary);
+}
+
+[data-theme='agenda'] .ag-bottom-nav-label {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme='agenda'] .ag-bottom-nav-item[data-active='true'] .ag-bottom-nav-label {
+  font-weight: 500;
+}
+
 @media (min-width: 768px) {
-  [data-theme='agenda'] .ag-bottom-nav-list { height: 72px; }
-  [data-theme='agenda'] .ag-bottom-nav-icon-desktop { display: inline-flex; }
-  [data-theme='agenda'] .ag-bottom-nav-icon-mobile { display: none; }
-  [data-theme='agenda'] .ag-bottom-nav-label { font-size: 13px; letter-spacing: 0.01em; }
-  [data-theme='agenda'] .ag-bottom-nav-item { gap: 4px; }
+  [data-theme='agenda'] .ag-bottom-nav {
+    top: 0;
+    right: auto;
+    bottom: 0;
+    width: 84px;
+    border-top: 0;
+    border-right: 1px solid var(--ag-rule);
+    padding-bottom: 0;
+    padding-top: calc(var(--ag-space-4) + env(safe-area-inset-top, 0px));
+  }
+
+  [data-theme='agenda'] .ag-bottom-nav-list {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ag-space-2);
+    padding: var(--ag-space-2);
+  }
+
+  [data-theme='agenda'] .ag-bottom-nav-li {
+    min-width: auto;
+  }
+
+  [data-theme='agenda'] .ag-bottom-nav-item {
+    flex: none;
+    width: 100%;
+    min-height: 64px;
+    border-top: 0;
+    border-left: 2px solid transparent;
+    border-radius: calc(var(--ag-radius-base) + 2px);
+    gap: 4px;
+    padding: var(--ag-space-2) 4px;
+  }
+
+  [data-theme='agenda'] .ag-bottom-nav-item[data-active='true'] {
+    border-left-color: var(--ag-ink-primary);
+  }
+
+  [data-theme='agenda'] .ag-bottom-nav-label {
+    font-size: 10px;
+    letter-spacing: 0.01em;
+  }
 }
 `;
 
@@ -83,76 +167,20 @@ export function AgendaBottomNav() {
   return (
     <>
       <style>{RESPONSIVE_CSS}</style>
-      <nav
-        aria-label="Navegación principal"
-        style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 30,
-          backgroundColor: 'var(--ag-bg)',
-          borderTop: '1px solid var(--ag-rule)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
-      >
-        <ul
-          className="ag-bottom-nav-list"
-          style={{
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
-            display: 'grid',
-            gridTemplateColumns: `repeat(${ITEMS.length}, 1fr)`,
-          }}
-        >
+      <nav className="ag-bottom-nav" aria-label="Navegación principal">
+        <ul className="ag-bottom-nav-list">
           {ITEMS.map(({ key, label, href, Icon }) => {
             const active = isActive(pathname, href);
             return (
-              <li key={key} style={{ display: 'flex', minWidth: 0 }}>
+              <li key={key} className="ag-bottom-nav-li">
                 <Link
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className="ag-bottom-nav-item"
-                  style={{
-                    flex: 1,
-                    height: '100%',
-                    minWidth: 0,
-                    background: active ? 'var(--ag-bg-elevated)' : 'transparent',
-                    border: 'none',
-                    borderTop: active ? '2px solid var(--ag-ink-primary)' : '2px solid transparent',
-                    color: active ? 'var(--ag-ink-primary)' : 'var(--ag-ink-hint)',
-                    display: 'inline-flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 2,
-                    cursor: 'pointer',
-                    fontFamily: 'var(--ag-font-body)',
-                    textDecoration: 'none',
-                    transition: `color var(--ag-duration-base) var(--ag-ease), background-color var(--ag-duration-base) var(--ag-ease)`,
-                    paddingInline: 2,
-                  }}
+                  data-active={active ? 'true' : 'false'}
                 >
-                  <span aria-hidden className="ag-bottom-nav-icon-mobile">
-                    <Icon size={16} strokeWidth={1.5} />
-                  </span>
-                  <span aria-hidden className="ag-bottom-nav-icon-desktop">
-                    <Icon size={22} strokeWidth={1.5} />
-                  </span>
-                  <span
-                    className="ag-bottom-nav-label"
-                    style={{
-                      fontWeight: active ? 500 : 400,
-                      letterSpacing: '0.02em',
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {label}
-                  </span>
+                  <Icon size={22} strokeWidth={1.5} aria-hidden />
+                  <span className="ag-bottom-nav-label">{label}</span>
                 </Link>
               </li>
             );
