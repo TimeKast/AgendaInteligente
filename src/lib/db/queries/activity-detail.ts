@@ -15,6 +15,13 @@ import { goalLinks } from '@/lib/db/schema/goal-links';
 
 export interface ActivityDetail extends Activity {
   projectName: string;
+  /**
+   * Recurrence rule resolved at the SERIES level. If this row is a
+   * materialized child instance, the value comes from its parent
+   * template (instances themselves carry `recurrence_rule = null`).
+   * For pure rows + parent templates it equals `this.recurrenceRule`.
+   */
+  effectiveRecurrenceRule: string | null;
 }
 
 export interface ActivityGoalRow {
@@ -45,9 +52,24 @@ export async function loadActivityDetail(
       )
     );
   if (rows.length === 0) return null;
+  const row = rows[0].activity;
+
+  // Resolve the series-level recurrence rule: instances carry NULL on
+  // their own row, but the user's mental model treats them as "this
+  // recurring task", so we pull the rule off the parent template.
+  let effectiveRecurrenceRule = row.recurrenceRule;
+  if (effectiveRecurrenceRule === null && row.recurrenceParentId !== null) {
+    const parent = await db
+      .select({ recurrenceRule: activities.recurrenceRule })
+      .from(activities)
+      .where(and(eq(activities.id, row.recurrenceParentId), eq(activities.userId, userId)));
+    effectiveRecurrenceRule = parent[0]?.recurrenceRule ?? null;
+  }
+
   return {
-    ...rows[0].activity,
+    ...row,
     projectName: rows[0].projectName ?? '',
+    effectiveRecurrenceRule,
   };
 }
 

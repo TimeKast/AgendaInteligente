@@ -22,6 +22,7 @@ import { Target, Trash2 } from 'lucide-react';
 import { AgendaHeader } from '@/components/agenda/AgendaHeader';
 import { updateActivity, transitionActivity, deleteActivity } from '@/lib/actions/activity';
 import { linkGoal, unlinkGoal } from '@/lib/actions/goal-link';
+import { RecurrencePicker, type RecurrenceRule } from '@/components/agenda/RecurrencePicker';
 import type { ActivityGoalRow } from '@/lib/db/queries/activity-detail';
 
 export interface ActivityDetailInput {
@@ -36,7 +37,19 @@ export interface ActivityDetailInput {
   durationMinutes: number | null;
   deadline: string | null;
   progressPercent: number | null;
+  /**
+   * Series-level recurrence rule. When the row is a materialized
+   * instance, this is the parent template's rule (resolved server-side
+   * in `loadActivityDetail`). Editing it always writes to the series.
+   */
   recurrenceRule: string | null;
+  /**
+   * When non-null, this row is a materialized child instance and the
+   * recurrence rule lives on the parent. The save handler routes the
+   * `recurrenceRule` write to this id instead of `id`. NULL = pure row
+   * or parent template (recurrence rule writes to `id` directly).
+   */
+  recurrenceParentId: string | null;
 }
 
 interface Props {
@@ -61,6 +74,9 @@ export function ActivityDetailClient({ initial, goals }: Props) {
   const [deadline, setDeadline] = useState(initial.deadline ?? '');
   const [progress, setProgress] = useState(initial.progressPercent ?? 0);
   const [status, setStatus] = useState(initial.status);
+  const [recurrence, setRecurrence] = useState<RecurrenceRule>(
+    (initial.recurrenceRule ?? null) as RecurrenceRule
+  );
   const [linkedGoals, setLinkedGoals] = useState<Set<string>>(
     () => new Set(goals.filter((g) => g.linked).map((g) => g.id))
   );
@@ -91,14 +107,20 @@ export function ActivityDetailClient({ initial, goals }: Props) {
     });
   }
 
+  const recurrenceDirty = (recurrence ?? null) !== (initial.recurrenceRule ?? null);
   const dirty =
     title !== initial.title ||
     description !== (initial.description ?? '') ||
     deadline !== (initial.deadline ?? '') ||
-    progress !== (initial.progressPercent ?? 0);
+    progress !== (initial.progressPercent ?? 0) ||
+    recurrenceDirty;
 
   function handleSave() {
     startTransition(async () => {
+      // Per-row fields: title / description / deadline / progress all
+      // belong to THIS row. Recurrence rule, on the other hand, lives
+      // on the series — when the row is a materialized instance we
+      // write it to the parent template instead.
       const result = await updateActivity({
         id: initial.id,
         title: title.trim(),
@@ -110,6 +132,20 @@ export function ActivityDetailClient({ initial, goals }: Props) {
         toast.error(`No se pudo guardar: ${result.error}`);
         return;
       }
+
+      if (recurrenceDirty) {
+        const targetId = initial.recurrenceParentId ?? initial.id;
+        const r2 = await updateActivity({
+          id: targetId,
+          recurrenceRule: recurrence ?? null,
+        });
+        if (r2.error) {
+          toast.error(`Se guardó la tarea pero no la recurrencia: ${r2.error}`);
+          router.refresh();
+          return;
+        }
+      }
+
       toast.success('Guardado.');
       router.refresh();
     });
@@ -256,16 +292,36 @@ export function ActivityDetailClient({ initial, goals }: Props) {
           />
         </Label>
 
-        {(initial.scheduledDates.length > 0 || initial.scheduledTime || initial.recurrenceRule) && (
+        {(initial.scheduledDates.length > 0 || initial.scheduledTime) && (
           <Label text="Programación">
             <p style={{ margin: 0, ...textStyle, color: 'var(--ag-ink-soft)' }}>
               {initial.scheduledDates.length > 0 ? initial.scheduledDates.join(', ') : 'Sin fecha'}
               {initial.scheduledTime && ` · ${initial.scheduledTime.slice(0, 5)}`}
               {initial.durationMinutes && ` · ${initial.durationMinutes} min`}
-              {initial.recurrenceRule && ` · ${initial.recurrenceRule}`}
             </p>
           </Label>
         )}
+
+        <Label text="Recurrencia">
+          <RecurrencePicker
+            value={recurrence}
+            onChange={setRecurrence}
+            referenceDate={initial.scheduledDates[0]}
+          />
+          {initial.recurrenceParentId && (
+            <p
+              style={{
+                margin: '6px 0 0',
+                fontFamily: 'var(--ag-font-display)',
+                fontStyle: 'italic',
+                fontSize: 12,
+                color: 'var(--ag-ink-hint)',
+              }}
+            >
+              Cambiar la recurrencia afecta a toda la serie.
+            </p>
+          )}
+        </Label>
 
         <Label text="Metas vinculadas">
           {goals.length === 0 ? (

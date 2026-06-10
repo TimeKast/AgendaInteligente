@@ -42,7 +42,10 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         durationMinutes: activity.durationMinutes,
         deadline: activity.deadline ? activity.deadline.toISOString().slice(0, 10) : null,
         progressPercent: activity.progressPercent,
-        recurrenceRule: activity.recurrenceRule,
+        // Series-level rule: same value the picker reads + the save
+        // path writes to (target depends on recurrenceParentId below).
+        recurrenceRule: activity.effectiveRecurrenceRule,
+        recurrenceParentId: activity.recurrenceParentId,
       }}
       goals={goals}
     />

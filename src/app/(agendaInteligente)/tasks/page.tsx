@@ -34,7 +34,15 @@ export default async function TasksPage() {
   const todayDate = todayInTimezone(new Date(), profile.timezone);
 
   const [listResult, projectLabelById, projectRows, categoryRows] = await Promise.all([
-    listActivities({ date: todayDate, includeDone: true }),
+    // collapseRecurringInstances: keep ONE row per recurring parent in
+    // the browse list. /tasks previously kept every instance visible
+    // (default false), but a daily-yoga task floods the list with 14
+    // near-identical rows that confuse status edits + grouping. The
+    // dedup picks the "best" instance (today's, else next-up, else
+    // most recent overdue) so the row's status + title still reflect
+    // real DB state — the rest of the series stays available via the
+    // detail screen.
+    listActivities({ date: todayDate, includeDone: true, collapseRecurringInstances: true }),
     loadProjectLabelMap(userId),
     listProjects(userId),
     listCategories(userId),
