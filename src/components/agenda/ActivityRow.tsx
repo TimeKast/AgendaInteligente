@@ -24,7 +24,6 @@ import {
   ArrowUp,
   ArrowUpRight,
   Check,
-  MinusCircle,
   Repeat,
   XCircle,
 } from 'lucide-react';
@@ -126,7 +125,7 @@ function ProjectDot({ label }: { label: string }) {
   );
 }
 
-export type ActivityStatus = 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked' | 'cancelled';
+export type ActivityStatus = 'todo' | 'in_progress' | 'done' | 'blocked' | 'cancelled';
 
 interface ActivityRowProps {
   title: string;
@@ -184,7 +183,7 @@ function Checkbox({ status }: { status: ActivityStatus }) {
   if (status === 'done') {
     return (
       <span
-        aria-label="Hecha"
+        aria-label="Cerrada"
         style={{
           ...base,
           backgroundColor: 'var(--ag-ink-primary)',
@@ -208,20 +207,6 @@ function Checkbox({ status }: { status: ActivityStatus }) {
           boxShadow: 'inset 0 0 0 1px var(--ag-ink-soft)',
         }}
       />
-    );
-  }
-
-  if (status === 'skipped') {
-    return (
-      <span
-        aria-label="Saltada"
-        style={{
-          ...base,
-          color: 'var(--ag-ink-hint)',
-        }}
-      >
-        <MinusCircle size={14} strokeWidth={1.5} />
-      </span>
     );
   }
 
@@ -281,10 +266,9 @@ export function ActivityRow({
 }: ActivityRowProps) {
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
-  const isSkipped = status === 'skipped';
   const isCancelled = status === 'cancelled';
-  // Terminal "closed" set: both done and cancelled get the dim/strike-through
-  // look so they read as "out of play" at a glance.
+  // Terminal "closed" set: done (Cerrada) + cancelled both get the
+  // dim/strike-through look so they read as "out of play" at a glance.
   const isClosed = isDone || isCancelled;
   const showProgress = !isClosed && (progressPercent ?? 0) > 0;
 
@@ -331,7 +315,7 @@ export function ActivityRow({
               fontFamily: 'var(--ag-font-body)',
               fontSize: 16,
               lineHeight: 1.4,
-              color: isClosed || isSkipped ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
+              color: isClosed ? 'var(--ag-ink-hint)' : 'var(--ag-ink-primary)',
               fontStyle: isInProgress ? 'italic' : 'normal',
               textDecoration: isClosed ? 'line-through' : 'none',
               textDecorationColor: 'var(--ag-rule)',

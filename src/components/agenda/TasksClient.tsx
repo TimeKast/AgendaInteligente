@@ -33,7 +33,10 @@ import {
 } from '@/components/agenda/ActivityStatusModal';
 import { createActivity, transitionActivity } from '@/lib/actions/activity';
 
-type StatusFilter = 'open' | 'done' | 'skipped' | 'blocked' | 'all';
+// Filter buckets. 'closed' = done (Cerrada). 'cancelled' = explicit drop.
+// Both are hidden by default in the assignable lists (today/week pools)
+// but stay browsable here under their own chips.
+type StatusFilter = 'open' | 'closed' | 'cancelled' | 'blocked' | 'all';
 type SortKey = 'date' | 'priority' | 'deadline' | 'project';
 
 export interface Task {
@@ -66,7 +69,7 @@ interface TasksClientProps {
   categories: QuickAddCategory[];
 }
 
-// Disjoint slices so counts add up: open + done + skipped + blocked === all.
+// Disjoint slices so counts add up: open + closed + cancelled + blocked === all.
 // A blocked task is NOT "abierta" — it's waiting on something external and
 // gets its own bucket.
 const OPEN_STATUSES: ActivityStatus[] = ['todo', 'in_progress'];
@@ -75,10 +78,10 @@ function matchesFilter(task: Task, filter: StatusFilter): boolean {
   switch (filter) {
     case 'open':
       return OPEN_STATUSES.includes(task.status);
-    case 'done':
+    case 'closed':
       return task.status === 'done';
-    case 'skipped':
-      return task.status === 'skipped';
+    case 'cancelled':
+      return task.status === 'cancelled';
     case 'blocked':
       return task.status === 'blocked';
     case 'all':
@@ -133,15 +136,15 @@ export function TasksClient({ initialTasks, todayDate, projects, categories }: T
   const counts = useMemo(() => {
     const c: Record<StatusFilter, number> = {
       open: 0,
-      done: 0,
-      skipped: 0,
+      closed: 0,
+      cancelled: 0,
       blocked: 0,
       all: tasks.length,
     };
     for (const t of tasks) {
       if (OPEN_STATUSES.includes(t.status)) c.open++;
-      if (t.status === 'done') c.done++;
-      if (t.status === 'skipped') c.skipped++;
+      if (t.status === 'done') c.closed++;
+      if (t.status === 'cancelled') c.cancelled++;
       if (t.status === 'blocked') c.blocked++;
     }
     return c;
@@ -209,10 +212,9 @@ export function TasksClient({ initialTasks, todayDate, projects, categories }: T
     }
     const mapped: Record<
       ExtendedActivityStatus,
-      'done' | 'skipped' | 'blocked' | 'cancelled' | 'pending' | null
+      'done' | 'blocked' | 'cancelled' | 'pending' | null
     > = {
       done: 'done',
-      skipped: 'skipped',
       blocked: 'blocked',
       cancelled: 'cancelled',
       todo: 'pending',
@@ -327,10 +329,10 @@ export function TasksClient({ initialTasks, todayDate, projects, categories }: T
               value={filter}
               onChange={setFilter}
               options={[
-                { id: 'open', label: `Por hacer (${counts.open})` },
-                { id: 'done', label: `Hechas (${counts.done})` },
-                { id: 'skipped', label: `Saltadas (${counts.skipped})` },
+                { id: 'open', label: `Pendientes (${counts.open})` },
                 { id: 'blocked', label: `Bloqueadas (${counts.blocked})` },
+                { id: 'closed', label: `Cerradas (${counts.closed})` },
+                { id: 'cancelled', label: `Canceladas (${counts.cancelled})` },
                 { id: 'all', label: `Todas (${counts.all})` },
               ]}
             />

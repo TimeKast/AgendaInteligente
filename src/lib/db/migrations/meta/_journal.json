@@ -211,6 +211,13 @@
       "when": 1781026950058,
       "tag": "0029_dear_power_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1781130000000,
+      "tag": "0030_drop_skipped_status",
+      "breakpoints": true
     }
   ]
 }

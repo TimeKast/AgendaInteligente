@@ -79,7 +79,7 @@ describe('closeDay — routing', () => {
       oneLine: '',
     });
 
-    expect(transitionMock).toHaveBeenCalledWith({ id: validId(3), toStatus: 'skipped' });
+    expect(transitionMock).toHaveBeenCalledWith({ id: validId(3), toStatus: 'cancelled' });
   });
 
   it('always writes the DaySheet summary at the end (even when empty)', async () => {

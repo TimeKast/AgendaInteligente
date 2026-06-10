@@ -195,17 +195,16 @@ export async function updateActivity(input: unknown): Promise<ActionResult> {
  * (which is permissive on status for internal/admin paths), this action:
  *
  *   1. Validates the (from, to) edge against the BR-8 matrix
- *      — `done → skipped` etc are rejected with ActionError.
+ *      — `done → cancelled` etc are rejected with ActionError.
  *   2. Enforces reason requirements:
  *      - `blocked` REQUIRES `reasonText` (textarea filled).
- *      - `skipped` accepts optional `reasonCategory` + `reasonText`.
- *      - Other targets ignore reason inputs.
+ *      - Other targets ignore reason inputs (skipped was retired in 0030).
  *   3. Applies BR-17 (status=done forces progress=100 + sets completed_at).
  *   4. Clears `completed_at` when leaving `done` (undo flow).
  *   5. Clears stale `reason_*` when transitioning to `pending` (re-activate).
  *   6. Logs a stub for the agent challenge layer (ISSUE-060) — when the
- *      user marks `skipped`/`blocked` without a reason category, the
- *      challenge system can pick up the gap.
+ *      user marks `blocked` without a reason category, the challenge
+ *      system can pick up the gap.
  */
 export async function transitionActivity(input: unknown): Promise<ActionResult> {
   return await withSelf(
@@ -269,8 +268,8 @@ export async function transitionActivity(input: unknown): Promise<ActionResult> 
         .execute();
 
       // ISSUE-060 stub — agent challenge picks up activities transitioned
-      // to skipped/blocked without a reason category.
-      if ((toStatus === 'skipped' || toStatus === 'blocked') && !data.reasonCategory) {
+      // to blocked without a reason category. (skipped retired in 0030.)
+      if (toStatus === 'blocked' && !data.reasonCategory) {
         logger.info(
           `[activity] transition ${fromStatus}→${toStatus} without reason_category (userId=${userId}, activityId=${data.id})`
         );

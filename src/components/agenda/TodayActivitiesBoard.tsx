@@ -367,7 +367,7 @@ interface TodayActivitiesBoardProps {
    */
   onTransitionPersist?: (
     id: string,
-    toStatus: 'done' | 'skipped' | 'blocked' | 'cancelled' | 'pending'
+    toStatus: 'done' | 'blocked' | 'cancelled' | 'pending'
   ) => void;
   /**
    * Server-loaded initial state. When provided, replaces the prototype
@@ -670,10 +670,9 @@ export function TodayActivitiesBoard({
     // expects. 'todo' is the rest state — no transition to record.
     const mapped: Record<
       ExtendedActivityStatus,
-      'done' | 'skipped' | 'blocked' | 'cancelled' | 'pending' | null
+      'done' | 'blocked' | 'cancelled' | 'pending' | null
     > = {
       done: 'done',
-      skipped: 'skipped',
       blocked: 'blocked',
       cancelled: 'cancelled',
       todo: 'pending',

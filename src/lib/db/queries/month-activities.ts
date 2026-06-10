@@ -19,7 +19,7 @@ import { addDaysIsoYmd } from '@/lib/domain/day-calc';
 export interface MonthActivitySummary {
   id: string;
   title: string;
-  status: 'todo' | 'in_progress' | 'done' | 'skipped' | 'blocked';
+  status: 'todo' | 'in_progress' | 'done' | 'blocked' | 'cancelled';
   priority: number;
   scheduledTime: string | null;
   scheduledDates: string[];
@@ -53,7 +53,7 @@ export interface MonthActivitiesResult {
 
 function uiStatus(s: string): MonthActivitySummary['status'] {
   if (s === 'in_progress') return 'in_progress';
-  if (s === 'done' || s === 'skipped' || s === 'blocked') return s;
+  if (s === 'done' || s === 'blocked' || s === 'cancelled') return s;
   return 'todo';
 }
 

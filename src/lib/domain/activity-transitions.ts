@@ -6,29 +6,28 @@
  * `requiresReason` to validate before persisting; the UI imports
  * `getAllowedNextStatuses` to render only valid action buttons.
  *
- * Matrix per BR-8 (06_DATA_MODEL.md §BR-8) + cancelled (ISSUE-tbd):
+ * Matrix per BR-8 (06_DATA_MODEL.md §BR-8). `skipped` was retired in
+ * migration 0030 — every "I'm not going to do this" reads as
+ * `cancelled` now, so the matrix is 5 states:
  *
- *   pending     → in_progress | done | skipped | blocked | cancelled
+ *   pending     → in_progress | done | blocked | cancelled
  *   in_progress → done | blocked | pending | cancelled
- *   done        → pending                       (undo only — no skip/block/cancel)
- *   skipped     → pending | cancelled
+ *   done        → pending                  (undo only — no block/cancel)
  *   blocked     → in_progress | pending | cancelled
- *   cancelled   → pending                       (un-cancel only)
+ *   cancelled   → pending                  (un-cancel only)
  *
  * Forbidden transitions (notable):
- *   - done → skipped/blocked/cancelled  (re-classifying a finished task makes
- *                                        no sense; path is done → pending → X)
- *   - skipped → in_progress/done/blocked  (must go through pending)
- *   - cancelled → in_progress/done/skipped/blocked  (must go through pending)
+ *   - done → blocked/cancelled  (re-classifying a finished task makes
+ *                                no sense; path is done → pending → X)
+ *   - cancelled → in_progress/done/blocked  (must go through pending)
  */
 
 import type { ActivityStatus } from '@/lib/db/schema/activities';
 
 const ALLOWED: Record<ActivityStatus, ReadonlySet<ActivityStatus>> = {
-  pending: new Set<ActivityStatus>(['in_progress', 'done', 'skipped', 'blocked', 'cancelled']),
+  pending: new Set<ActivityStatus>(['in_progress', 'done', 'blocked', 'cancelled']),
   in_progress: new Set<ActivityStatus>(['done', 'blocked', 'pending', 'cancelled']),
   done: new Set<ActivityStatus>(['pending']),
-  skipped: new Set<ActivityStatus>(['pending', 'cancelled']),
   blocked: new Set<ActivityStatus>(['in_progress', 'pending', 'cancelled']),
   cancelled: new Set<ActivityStatus>(['pending']),
 };
@@ -54,17 +53,15 @@ export function getAllowedNextStatuses(from: ActivityStatus): ActivityStatus[] {
  * Which transitions require a reason payload from the user.
  *
  *   - `blocked`: text reason REQUIRED (UI form must have textarea).
- *   - `skipped`: reason_category recommended (UI shows a quick-pick); text
- *     optional. The action allows skipped without reason but flags it for
- *     the agent challenge layer (ISSUE-060).
  *   - Everything else: no reason input.
+ *
+ * (`skipped` used to take a soft reason — retired in migration 0030.)
  */
 export function reasonRequirementFor(to: ActivityStatus): {
   textRequired: boolean;
   categoryAllowed: boolean;
 } {
   if (to === 'blocked') return { textRequired: true, categoryAllowed: true };
-  if (to === 'skipped') return { textRequired: false, categoryAllowed: true };
   return { textRequired: false, categoryAllowed: false };
 }
 

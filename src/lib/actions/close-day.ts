@@ -58,10 +58,10 @@ export async function closeDay(input: unknown): Promise<ActionResult<CloseDayRes
         continue;
       }
 
-      // outcome === 'missed' → mark skipped. Reason category omitted on
-      // purpose: the agent challenge layer picks up uncategorized skips
-      // and asks the user why later.
-      const r = await transitionActivity({ id: a.id, toStatus: 'skipped' });
+      // outcome === 'missed' → mark cancelled. Used to be 'skipped' but
+      // that state was retired in migration 0030 — "didn't do it" reads
+      // as cancellation now, and the row stops surfacing in lists.
+      const r = await transitionActivity({ id: a.id, toStatus: 'cancelled' });
       if (r.error) {
         partialErrors.push({ activityId: a.id, error: r.error });
         continue;

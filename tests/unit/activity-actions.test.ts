@@ -425,11 +425,11 @@ describe('transitionActivity — BR-8 enforcement', () => {
     expect(set.completedAt).toBeInstanceOf(Date);
   });
 
-  it('rejects done → skipped (BR-8 forbidden)', async () => {
+  it('rejects done → cancelled (BR-8 forbidden — pick one terminal at a time)', async () => {
     scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'done', completedAt: new Date() }]];
 
     const { transitionActivity } = await import('@/lib/actions/activity');
-    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'skipped' });
+    const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'cancelled' });
 
     expect(result.error).toBe('Transición no permitida');
     expect(scopedState.updated).toBeUndefined();
@@ -444,8 +444,8 @@ describe('transitionActivity — BR-8 enforcement', () => {
     expect(result.error).toBe('Transición no permitida');
   });
 
-  it('rejects skipped → done (must route via pending)', async () => {
-    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'skipped' }]];
+  it('rejects cancelled → done (must route via pending)', async () => {
+    scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'cancelled' }]];
 
     const { transitionActivity } = await import('@/lib/actions/activity');
     const result = await transitionActivity({ id: ACTIVITY_ID, toStatus: 'done' });
@@ -499,27 +499,26 @@ describe('transitionActivity — reason capture', () => {
     expect(set.reasonCategory).toBe('blocked');
   });
 
-  it('accepts → skipped without reasonText (optional)', async () => {
+  it('accepts → cancelled without reason payload (terminal, no challenge)', async () => {
     scopedState.selectResults = [[{ id: ACTIVITY_ID, status: 'pending' }]];
 
     const { transitionActivity } = await import('@/lib/actions/activity');
     const result = await transitionActivity({
       id: ACTIVITY_ID,
-      toStatus: 'skipped',
-      reasonCategory: 'time',
+      toStatus: 'cancelled',
     });
 
     expect(result.error).toBeUndefined();
     const set = scopedState.updated?.set as Record<string, unknown>;
-    expect(set.status).toBe('skipped');
-    expect(set.reasonCategory).toBe('time');
+    expect(set.status).toBe('cancelled');
   });
 
   it('rejects invalid reasonCategory at Zod layer', async () => {
     const { transitionActivity } = await import('@/lib/actions/activity');
     const result = await transitionActivity({
       id: ACTIVITY_ID,
-      toStatus: 'skipped',
+      toStatus: 'blocked',
+      reasonText: 'Espero feedback',
       reasonCategory: 'bogus_value',
     });
 
@@ -545,14 +544,14 @@ describe('transitionActivity — undo + reactivate semantics', () => {
     expect(set.completedAt).toBeNull();
   });
 
-  it('skipped → pending clears reason_* fields', async () => {
+  it('cancelled → pending clears reason_* fields (if any persisted from a prior blocked)', async () => {
     scopedState.selectResults = [
       [
         {
           id: ACTIVITY_ID,
-          status: 'skipped',
+          status: 'cancelled',
           reasonCategory: 'time',
-          reasonNotDone: 'No tuve tiempo',
+          reasonNotDone: 'Ya no aplica',
         },
       ],
     ];

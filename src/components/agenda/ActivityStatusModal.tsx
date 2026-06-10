@@ -5,24 +5,18 @@
  * tap on the row "⋯" menu (or, in spec, long-press / swipe).
  *
  * Status options:
- *   ◯ Pending / ● In progress / ◯ Done / ◯ Skipped / ◯ Blocked / ◯ Cancelled
+ *   ◯ Pendiente / ● En proceso / ◯ Bloqueada / ◯ Cancelada / ◯ Cerrada
  *
- * Selecting Skipped or Blocked expands a reason form (category radio +
- * optional textarea). Cancelled is terminal but takes no reason (the
- * agent doesn't challenge cancellations the way it does skips/blocks).
+ * Selecting Bloqueada expands a reason form (category radio + optional
+ * textarea). Cancelada + Cerrada are terminal and take no reason; both
+ * hide the activity from "asignable" lists.
  * On confirm, calls onApply with the chosen status + reason.
  */
 
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
-export type ExtendedActivityStatus =
-  | 'todo'
-  | 'in_progress'
-  | 'done'
-  | 'skipped'
-  | 'blocked'
-  | 'cancelled';
+export type ExtendedActivityStatus = 'todo' | 'in_progress' | 'done' | 'blocked' | 'cancelled';
 
 export interface StatusReason {
   category: 'tiempo' | 'prioridad' | 'bloqueado' | 'no quise' | 'otro';
@@ -38,12 +32,11 @@ interface ActivityStatusModalProps {
 }
 
 const STATUS_OPTIONS: Array<{ id: ExtendedActivityStatus; label: string }> = [
-  { id: 'todo', label: 'Por hacer' },
-  { id: 'in_progress', label: 'En progreso' },
-  { id: 'done', label: 'Hecha' },
-  { id: 'skipped', label: 'Saltada' },
+  { id: 'todo', label: 'Pendiente' },
+  { id: 'in_progress', label: 'En proceso' },
   { id: 'blocked', label: 'Bloqueada' },
   { id: 'cancelled', label: 'Cancelada' },
+  { id: 'done', label: 'Cerrada' },
 ];
 
 const REASON_CATEGORIES: StatusReason['category'][] = [
@@ -83,7 +76,7 @@ export function ActivityStatusModal({
 
   if (!open) return null;
 
-  const needsReason = status === 'skipped' || status === 'blocked';
+  const needsReason = status === 'blocked';
 
   function submit() {
     if (needsReason) {

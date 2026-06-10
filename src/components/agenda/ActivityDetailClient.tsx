@@ -44,13 +44,15 @@ interface Props {
   goals: ActivityGoalRow[];
 }
 
-const STATUS_OPTIONS: Array<{ value: 'done' | 'skipped' | 'blocked' | 'pending'; label: string }> =
-  [
-    { value: 'pending', label: 'Por hacer' },
-    { value: 'done', label: 'Hecha' },
-    { value: 'skipped', label: 'Saltada' },
-    { value: 'blocked', label: 'Bloqueada' },
-  ];
+const STATUS_OPTIONS: Array<{
+  value: 'done' | 'blocked' | 'cancelled' | 'pending';
+  label: string;
+}> = [
+  { value: 'pending', label: 'Pendiente' },
+  { value: 'blocked', label: 'Bloqueada' },
+  { value: 'cancelled', label: 'Cancelada' },
+  { value: 'done', label: 'Cerrada' },
+];
 
 export function ActivityDetailClient({ initial, goals }: Props) {
   const router = useRouter();
@@ -113,7 +115,7 @@ export function ActivityDetailClient({ initial, goals }: Props) {
     });
   }
 
-  function handleStatusChange(next: 'done' | 'skipped' | 'blocked' | 'pending') {
+  function handleStatusChange(next: 'done' | 'blocked' | 'cancelled' | 'pending') {
     const prev = status;
     setStatus(next);
     startTransition(async () => {

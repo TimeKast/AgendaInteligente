@@ -15,12 +15,11 @@ import {
 import { ACTIVITY_STATUSES, type ActivityStatus } from '@/lib/db/schema/activities';
 
 // Per BR-8 §05_BUSINESS_RULES.md (source of truth — keep in sync).
-// Cancelled added as a terminal state (with undo path back to pending).
+// `skipped` retired in migration 0030 — collapses into `cancelled`.
 const EXPECTED: Record<ActivityStatus, ActivityStatus[]> = {
-  pending: ['in_progress', 'done', 'skipped', 'blocked', 'cancelled'],
+  pending: ['in_progress', 'done', 'blocked', 'cancelled'],
   in_progress: ['done', 'blocked', 'pending', 'cancelled'],
   done: ['pending'],
-  skipped: ['pending', 'cancelled'],
   blocked: ['in_progress', 'pending', 'cancelled'],
   cancelled: ['pending'],
 };
@@ -53,20 +52,16 @@ describe('isAllowedTransition — BR-8 matrix', () => {
     }
   });
 
-  it('explicitly rejects done → skipped (BR-8 forbidden)', () => {
-    expect(isAllowedTransition('done', 'skipped')).toBe(false);
-  });
-
   it('explicitly rejects done → blocked (BR-8 forbidden)', () => {
     expect(isAllowedTransition('done', 'blocked')).toBe(false);
   });
 
-  it('explicitly rejects skipped → done (must go via pending)', () => {
-    expect(isAllowedTransition('skipped', 'done')).toBe(false);
+  it('explicitly rejects done → cancelled (must go via pending)', () => {
+    expect(isAllowedTransition('done', 'cancelled')).toBe(false);
   });
 
-  it('explicitly rejects skipped → in_progress (must go via pending)', () => {
-    expect(isAllowedTransition('skipped', 'in_progress')).toBe(false);
+  it('explicitly rejects cancelled → in_progress (must go via pending)', () => {
+    expect(isAllowedTransition('cancelled', 'in_progress')).toBe(false);
   });
 });
 
@@ -95,15 +90,8 @@ describe('reasonRequirementFor', () => {
     });
   });
 
-  it('skipped accepts category but does not require text', () => {
-    expect(reasonRequirementFor('skipped')).toEqual({
-      textRequired: false,
-      categoryAllowed: true,
-    });
-  });
-
-  it('done / pending / in_progress accept no reason input', () => {
-    for (const s of ['done', 'pending', 'in_progress'] as ActivityStatus[]) {
+  it('cancelled / done / pending / in_progress accept no reason input', () => {
+    for (const s of ['cancelled', 'done', 'pending', 'in_progress'] as ActivityStatus[]) {
       expect(reasonRequirementFor(s)).toEqual({
         textRequired: false,
         categoryAllowed: false,

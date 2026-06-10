@@ -154,7 +154,6 @@ export const ACTIVITY_STATUSES = [
   'pending',
   'in_progress',
   'done',
-  'skipped',
   'blocked',
   'cancelled',
 ] as const;
