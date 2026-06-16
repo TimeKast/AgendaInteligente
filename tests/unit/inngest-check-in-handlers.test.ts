@@ -171,7 +171,7 @@ describe('runMiddayCheckIn — always fires', () => {
     );
   });
 
-  it('fires when there is no planned win — {win} placeholder is stripped', async () => {
+  it('fires with the generic question when there is no planned win and no today-pending activity', async () => {
     vi.resetModules();
     state.daySheetRow = null;
     state.pendingActivities = [];
@@ -184,17 +184,22 @@ describe('runMiddayCheckIn — always fires', () => {
     expect(enqueueMock).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'midday_check',
-        // Default Spanish midday body without the {win} substitution
-        // would have left a dangling "ibas a ." — the resolver strips
-        // the token + the trailing dot cleanly.
-        body: expect.not.stringContaining('{win}'),
+        // No-anchor + default body → swap for the generic "¿Cómo vas
+        // con el día?" instead of stripping `{win}` and leaving the
+        // sentence broken.
+        body: '¿Cómo vas con el día?',
       })
     );
   });
 
-  it('falls back to a pending activity title when no winsPlanned but pending exists', async () => {
+  it('falls back to a today-scheduled pending activity title when winsPlanned is empty', async () => {
     vi.resetModules();
     state.daySheetRow = null;
+    // The fanout test mock returns this row for the activities query;
+    // in production the resolveMiddayAnchor query also requires that
+    // the row be scheduled for `date`, but the mock predicates aren't
+    // exercised here — we're checking that whatever the query returns
+    // gets used as the anchor.
     state.pendingActivities = [{ title: 'enviar email' }];
     const { runMiddayCheckIn } = await import('@/lib/inngest/functions/check-in-handlers');
     const result = await runMiddayCheckIn({

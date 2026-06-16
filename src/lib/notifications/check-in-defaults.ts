@@ -12,6 +12,16 @@
  * happens server-side before push delivery. Bodies without the token
  * are sent verbatim.
  *
+ * No-anchor handling: when `{win}` is in the body but the resolver
+ * receives no anchor (user didn't plan a win this morning), the result
+ * depends on whether the body came from a USER override or the default.
+ *   - Default body: swap for `NO_ANCHOR_FALLBACK[lang].midday` — a
+ *     clean generic question. Stripping the token leaves "Dijiste que
+ *     ibas a." which reads broken.
+ *   - User override: strip the token + collapse whitespace and trailing
+ *     punctuation. The user wrote the surrounding sentence; we respect
+ *     it rather than substituting our own.
+ *
  * Linked: FT-085, US-085, check-in-handlers.
  */
 
@@ -34,6 +44,17 @@ const DEFAULTS: Record<Lang, Record<DailySlot, SlotCopy>> = {
     midday: { title: 'Quick check', body: "You said you'd {win}. How's it going?" },
     evening: { title: 'Closing the day', body: 'One sentence to close?' },
   },
+};
+
+/**
+ * Body used when the DEFAULT midday body contains `{win}` but no anchor
+ * is available. We don't try to strip the token because the rest of the
+ * default sentence depends on it ("Dijiste que ibas a ___"). A generic
+ * question lands better than a half-sentence.
+ */
+const NO_ANCHOR_FALLBACK_MIDDAY: Record<Lang, string> = {
+  es: '¿Cómo vas con el día?',
+  en: "How's the day going?",
 };
 
 /** Default title + body for a slot in a given language. */
@@ -77,14 +98,20 @@ export function resolveCheckInCopy(
         : overrides.eveningBody;
 
   const title = titleOverride && titleOverride.trim().length > 0 ? titleOverride.trim() : def.title;
-  let body = bodyOverride && bodyOverride.trim().length > 0 ? bodyOverride.trim() : def.body;
+  const bodyFromOverride = !!(bodyOverride && bodyOverride.trim().length > 0);
+  let body = bodyFromOverride ? bodyOverride!.trim() : def.body;
+  const hasAnchor = !!(anchor && anchor.trim().length > 0);
 
   if (body.includes('{win}')) {
-    if (anchor && anchor.trim().length > 0) {
-      body = body.replaceAll('{win}', anchor.trim());
+    if (hasAnchor) {
+      body = body.replaceAll('{win}', anchor!.trim());
+    } else if (slot === 'midday' && !bodyFromOverride) {
+      // Default midday body would leave "Dijiste que ibas a." — swap
+      // for a clean generic question instead.
+      body = NO_ANCHOR_FALLBACK_MIDDAY[lang];
     } else {
-      // No anchor available — drop the token and collapse double spaces /
-      // trailing punctuation that would look broken.
+      // Custom body that uses `{win}` but no anchor — strip the token
+      // and tidy. We don't substitute a sentence the user didn't write.
       body = body
         .replaceAll('{win}', '')
         .replace(/\s{2,}/g, ' ')

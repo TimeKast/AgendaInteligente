@@ -14,7 +14,7 @@
  * Linked: FT-080..082, FT-104, FT-085, US-080..082, US-085, AI-9.
  */
 
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { users } from '@/lib/db/schema/users';
 import { daySheets } from '@/lib/db/schema/day-sheets';
@@ -136,7 +136,17 @@ export const morningCheckInHandler = getInngest().createFunction(
 /**
  * Best-effort win anchor for the midday `{win}` substitution. Returns
  * an empty string when the user hasn't recorded a planned win — the
- * resolver drops the token from the body without leaving "" debris.
+ * resolver swaps the default body for a clean generic question (no
+ * "Dijiste que ibas a." debris) and custom bodies just lose the token.
+ *
+ * Source priority:
+ *   1. `day_sheets.wins_planned[0]` for `date` — what the user told the
+ *      agent in this morning's check-in.
+ *   2. The first pending activity that's **scheduled FOR `date`** — a
+ *      concrete commitment on today's plate. We deliberately do NOT
+ *      pull from the broader backlog: a random pending row from a past
+ *      weekly objective is irrelevant to the nag's "how's today going"
+ *      framing and reads as the system referencing the wrong thing.
  */
 export async function resolveMiddayAnchor(userId: string, date: string): Promise<string> {
   const sheetRows = await db
@@ -146,8 +156,9 @@ export async function resolveMiddayAnchor(userId: string, date: string): Promise
   const wins = sheetRows[0]?.winsPlanned ?? [];
   if (wins.length > 0) return wins[0];
 
-  // No planned win → use the next pending scheduled activity title as
-  // a softer fallback, so `{win}` still resolves to something concrete.
+  // Only TODAY's scheduled activities qualify. `scheduled_dates` is a
+  // text[] of YYYY-MM-DD strings in the user's TZ; `= ANY` is the
+  // Postgres-native containment check.
   const pending = await db
     .select({ title: activities.title })
     .from(activities)
@@ -155,7 +166,8 @@ export async function resolveMiddayAnchor(userId: string, date: string): Promise
       and(
         eq(activities.userId, userId),
         eq(activities.status, 'pending'),
-        gt(activities.scheduledTime, '00:00')
+        gt(activities.scheduledTime, '00:00'),
+        sql`${date} = ANY(${activities.scheduledDates})`
       )
     )
     .limit(1);
