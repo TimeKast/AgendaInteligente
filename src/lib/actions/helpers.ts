@@ -36,6 +36,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { requirePermission, type Resource, type Action } from '@/lib/auth/permissions';
 import { ActionError, type ActionResult } from '@/lib/actions/types';
+import { recordActivity } from '@/lib/notifications/activity-tracker';
 import type { ZodSchema } from 'zod';
 
 // =============================================================================
@@ -115,6 +116,13 @@ export async function withAuth<TInput, TOutput = void>(
     return { error: 'Debes iniciar sesión' };
   }
 
+  // Activity tracker — any authenticated user action counts as the
+  // user being "in the app", which pauses the nag check-in chain for
+  // today. `recordActivity` is internally throttled to 1/min, so a
+  // burst of mutations doesn't hammer Postgres. Fire-and-forget so
+  // the action handler isn't blocked on a notification-prefs write.
+  void recordActivity(session.user.id);
+
   // 2. Permission check
   try {
     requirePermission(session.user.role, options.resource, options.action);
@@ -191,6 +199,9 @@ export async function withSelf<TInput, TOutput = void>(
   if (!session?.user?.id) {
     return { error: 'Debes iniciar sesión' };
   }
+
+  // Same activity tracking as withAuth — see the comment there for why.
+  void recordActivity(session.user.id);
 
   const hasSchema = 'schema' in options && options.schema != null;
 
