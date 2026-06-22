@@ -23,6 +23,10 @@ const nagInterval = z
 // default). nullable() lets the client explicitly clear by sending null.
 const customTitle = z.string().max(80).nullable().optional();
 const customBody = z.string().max(280).nullable().optional();
+// Days off — user-local YYYY-MM-DD strings. The action de-dupes and
+// sorts before persisting; we cap at 365 to stop someone from blasting
+// a five-year list at the column.
+const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida (YYYY-MM-DD)');
 
 export const updateNotificationPrefsSchema = z.object({
   morningTime: hhmm.optional(),
@@ -43,6 +47,7 @@ export const updateNotificationPrefsSchema = z.object({
   eveningTitle: customTitle,
   eveningBody: customBody,
   nagIntervalMinutes: nagInterval.optional(),
+  daysOff: z.array(ymd).max(365).optional(),
 });
 
 export { NAG_INTERVAL_VALUES };

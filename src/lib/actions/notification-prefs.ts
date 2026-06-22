@@ -64,6 +64,14 @@ export async function updateNotificationPrefs(input: unknown): Promise<ActionRes
         prefsUpdate[f] = v === null || v.trim().length === 0 ? null : v.trim();
       }
 
+      // Days off — store unique YYYY-MM-DD ascending. The cron's
+      // `isDayOff` check uses `includes()`, so order doesn't change
+      // behavior, but keeping the column tidy makes diffs / debugging
+      // sane. The UI sends the full desired list every save.
+      if (data.daysOff !== undefined) {
+        prefsUpdate.daysOff = Array.from(new Set(data.daysOff)).sort();
+      }
+
       if (Object.keys(prefsUpdate).length > 0) {
         await db
           .insert(notificationPrefs)

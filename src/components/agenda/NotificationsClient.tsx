@@ -45,6 +45,7 @@ interface Props {
     eveningTitle: string | null;
     eveningBody: string | null;
     nagIntervalMinutes: number;
+    daysOff: string[];
   };
 }
 
@@ -87,10 +88,72 @@ export function NotificationsClient({ initial }: Props) {
   const [eveningTitle, setEveningTitle] = useState(initial.eveningTitle ?? '');
   const [eveningBody, setEveningBody] = useState(initial.eveningBody ?? '');
   const [nagInterval, setNagInterval] = useState<number>(initial.nagIntervalMinutes);
+  // daysOff is always shown sorted ascending, dedupe-on-toggle, future-
+  // only (past dates expire). Persisted as YYYY-MM-DD strings.
+  const [daysOff, setDaysOff] = useState<string[]>(initial.daysOff);
+  const [newDayOff, setNewDayOff] = useState('');
   const [isPending, startTransition] = useTransition();
 
   function toggleChannel(c: string, on: boolean) {
     setChannels((prev) => (on ? [...new Set([...prev, c])] : prev.filter((x) => x !== c)));
+  }
+
+  function todayIsoLocal(): string {
+    const now = new Date();
+    return new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(now);
+  }
+
+  function addDayOff(ymd: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return;
+    if (ymd < todayIsoLocal()) return; // past dates are noise
+    setDaysOff((prev) => {
+      if (prev.includes(ymd)) return prev;
+      return [...prev, ymd].sort();
+    });
+  }
+
+  function removeDayOff(ymd: string) {
+    setDaysOff((prev) => prev.filter((d) => d !== ymd));
+  }
+
+  function addWorkweekRange(weekOffset: number) {
+    // Mon..Fri of `now + weekOffset*7` days, in user-local calendar.
+    const base = new Date();
+    base.setDate(base.getDate() + weekOffset * 7);
+    // Find Monday of that week (ISO: Mon=1..Sun=7; Date.getDay: Sun=0..Sat=6).
+    const dow = base.getDay(); // 0..6, Sun..Sat
+    const offsetToMonday = dow === 0 ? -6 : 1 - dow;
+    const monday = new Date(base);
+    monday.setDate(base.getDate() + offsetToMonday);
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const today = todayIsoLocal();
+    const next: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const ymd = fmt.format(d);
+      if (ymd >= today) next.push(ymd);
+    }
+    setDaysOff((prev) => Array.from(new Set([...prev, ...next])).sort());
+  }
+
+  function formatDayOffLabel(ymd: string): string {
+    const [y, m, d] = ymd.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return new Intl.DateTimeFormat('es-MX', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      timeZone: 'UTC',
+    }).format(dt);
   }
 
   function handleSave() {
@@ -118,6 +181,7 @@ export function NotificationsClient({ initial }: Props) {
         eveningTitle,
         eveningBody,
         nagIntervalMinutes: nagInterval,
+        daysOff,
       });
       if (result.error) {
         toast.error(`No se pudo guardar: ${result.error}`);
@@ -172,6 +236,122 @@ export function NotificationsClient({ initial }: Props) {
           onChange={setNagInterval}
           disabled={isPending}
         />
+      </Section>
+
+      <Section title="Días libres">
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'var(--ag-font-display)',
+            fontStyle: 'italic',
+            fontSize: 12,
+            color: 'var(--ag-ink-soft)',
+            lineHeight: 1.4,
+          }}
+        >
+          Fechas en las que no querés recibir ningún check-in. Aplica al de la mañana, los nags y el
+          de la noche.
+        </p>
+
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 6,
+            alignItems: 'center',
+            padding: 'var(--ag-space-3)',
+            borderRadius: 'var(--ag-radius-base)',
+            backgroundColor: 'var(--ag-bg-elevated)',
+            border: '1px solid var(--ag-rule)',
+            minHeight: 44,
+          }}
+        >
+          {daysOff.length === 0 ? (
+            <span
+              style={{
+                fontFamily: 'var(--ag-font-display)',
+                fontStyle: 'italic',
+                fontSize: 13,
+                color: 'var(--ag-ink-hint)',
+              }}
+            >
+              Ningún día libre por ahora.
+            </span>
+          ) : (
+            daysOff.map((d) => (
+              <DayOffChip
+                key={d}
+                label={formatDayOffLabel(d)}
+                onRemove={() => removeDayOff(d)}
+                disabled={isPending}
+              />
+            ))
+          )}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            padding: '10px 12px',
+            borderRadius: 'var(--ag-radius-base)',
+            border: '1px solid var(--ag-rule)',
+            backgroundColor: 'var(--ag-bg-elevated)',
+          }}
+        >
+          <input
+            type="date"
+            value={newDayOff}
+            min={todayIsoLocal()}
+            onChange={(e) => setNewDayOff(e.target.value)}
+            disabled={isPending}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid var(--ag-rule)',
+              borderRadius: 'var(--ag-radius-base)',
+              backgroundColor: 'var(--ag-bg)',
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: 13,
+            }}
+          />
+          <button
+            type="button"
+            disabled={isPending || !newDayOff}
+            onClick={() => {
+              if (!newDayOff) return;
+              addDayOff(newDayOff);
+              setNewDayOff('');
+            }}
+            style={{
+              appearance: 'none',
+              padding: '6px 14px',
+              border: '1px solid var(--ag-rule)',
+              borderRadius: 'var(--ag-radius-base)',
+              backgroundColor: 'var(--ag-bg)',
+              fontFamily: 'var(--ag-font-body)',
+              fontSize: 13,
+              color: 'var(--ag-ink-primary)',
+              cursor: isPending || !newDayOff ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Agregar día
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <ShortcutButton
+            label="Esta semana (L-V)"
+            onClick={() => addWorkweekRange(0)}
+            disabled={isPending}
+          />
+          <ShortcutButton
+            label="Próxima semana (L-V)"
+            onClick={() => addWorkweekRange(1)}
+            disabled={isPending}
+          />
+        </div>
       </Section>
 
       <Section title="Mensajes personalizados">
@@ -627,5 +807,89 @@ function ToggleRow({
         style={{ width: 18, height: 18, accentColor: 'var(--ag-ink-primary)' }}
       />
     </label>
+  );
+}
+
+function DayOffChip({
+  label,
+  onRemove,
+  disabled,
+}: {
+  label: string;
+  onRemove: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '4px 6px 4px 10px',
+        borderRadius: 'var(--ag-radius-pill)',
+        border: '1px solid var(--ag-rule)',
+        backgroundColor: 'var(--ag-bg)',
+        fontFamily: 'var(--ag-font-body)',
+        fontSize: 12,
+        color: 'var(--ag-ink-primary)',
+      }}
+    >
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={disabled}
+        aria-label={`Quitar ${label}`}
+        style={{
+          appearance: 'none',
+          border: 'none',
+          background: 'transparent',
+          color: 'var(--ag-ink-hint)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          padding: 0,
+          width: 18,
+          height: 18,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '50%',
+          fontSize: 14,
+          lineHeight: 1,
+        }}
+      >
+        ×
+      </button>
+    </span>
+  );
+}
+
+function ShortcutButton({
+  label,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        appearance: 'none',
+        padding: '6px 12px',
+        border: '1px dashed var(--ag-rule)',
+        borderRadius: 'var(--ag-radius-pill)',
+        backgroundColor: 'transparent',
+        fontFamily: 'var(--ag-font-body)',
+        fontSize: 12,
+        color: 'var(--ag-ink-soft)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
+    >
+      + {label}
+    </button>
   );
 }

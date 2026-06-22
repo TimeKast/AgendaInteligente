@@ -75,6 +75,12 @@ export interface NotificationsPrefs {
   eveningBody: string | null;
   /** Minutes between nag re-fires after morning. 0 = nag disabled. */
   nagIntervalMinutes: number;
+  /**
+   * User-local YYYY-MM-DD strings on which no check-in fires
+   * (vacations, travel days, etc.). Read-only here; mutations go
+   * through `updateNotificationPrefs`.
+   */
+  daysOff: string[];
 }
 
 export async function loadNotificationsPrefs(userId: string): Promise<NotificationsPrefs> {
@@ -98,6 +104,7 @@ export async function loadNotificationsPrefs(userId: string): Promise<Notificati
         eveningTitle: notificationPrefs.eveningTitle,
         eveningBody: notificationPrefs.eveningBody,
         nagIntervalMinutes: notificationPrefs.nagIntervalMinutes,
+        daysOff: notificationPrefs.daysOff,
       })
       .from(notificationPrefs)
       .where(eq(notificationPrefs.userId, userId)),
@@ -123,5 +130,6 @@ export async function loadNotificationsPrefs(userId: string): Promise<Notificati
     eveningTitle: p?.eveningTitle ?? null,
     eveningBody: p?.eveningBody ?? null,
     nagIntervalMinutes: p?.nagIntervalMinutes ?? 60,
+    daysOff: p?.daysOff ?? [],
   };
 }
