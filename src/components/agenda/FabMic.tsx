@@ -3,46 +3,53 @@
 /**
  * FabMic — 56×56 floating action button (CMP-005).
  *
- * Position: fixed bottom-right, offset above the bottom nav (64px) by 16px.
- * Background: warm charcoal `--ag-accent-primary`. Icon cream.
- * Stroke 1.75 per design rules.
- *
- * Tap opens VoiceCaptureSheet (SCR-050): real mic capture → Whisper STT
- * → Claude voice-parser → editable preview → createActivity.
+ * Mobile: fixed bottom-right, offset above bottom nav.
+ * Desktop: fixed bottom-right without bottom-nav offset because the primary nav
+ * moves to the left sidebar.
  */
 
 import { useState } from 'react';
 import { Mic } from 'lucide-react';
 import { VoiceCaptureSheet } from './VoiceCaptureSheet';
 
+const FAB_CSS = `
+[data-theme='agenda'] .ag-fab-mic {
+  position: fixed;
+  right: 16px;
+  bottom: calc(64px + 16px + env(safe-area-inset-bottom, 0px));
+  width: 56px;
+  height: 56px;
+  border-radius: var(--ag-radius-pill);
+  background-color: var(--ag-accent-primary);
+  color: var(--ag-accent-on);
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(42, 40, 38, 0.12), 0 2px 6px rgba(42, 40, 38, 0.08);
+  transition: background-color var(--ag-duration-base) var(--ag-ease), transform var(--ag-duration-base) var(--ag-ease);
+  z-index: 40;
+}
+
+@media (min-width: 768px) {
+  [data-theme='agenda'] .ag-fab-mic {
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+}
+`;
+
 export function FabMic() {
   const [open, setOpen] = useState(false);
 
   return (
     <>
+      <style>{FAB_CSS}</style>
       <button
         type="button"
         aria-label="Capturar con voz"
         onClick={() => setOpen(true)}
-        style={{
-          position: 'fixed',
-          right: 16,
-          bottom: 'calc(64px + 16px + env(safe-area-inset-bottom, 0px))',
-          width: 56,
-          height: 56,
-          borderRadius: 'var(--ag-radius-pill)',
-          backgroundColor: 'var(--ag-accent-primary)',
-          color: 'var(--ag-accent-on)',
-          border: 'none',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          // Calm, soft shadow — no neumo, no glass.
-          boxShadow: '0 1px 2px rgba(42, 40, 38, 0.12), 0 2px 6px rgba(42, 40, 38, 0.08)',
-          transition: `background-color var(--ag-duration-base) var(--ag-ease), transform var(--ag-duration-base) var(--ag-ease)`,
-          zIndex: 40,
-        }}
+        className="ag-fab-mic"
         onMouseDown={(e) => {
           e.currentTarget.style.transform = 'scale(0.97)';
         }}
