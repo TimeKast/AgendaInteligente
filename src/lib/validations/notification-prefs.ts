@@ -48,6 +48,10 @@ export const updateNotificationPrefsSchema = z.object({
   eveningBody: customBody,
   nagIntervalMinutes: nagInterval.optional(),
   daysOff: z.array(ymd).max(365).optional(),
+  // Silencio total. Fecha ISO en el futuro = silenciado hasta esa
+  // fecha. `null` explícito = reactivar. Ausente = sin cambio. Los
+  // 5 paths de envío lo respetan vía isMuted() en checkin-schedule.
+  mutedUntil: z.string().datetime().nullable().optional(),
 });
 
 export { NAG_INTERVAL_VALUES };

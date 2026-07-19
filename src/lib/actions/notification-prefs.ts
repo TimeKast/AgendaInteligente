@@ -72,6 +72,12 @@ export async function updateNotificationPrefs(input: unknown): Promise<ActionRes
         prefsUpdate.daysOff = Array.from(new Set(data.daysOff)).sort();
       }
 
+      // Muted until — Zod delivers a string; convert to Date. Explicit
+      // null means the user is un-muting.
+      if (data.mutedUntil !== undefined) {
+        prefsUpdate.mutedUntil = data.mutedUntil === null ? null : new Date(data.mutedUntil);
+      }
+
       if (Object.keys(prefsUpdate).length > 0) {
         await db
           .insert(notificationPrefs)

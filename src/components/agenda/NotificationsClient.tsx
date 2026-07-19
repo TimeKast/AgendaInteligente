@@ -46,6 +46,7 @@ interface Props {
     eveningBody: string | null;
     nagIntervalMinutes: number;
     daysOff: string[];
+    mutedUntil: Date | null;
   };
 }
 
@@ -92,6 +93,10 @@ export function NotificationsClient({ initial }: Props) {
   // only (past dates expire). Persisted as YYYY-MM-DD strings.
   const [daysOff, setDaysOff] = useState<string[]>(initial.daysOff);
   const [newDayOff, setNewDayOff] = useState('');
+  // Muted-until: `null` = active, Date in the future = silenced. We
+  // track the value optimistically so the section flips immediately;
+  // save runs on the same handler as the rest of the page.
+  const [mutedUntil, setMutedUntil] = useState<Date | null>(initial.mutedUntil);
   const [isPending, startTransition] = useTransition();
 
   function toggleChannel(c: string, on: boolean) {
@@ -182,6 +187,7 @@ export function NotificationsClient({ initial }: Props) {
         eveningBody,
         nagIntervalMinutes: nagInterval,
         daysOff,
+        mutedUntil: mutedUntil ? mutedUntil.toISOString() : null,
       });
       if (result.error) {
         toast.error(`No se pudo guardar: ${result.error}`);
@@ -203,6 +209,8 @@ export function NotificationsClient({ initial }: Props) {
         gap: 'var(--ag-space-5)',
       }}
     >
+      <MuteSection mutedUntil={mutedUntil} setMutedUntil={setMutedUntil} disabled={isPending} />
+
       <Section title="Check-ins diarios">
         <TimeRow label="Mañana" value={morning} onChange={setMorning} disabled={isPending} />
         <TimeRow label="Noche" value={evening} onChange={setEvening} disabled={isPending} />
@@ -892,4 +900,176 @@ function ShortcutButton({
       + {label}
     </button>
   );
+}
+
+// Preset durations (label, ms). "Fin de semana" is computed dynamically
+// because the target date depends on today's weekday.
+const MUTE_PRESETS: Array<{ label: string; hours: number }> = [
+  { label: '1 hora', hours: 1 },
+  { label: '4 horas', hours: 4 },
+  { label: 'Hasta mañana', hours: 12 },
+  { label: '24 horas', hours: 24 },
+  { label: '1 semana', hours: 24 * 7 },
+];
+
+function endOfWeekendMs(now: Date): number {
+  // Next Sunday 23:59:59 local. If today is already Sunday, use today.
+  const dow = now.getDay(); // Sun=0..Sat=6
+  const daysToSunday = dow === 0 ? 0 : 7 - dow;
+  const target = new Date(now);
+  target.setDate(now.getDate() + daysToSunday);
+  target.setHours(23, 59, 59, 999);
+  return target.getTime() - now.getTime();
+}
+
+function formatMutedUntil(d: Date): string {
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const time = new Intl.DateTimeFormat('es-MX', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d);
+  if (sameDay) return `hoy ${time}`;
+  const day = new Intl.DateTimeFormat('es-MX', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+  }).format(d);
+  return `${day} · ${time}`;
+}
+
+function MuteSection({
+  mutedUntil,
+  setMutedUntil,
+  disabled,
+}: {
+  mutedUntil: Date | null;
+  setMutedUntil: (v: Date | null) => void;
+  disabled: boolean;
+}) {
+  // React 19 flags Date.now() as impure in render. useState initializer
+  // is allowed and captures a stable "now" for this mount, which is
+  // plenty for a settings page (the user isn't sitting on it for hours).
+  const [renderStart] = useState(() => new Date());
+  const isActive = mutedUntil !== null && mutedUntil > renderStart;
+
+  return (
+    <section
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--ag-space-2)',
+        padding: 'var(--ag-space-3)',
+        border: '1px solid var(--ag-rule)',
+        borderRadius: 'var(--ag-radius-base)',
+        backgroundColor: isActive
+          ? 'color-mix(in oklab, var(--ag-warning, #a04b2e), transparent 88%)'
+          : 'var(--ag-bg-elevated)',
+      }}
+    >
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 'var(--ag-space-3)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontFamily: 'var(--ag-font-body)',
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--ag-slate)',
+          }}
+        >
+          Silenciar
+        </h3>
+        {isActive && (
+          <span
+            style={{
+              fontFamily: 'var(--ag-font-display)',
+              fontStyle: 'italic',
+              fontSize: 12,
+              color: 'var(--ag-ink-primary)',
+            }}
+          >
+            Silenciado hasta {formatMutedUntil(mutedUntil!)}
+          </span>
+        )}
+      </header>
+
+      <p
+        style={{
+          margin: 0,
+          fontFamily: 'var(--ag-font-display)',
+          fontStyle: 'italic',
+          fontSize: 12,
+          color: 'var(--ag-ink-soft)',
+          lineHeight: 1.4,
+        }}
+      >
+        Corta TODOS los envíos (mañana, insistencia, noche, semanal) hasta la hora que elijas.
+        Guardá los cambios para que tome efecto en el próximo tick del cron.
+      </p>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+        {MUTE_PRESETS.map((p) => (
+          <button
+            key={p.label}
+            type="button"
+            disabled={disabled}
+            onClick={() => setMutedUntil(new Date(Date.now() + p.hours * 60 * 60 * 1000))}
+            style={presetButtonStyle(disabled)}
+          >
+            {p.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setMutedUntil(new Date(Date.now() + endOfWeekendMs(new Date())))}
+          style={presetButtonStyle(disabled)}
+        >
+          Fin de semana
+        </button>
+        {isActive && (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => setMutedUntil(null)}
+            style={{
+              ...presetButtonStyle(disabled),
+              borderStyle: 'solid',
+              backgroundColor: 'var(--ag-ink-primary)',
+              color: 'var(--ag-accent-on)',
+            }}
+          >
+            Reactivar ahora
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function presetButtonStyle(disabled: boolean): React.CSSProperties {
+  return {
+    appearance: 'none',
+    padding: '6px 12px',
+    border: '1px dashed var(--ag-rule)',
+    borderRadius: 'var(--ag-radius-pill)',
+    backgroundColor: 'var(--ag-bg)',
+    fontFamily: 'var(--ag-font-body)',
+    fontSize: 12,
+    color: 'var(--ag-ink-primary)',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+  };
 }

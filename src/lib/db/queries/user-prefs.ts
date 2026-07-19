@@ -81,6 +81,11 @@ export interface NotificationsPrefs {
    * through `updateNotificationPrefs`.
    */
   daysOff: string[];
+  /**
+   * When set to a future timestamp, EVERY check-in is suppressed until
+   * that instant (`isMuted` in checkin-schedule.ts). `null` = active.
+   */
+  mutedUntil: Date | null;
 }
 
 export async function loadNotificationsPrefs(userId: string): Promise<NotificationsPrefs> {
@@ -105,6 +110,7 @@ export async function loadNotificationsPrefs(userId: string): Promise<Notificati
         eveningBody: notificationPrefs.eveningBody,
         nagIntervalMinutes: notificationPrefs.nagIntervalMinutes,
         daysOff: notificationPrefs.daysOff,
+        mutedUntil: notificationPrefs.mutedUntil,
       })
       .from(notificationPrefs)
       .where(eq(notificationPrefs.userId, userId)),
@@ -131,5 +137,6 @@ export async function loadNotificationsPrefs(userId: string): Promise<Notificati
     eveningBody: p?.eveningBody ?? null,
     nagIntervalMinutes: p?.nagIntervalMinutes ?? 60,
     daysOff: p?.daysOff ?? [],
+    mutedUntil: p?.mutedUntil ?? null,
   };
 }
