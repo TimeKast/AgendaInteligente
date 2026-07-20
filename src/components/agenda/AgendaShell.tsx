@@ -1,20 +1,16 @@
 'use client';
 
 /**
- * AgendaShell — client wrapper that decides whether to render chrome (bottom
- * nav + FAB) based on the current route.
+ * AgendaShell — client wrapper that decides whether to render chrome based on
+ * the current route.
  *
- * Nav strategy (post-iteration): the nav is ALWAYS horizontal at the bottom of
- * the viewport, on every breakpoint. The legacy desktop side nav was removed —
- * AgendaBottomNav now handles both layouts internally (compact 7-cell on
- * <768px, generous 7-cell on ≥768px). See AgendaBottomNav for the responsive
- * sizing details.
+ * Nav strategy:
+ *   - Mobile: bottom nav + FAB offset above it.
+ *   - Desktop: fixed left icon sidebar/rail + content offset so the nav never
+ *     overlaps the app.
  *
  * Per-route exclusions:
  *   - /onboarding/* → no chrome (owns its layout).
- *
- * All other routes show the chrome — UX feedback is consistent: nav siempre
- * accesible.
  */
 
 import { usePathname } from 'next/navigation';
@@ -24,6 +20,14 @@ import { FabMic } from './FabMic';
 interface AgendaShellProps {
   children: React.ReactNode;
 }
+
+const SHELL_CSS = `
+@media (min-width: 768px) {
+  [data-theme='agenda'] .ag-shell-content[data-has-chrome='true'] {
+    padding-left: 84px;
+  }
+}
+`;
 
 export function AgendaShell({ children }: AgendaShellProps) {
   const pathname = usePathname() ?? '/';
@@ -40,7 +44,10 @@ export function AgendaShell({ children }: AgendaShellProps) {
         minHeight: '100dvh',
       }}
     >
+      <style>{SHELL_CSS}</style>
       <div
+        className="ag-shell-content"
+        data-has-chrome={showChrome ? 'true' : 'false'}
         style={{
           flex: 1,
           minWidth: 0,
