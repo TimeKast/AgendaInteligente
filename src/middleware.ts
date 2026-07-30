@@ -35,12 +35,26 @@ const { auth } = NextAuth(authConfig);
 // callback (`authorized` in auth.config) still runs for anything that
 // passes through (returning `undefined` = default gating path).
 export const middleware = auth((req) => {
-  if (isMaintenanceMode() && req.nextUrl.pathname !== '/maintenance') {
+  const maintenance = isMaintenanceMode();
+  // TEMPORARY diagnostic — expose what the middleware sees so we can
+  // debug env-var injection on the Edge runtime from a curl. Remove
+  // once we've confirmed the kill switch works end-to-end.
+  const rawMode = process.env.MAINTENANCE_MODE;
+  const rawKind =
+    rawMode === undefined ? 'undefined' : rawMode === '' ? 'empty' : `str:${rawMode.length}`;
+
+  if (maintenance && req.nextUrl.pathname !== '/maintenance') {
     const url = req.nextUrl.clone();
     url.pathname = '/maintenance';
-    return NextResponse.rewrite(url, { status: 503 });
+    const res = NextResponse.rewrite(url, { status: 503 });
+    res.headers.set('X-Maintenance-Debug', 'on');
+    res.headers.set('X-Maintenance-Raw', rawKind);
+    return res;
   }
-  return undefined;
+  const res = NextResponse.next();
+  res.headers.set('X-Maintenance-Debug', 'off');
+  res.headers.set('X-Maintenance-Raw', rawKind);
+  return res;
 });
 
 export const config = {
