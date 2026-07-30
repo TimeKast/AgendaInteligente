@@ -2,7 +2,7 @@
 
 > **Auto-generated** — Run `pnpm generate:inventory` to update
 > **Regla:** SIEMPRE consultar antes de crear algo nuevo.
-> **Last updated:** 2026-07-19
+> **Last updated:** 2026-07-30
 
 ---
 
@@ -125,6 +125,7 @@
 | /goals | `src\app\(agendaInteligente)\goals\page.tsx` |
 | /goals/[id] | `src\app\(agendaInteligente)\goals\[id]\page.tsx` |
 | /login | `src\app\(auth)\login\page.tsx` |
+| /maintenance | `src\app\maintenance\page.tsx` |
 | /month | `src\app\(agendaInteligente)\month\page.tsx` |
 | /notifications | `src\app\(protected)\notifications\page.tsx` |
 | /offline | `src\app\offline\page.tsx` |
@@ -202,10 +203,10 @@
 | Metric | Value |
 |--------|-------|
 | Dependencies | 44 |
-| Page Routes | 49 |
+| Page Routes | 50 |
 | API Routes | 26 |
 | Components & Utils | 44 |
-| **Total items** | **163** |
+| **Total items** | **164** |
 
 ---
 

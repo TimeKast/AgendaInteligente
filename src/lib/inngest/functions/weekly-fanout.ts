@@ -10,6 +10,7 @@
 
 import { eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
+import { isMaintenanceMode } from '@/lib/env';
 import { users } from '@/lib/db/schema/users';
 import { notificationPrefs } from '@/lib/db/schema/notification-prefs';
 import {
@@ -39,6 +40,13 @@ export async function runWeeklyFanout({
   logger: LoggerLike;
   now?: Date;
 }): Promise<{ users: number; emitted: number }> {
+  // Kill switch — matches daily-checkin-fanout. Skip the DB read
+  // entirely when MAINTENANCE_MODE is on / unset.
+  if (isMaintenanceMode()) {
+    logger.info('[weekly.fanout] maintenance mode — skipping');
+    return { users: 0, emitted: 0 };
+  }
+
   const rows = await step.run('list-active-users-with-prefs', async () => {
     return db
       .select({

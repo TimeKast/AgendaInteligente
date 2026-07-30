@@ -134,6 +134,15 @@ const envSchema = z.object({
   ENCRYPTION_KEY: z.string().optional(),
 
   // ─────────────────────────────────────────────────────────────
+  // Ops kill switch — MAINTENANCE_MODE
+  // Default (unset) = maintenance ON. Only "false"/"0"/"no"/"off"
+  // (case-insensitive) turns the app on. Rationale: this is a
+  // personal-project pause switch; forgetting to set it should keep
+  // the app OFF, never on. See `isMaintenanceMode()` below.
+  // ─────────────────────────────────────────────────────────────
+  MAINTENANCE_MODE: z.string().optional(),
+
+  // ─────────────────────────────────────────────────────────────
   // Vercel System Variables (auto-injected by Vercel runtime)
   // ─────────────────────────────────────────────────────────────
   VERCEL_URL: z.string().optional(),
@@ -330,6 +339,26 @@ export function isGitHubOAuthConfigured(): boolean {
 export function isDatabaseConfigured(): boolean {
   const e = getEnv();
   return !!e.DATABASE_URL;
+}
+
+/**
+ * Ops kill switch — is the app in maintenance mode?
+ *
+ * Defaults to TRUE when `MAINTENANCE_MODE` is unset. The only values
+ * that turn the app ON are the explicit falsy strings: "false" / "0"
+ * / "no" / "off" (case-insensitive). Any other value keeps it off.
+ *
+ * Read directly from `process.env` (not the Zod-validated cache) so
+ * middleware — which runs on the Edge runtime and cannot import the
+ * Node-side logger transitively — can call it without triggering the
+ * full env validation path. Middleware + server + client all agree
+ * on the same source of truth.
+ */
+export function isMaintenanceMode(): boolean {
+  const raw = process.env.MAINTENANCE_MODE;
+  if (raw === undefined || raw.trim() === '') return true;
+  const norm = raw.trim().toLowerCase();
+  return !(norm === 'false' || norm === '0' || norm === 'no' || norm === 'off');
 }
 
 /**

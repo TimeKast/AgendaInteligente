@@ -1,30 +1,47 @@
 /**
  * Edge-runtime middleware for route gating.
  *
- * Uses the Edge-safe `authConfig` (no DB imports) so the bundle can run on
- * Vercel's Edge runtime. The actual gating policy (public vs protected
- * routes, role-based ACL) lives in `authConfig.callbacks.authorized` in
- * `lib/auth/auth.config.ts` — that callback is invoked automatically per
- * request by NextAuth's middleware export.
+ * Two responsibilities, in order:
  *
- * Why a separate middleware file when `authorized` already covers gating:
- *   - Explicit `src/middleware.ts` is the discoverable place new contributors
- *     look for "is this route protected?".
- *   - The matcher below excludes static assets, image optimization, and
- *     NextAuth's own routes — avoiding wasted middleware invocations on
- *     /_next/*, /favicon.ico, etc.
+ * 1. **Maintenance kill switch** — if `MAINTENANCE_MODE` is truthy (or
+ *    unset — default is ON, safe-by-default), every request is
+ *    rewritten to `/maintenance`. The Inngest webhook is exempted at
+ *    the matcher level so background events can still drain, but the
+ *    handlers themselves early-return via `isMaintenanceMode()` so
+ *    nothing actually fires.
+ *
+ * 2. **Auth gating** — uses the Edge-safe `authConfig` (no DB imports)
+ *    so the bundle can run on Vercel's Edge runtime. The actual gating
+ *    policy (public vs protected routes, role-based ACL) lives in
+ *    `authConfig.callbacks.authorized` in `lib/auth/auth.config.ts`.
+ *
+ * The matcher below excludes static assets, image optimization, and
+ * NextAuth's own routes — avoiding wasted middleware invocations on
+ * /_next/*, /favicon.ico, etc.
  *
  * Linked: ISSUE-003.
  */
 
 import NextAuth from 'next-auth';
+import { NextResponse } from 'next/server';
 import { authConfig } from '@/lib/auth/auth.config';
+import { isMaintenanceMode } from '@/lib/env';
 
-// Next.js 16 static analysis can't trace a destructured re-export — keep
-// the `middleware` export as a named const assignment so the compiler
-// sees the function directly.
 const { auth } = NextAuth(authConfig);
-export const middleware = auth;
+
+// NextAuth v5 middleware pattern: `auth(handler)` returns a middleware
+// with the session already resolved on `req.auth`. We short-circuit
+// with the maintenance rewrite BEFORE reading the session; the auth
+// callback (`authorized` in auth.config) still runs for anything that
+// passes through (returning `undefined` = default gating path).
+export const middleware = auth((req) => {
+  if (isMaintenanceMode() && req.nextUrl.pathname !== '/maintenance') {
+    const url = req.nextUrl.clone();
+    url.pathname = '/maintenance';
+    return NextResponse.rewrite(url, { status: 503 });
+  }
+  return undefined;
+});
 
 export const config = {
   // Match everything EXCEPT:

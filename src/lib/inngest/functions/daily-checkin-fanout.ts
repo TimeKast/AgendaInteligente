@@ -25,6 +25,7 @@
 
 import { eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
+import { isMaintenanceMode } from '@/lib/env';
 import { users } from '@/lib/db/schema/users';
 import { notificationPrefs } from '@/lib/db/schema/notification-prefs';
 import {
@@ -65,6 +66,15 @@ export async function runDailyCheckinFanout({
   logger: LoggerLike;
   now?: Date;
 }): Promise<{ users: number; emitted: number }> {
+  // Kill switch — MAINTENANCE_MODE unset/truthy pauses every check-in.
+  // We still let the cron tick because unregistering it would require a
+  // vercel.json edit; short-circuiting here is cheap (1 env read) and
+  // reversible by flipping the env var.
+  if (isMaintenanceMode()) {
+    logger.info('[daily.checkin.fanout] maintenance mode — skipping');
+    return { users: 0, emitted: 0 };
+  }
+
   const rows = await step.run('list-active-users-with-prefs', async () => {
     return db
       .select({

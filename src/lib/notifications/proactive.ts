@@ -29,6 +29,7 @@
 
 import { and, count, eq, gt, inArray } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
+import { isMaintenanceMode } from '@/lib/env';
 import { users } from '@/lib/db/schema/users';
 import { notificationPrefs } from '@/lib/db/schema/notification-prefs';
 import {
@@ -80,6 +81,16 @@ export interface EnqueueResult {
  */
 export async function enqueueAndSend(input: EnqueueInput): Promise<EnqueueResult> {
   const now = input.now ?? new Date();
+
+  // ── Gate 0: MAINTENANCE_MODE kill switch ─────────────────────────
+  // Cheap short-circuit before any DB read. The fanouts already skip
+  // when maintenance is on; this is the belt-and-suspenders for any
+  // other caller (challenge crons, risk-alerts, project-kill, etc.).
+  // Recorded as `cancelled_muted` for telemetry — it's a system-wide
+  // mute, semantically the same bucket as a per-user muted_until.
+  if (isMaintenanceMode()) {
+    return await record(input, now, 'cancelled_muted', 'muted');
+  }
 
   // ── Gate 1: OPS-1 24h limit ──────────────────────────────────────
   // Skipped for the morning/nag chain — that chain self-throttles via

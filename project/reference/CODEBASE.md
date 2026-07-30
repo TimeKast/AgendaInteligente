@@ -1,7 +1,7 @@
 # 🗺️ CODEBASE — Dependency Map
 
 > **Auto-generated** — Run `pnpm generate:codebase` to update
-> **Last updated:** 2026-07-19
+> **Last updated:** 2026-07-30
 
 ---
 
@@ -139,6 +139,7 @@
 | `src\app\api\voice\transcribe\route.ts` | — | — |
 | `src\app\error.tsx` | — | — |
 | `src\app\layout.tsx` | `src\app\serwist.ts` | — |
+| `src\app\maintenance\page.tsx` | — | — |
 | `src\app\manifest.ts` | — | — |
 | `src\app\not-found.tsx` | — | — |
 | `src\app\offline\page.tsx` | — | — |
@@ -565,10 +566,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 504 |
+| Total files analyzed | 505 |
 | Total connections | 198 |
 | High-risk files (2+ deps) | 36 |
-| Orphan files (no connections) | 337 |
+| Orphan files (no connections) | 338 |
 
 ---
 
