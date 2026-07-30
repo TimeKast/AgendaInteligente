@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { Providers } from '@/components/providers/Providers';
+import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 import { branding } from '@/config/branding';
+import { isMaintenanceMode } from '@/lib/env';
 import { SerwistProvider } from './serwist';
 import './globals.css';
 
@@ -51,14 +53,25 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Maintenance kill switch — MAINTENANCE_MODE default = ON (safe by
+  // default). We check here (Serverless runtime — reads runtime env
+  // reliably) instead of in middleware (Edge runtime — inlines env at
+  // build time). When on, render the maintenance screen INSTEAD of
+  // children so no page ever gets its layout / providers / auth code
+  // in front of the user.
+  const maintenance = isMaintenanceMode();
   return (
     // lang="es" — Factory default for Spanish-first projects. Change per project.
     <html lang="es" className="dark" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <SerwistProvider swUrl="/serwist/sw.js">
-          <Providers>{children}</Providers>
-          <Toaster />
-        </SerwistProvider>
+        {maintenance ? (
+          <MaintenanceScreen />
+        ) : (
+          <SerwistProvider swUrl="/serwist/sw.js">
+            <Providers>{children}</Providers>
+            <Toaster />
+          </SerwistProvider>
+        )}
       </body>
     </html>
   );

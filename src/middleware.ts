@@ -1,19 +1,17 @@
 /**
  * Edge-runtime middleware for route gating.
  *
- * Two responsibilities, in order:
+ * Uses the Edge-safe `authConfig` (no DB imports) so the bundle can run
+ * on Vercel's Edge runtime. The actual gating policy (public vs
+ * protected routes, role-based ACL) lives in `authConfig.callbacks
+ * .authorized` in `lib/auth/auth.config.ts`.
  *
- * 1. **Maintenance kill switch** — if `MAINTENANCE_MODE` is truthy (or
- *    unset — default is ON, safe-by-default), every request is
- *    rewritten to `/maintenance`. The Inngest webhook is exempted at
- *    the matcher level so background events can still drain, but the
- *    handlers themselves early-return via `isMaintenanceMode()` so
- *    nothing actually fires.
- *
- * 2. **Auth gating** — uses the Edge-safe `authConfig` (no DB imports)
- *    so the bundle can run on Vercel's Edge runtime. The actual gating
- *    policy (public vs protected routes, role-based ACL) lives in
- *    `authConfig.callbacks.authorized` in `lib/auth/auth.config.ts`.
+ * Note: the MAINTENANCE_MODE kill switch does NOT live here. Vercel's
+ * Edge Middleware bundle inlines `process.env.X` at build time and
+ * doesn't reliably see runtime env changes, so the maintenance gate
+ * moved to the root `layout.tsx` (Serverless runtime), which reads the
+ * env correctly and intercepts every page render before it commits.
+ * Cron fanouts + `enqueueAndSend` gate on the same helper server-side.
  *
  * The matcher below excludes static assets, image optimization, and
  * NextAuth's own routes — avoiding wasted middleware invocations on
@@ -22,40 +20,14 @@
  * Linked: ISSUE-003.
  */
 
+// Next.js 16 static analysis can't trace a destructured re-export — keep
+// the `middleware` export as a named const assignment so the compiler
+// sees the function directly.
 import NextAuth from 'next-auth';
-import { NextResponse } from 'next/server';
 import { authConfig } from '@/lib/auth/auth.config';
-import { isMaintenanceMode } from '@/lib/env';
 
 const { auth } = NextAuth(authConfig);
-
-// NextAuth v5 middleware pattern: `auth(handler)` returns a middleware
-// with the session already resolved on `req.auth`. We short-circuit
-// with the maintenance rewrite BEFORE reading the session; the auth
-// callback (`authorized` in auth.config) still runs for anything that
-// passes through (returning `undefined` = default gating path).
-export const middleware = auth((req) => {
-  const maintenance = isMaintenanceMode();
-  // TEMPORARY diagnostic — expose what the middleware sees so we can
-  // debug env-var injection on the Edge runtime from a curl. Remove
-  // once we've confirmed the kill switch works end-to-end.
-  const rawMode = process.env.MAINTENANCE_MODE;
-  const rawKind =
-    rawMode === undefined ? 'undefined' : rawMode === '' ? 'empty' : `str:${rawMode.length}`;
-
-  if (maintenance && req.nextUrl.pathname !== '/maintenance') {
-    const url = req.nextUrl.clone();
-    url.pathname = '/maintenance';
-    const res = NextResponse.rewrite(url, { status: 503 });
-    res.headers.set('X-Maintenance-Debug', 'on');
-    res.headers.set('X-Maintenance-Raw', rawKind);
-    return res;
-  }
-  const res = NextResponse.next();
-  res.headers.set('X-Maintenance-Debug', 'off');
-  res.headers.set('X-Maintenance-Raw', rawKind);
-  return res;
-});
+export const middleware = auth;
 
 export const config = {
   // Match everything EXCEPT:

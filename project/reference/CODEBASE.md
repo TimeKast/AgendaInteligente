@@ -147,6 +147,7 @@
 | `src\app\serwist.ts` | — | `src\app\layout.tsx` |
 | `src\app\serwist\[path]\route.ts` | — | — |
 | `src\app\sw.ts` | — | — |
+| `src\components\MaintenanceScreen.tsx` | — | — |
 | `src\components\admin\InviteUserDialog.tsx` | — | `src\components\admin\UserTable.tsx` |
 | `src\components\admin\NewUserContent.tsx` | — | — |
 | `src\components\admin\UserActivityLog.tsx` | — | — |
@@ -566,10 +567,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files analyzed | 505 |
+| Total files analyzed | 506 |
 | Total connections | 198 |
 | High-risk files (2+ deps) | 36 |
-| Orphan files (no connections) | 338 |
+| Orphan files (no connections) | 339 |
 
 ---
 
