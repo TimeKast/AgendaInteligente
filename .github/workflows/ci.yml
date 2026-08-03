@@ -8,7 +8,7 @@ name: CI
 
 on:
   push:
-    branches: ['**'] # All branches, but not tags
+    branches: [main, develop, dev]
     tags-ignore: ['**'] # Explicitly ignore tags
   pull_request:
   workflow_dispatch:
@@ -21,6 +21,9 @@ jobs:
   validate:
     name: Lint, TypeCheck, Test
     runs-on: ubuntu-latest
+    # Cost guard: GitHub's default job timeout is 6 HOURS, all of it billable.
+    # A hung job would burn 360 minutes of the monthly allowance.
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
