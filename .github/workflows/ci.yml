@@ -9,6 +9,9 @@ name: CI
 on:
   push:
     branches: [main, develop, dev]
+    # Cost guard: a push touching ONLY docs has nothing for this workflow to verify.
+    # A mixed docs+code push still runs (the filter skips only when EVERY path matches).
+    paths-ignore: ["project/**", "docs/**", "*.md"]
     tags-ignore: ['**'] # Explicitly ignore tags
   pull_request:
   workflow_dispatch:
